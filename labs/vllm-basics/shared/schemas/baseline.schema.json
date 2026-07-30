@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "vLLM concurrency baseline row",
+  "type": "object",
+  "required": ["timestamp", "model", "concurrency", "request_count", "successful_requests", "failed_requests", "wall_time_seconds", "throughput_rps"],
+  "properties": {
+    "timestamp": {"type": "string", "format": "date-time"},
+    "model": {"type": "string"},
+    "concurrency": {"type": "integer", "minimum": 1},
+    "request_count": {"type": "integer", "minimum": 1},
+    "successful_requests": {"type": "integer", "minimum": 0},
+    "failed_requests": {"type": "integer", "minimum": 0},
+    "wall_time_seconds": {"type": "number", "minimum": 0},
+    "throughput_rps": {"type": "number", "minimum": 0}
+  }
+}
