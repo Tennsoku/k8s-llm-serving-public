@@ -1,0 +1,17 @@
+
+===== Git revision =====
+$ bash -lc git\ -C\ <REMOTE_REPO_ROOT>\ rev-parse\ HEAD\ 2\>/dev/null\ \|\|\ true
+784506a1b72727de0dcc774eabcbf9f623847438
+
+[exit_code=0]
+
+===== Git dirty flag =====
+$ bash -lc test\ -z\ \?\?
+
+[exit_code=1]
+
+===== Collector checksum =====
+$ sha256sum ./scripts/m0/m0-evidence.sh
+13ddcf5acf57c7dceef65bbbe58ae4dfc72d052acedeaca422949583102ce960  ./scripts/m0/m0-evidence.sh
+
+[exit_code=0]

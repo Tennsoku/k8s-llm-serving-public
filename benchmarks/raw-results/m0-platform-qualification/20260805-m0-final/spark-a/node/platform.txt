@@ -1,0 +1,54 @@
+
+===== UTC timestamp =====
+$ date -u +%FT%TZ
+2026-08-05T18:45:17Z
+
+[exit_code=0]
+
+===== OS release =====
+$ cat /etc/os-release
+PRETTY_NAME="Ubuntu 24.04.4 LTS"
+NAME="Ubuntu"
+VERSION_ID="24.04"
+VERSION="24.04.4 LTS (Noble Numbat)"
+VERSION_CODENAME=noble
+ID=ubuntu
+ID_LIKE=debian
+HOME_URL="https://www.ubuntu.com/"
+SUPPORT_URL="https://help.ubuntu.com/"
+BUG_REPORT_URL="https://bugs.launchpad.net/ubuntu/"
+PRIVACY_POLICY_URL="https://www.ubuntu.com/legal/terms-and-policies/privacy-policy"
+UBUNTU_CODENAME=noble
+LOGO=ubuntu-logo
+
+[exit_code=0]
+
+===== Kernel and architecture =====
+$ uname -srmo
+Linux 6.17.0-1029-nvidia aarch64 GNU/Linux
+
+[exit_code=0]
+
+===== CPU summary =====
+$ bash -lc lscpu\ \|\ grep\ -E\ \'\^\(Architecture\|CPU\\\(s\\\)\|Model\ name\|Socket\\\(s\\\)\|Core\\\(s\\\)\ per\ socket\|Thread\\\(s\\\)\ per\ core\|NUMA\ node\\\(s\\\)\):\'
+Architecture:                            aarch64
+CPU(s):                                  20
+Model name:                              Cortex-X925
+Thread(s) per core:                      1
+Core(s) per socket:                      10
+Socket(s):                               1
+Model name:                              Cortex-A725
+Thread(s) per core:                      1
+Core(s) per socket:                      10
+Socket(s):                               1
+NUMA node(s):                            1
+
+[exit_code=0]
+
+===== Memory summary =====
+$ free -h
+               total        used        free      shared  buff/cache   available
+Mem:           121Gi       4.8Gi       100Gi       3.1Mi        17Gi       116Gi
+Swap:           15Gi          0B        15Gi
+
+[exit_code=0]

@@ -1,0 +1,1 @@
+mpirun --host <LOCAL_DATA_IP>:1\,<PEER_DATA_IP>:1 -np 2 -N 1 -x PATH -x LD_LIBRARY_PATH -x NCCL_DEBUG=INFO -x NCCL_DEBUG_SUBSYS=INIT\,BOOTSTRAP\,NET\,GRAPH\,ENV -x NCCL_SOCKET_FAMILY=AF_INET -x NCCL_SOCKET_IFNAME=enp1s0f1np1 ./distributed/nccl-tests/build/all_reduce_perf_mpi -b 8 -e 512M -f 2 -g 1 -w 5 -n 20 -c 1 -T 120

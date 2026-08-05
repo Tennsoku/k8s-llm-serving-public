@@ -1,0 +1,63 @@
+Host verification: spark-a
+Evidence directory: <REMOTE_REPO_ROOT>/deployments/bootstrap/out/20260805-m0-final/spark-a/host
+
+[PASS] Operating system is Linux
+[PASS] Architecture is aarch64
+[PASS] OS release detected: Ubuntu 24.04.4 LTS
+[INFO] Kernel: 6.17.0-1029-nvidia
+[PASS] CPU topology captured
+[PASS] System memory captured
+[PASS] Root filesystem has at least 20 GiB free
+[PASS] System clock is NTP-synchronized
+[PASS] NVIDIA GPU visible to host (count=1)
+[PASS] /dev/nvidiactl exists
+[PASS] NVIDIA GPU device node exists
+[PASS] NVIDIA kernel module is loaded
+[PASS] CUDA compiler found: /usr/local/cuda-13.0/bin/nvcc
+[PASS] /usr/local/cuda exists
+[PASS] CUDA runtime library found by ldconfig
+[PASS] python3 found
+[WARN] Host PyTorch is not installed or could not be imported
+[PASS] Host CUDA smoke binary passed
+
+Summary: failures=0 warnings=1
+Evidence: <REMOTE_REPO_ROOT>/deployments/bootstrap/out/20260805-m0-final/spark-a/host
+Container runtime verification: spark-a
+Evidence directory: <REMOTE_REPO_ROOT>/deployments/bootstrap/out/20260805-m0-final/spark-a/container-runtime
+
+[PASS] Docker client can reach the daemon
+[PASS] Docker server configuration captured
+[PASS] Docker socket exists
+[PASS] Current user is in the docker group
+[PASS] nvidia-ctk found
+[PASS] nvidia-container-cli found
+[PASS] Plain container executed successfully: hello-world:latest
+[PASS] Docker Buildx is available for multi-architecture builds
+
+Summary: failures=0 warnings=0
+Evidence: <REMOTE_REPO_ROOT>/deployments/bootstrap/out/20260805-m0-final/spark-a/container-runtime
+GPU container verification: spark-a
+Evidence directory: <REMOTE_REPO_ROOT>/deployments/bootstrap/out/20260805-m0-final/spark-a/gpu-container
+
+[PASS] Container userspace architecture: aarch64
+[PASS] nvidia-smi succeeded inside the container
+[PASS] PyTorch CUDA allocation and matrix multiplication passed in container
+[PASS] Container sees expected GPU count (actual=1, expected>=1)
+
+Summary: failures=0 warnings=0
+Evidence: <REMOTE_REPO_ROOT>/deployments/bootstrap/out/20260805-m0-final/spark-a/gpu-container
+Network verification: spark-a
+Evidence directory: <REMOTE_REPO_ROOT>/deployments/bootstrap/out/20260805-m0-final/spark-a/network
+
+[PASS] management interface is up with carrier: enP7s7
+[PASS] management NIC driver, firmware, link and counters captured
+[PASS] data interface is up with carrier: enp1s0f1np1
+[PASS] data NIC driver, firmware, link and counters captured
+[PASS] management peer is reachable via enP7s7: <IPV4>
+[PASS] data peer is reachable via enp1s0f1np1: <PEER_DATA_IP>
+[PASS] RDMA device inventory was captured
+[PASS] Data interface maps to an RDMA device: enp1s0f1np1
+[PASS] iperf3 TCP baseline completed on the data path
+
+Summary: failures=0 warnings=0
+Evidence: <REMOTE_REPO_ROOT>/deployments/bootstrap/out/20260805-m0-final/spark-a/network

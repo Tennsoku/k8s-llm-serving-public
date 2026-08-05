@@ -1,0 +1,11 @@
+# M0 private evidence and local topology configuration
+.env.m0.local
+artifacts/m0-private/
+deployments/bootstrap/out/
+deployments/bootstrap/platform-qualification/cuda-smoke/vector_add
+docs/environment/*.private.md
+helper/
+
+# Interrupted publisher scratch/backup directories (staging may be unsanitized)
+benchmarks/raw-results/m0-platform-qualification/.*.staging.*/
+benchmarks/raw-results/m0-platform-qualification/.*.previous.*/

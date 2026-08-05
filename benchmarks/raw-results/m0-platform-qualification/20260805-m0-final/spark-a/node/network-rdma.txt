@@ -1,0 +1,268 @@
+
+===== Interfaces =====
+$ ip -br link show
+lo               UNKNOWN        <MAC> <LOOPBACK,UP,LOWER_UP> 
+enP7s7           UP             <MAC> <BROADCAST,MULTICAST,UP,LOWER_UP> 
+enp1s0f0np0      DOWN           <MAC> <NO-CARRIER,BROADCAST,MULTICAST,UP> 
+enp1s0f1np1      UP             <MAC> <BROADCAST,MULTICAST,UP,LOWER_UP> 
+enP2p1s0f0np0    DOWN           <MAC> <NO-CARRIER,BROADCAST,MULTICAST,UP> 
+enP2p1s0f1np1    UP             <MAC> <BROADCAST,MULTICAST,UP,LOWER_UP> 
+wlP9s9           DOWN           <MAC> <BROADCAST,MULTICAST> 
+tailscale0       UNKNOWN        <POINTOPOINT,MULTICAST,NOARP,UP,LOWER_UP> 
+docker0          DOWN           <MAC> <NO-CARRIER,BROADCAST,MULTICAST,UP> 
+br-4fcff574539c  DOWN           <MAC> <NO-CARRIER,BROADCAST,MULTICAST,UP> 
+
+[exit_code=0]
+
+===== Addresses =====
+$ ip -br addr show
+lo               UNKNOWN        127.0.0.1/8 ::1/128 
+enP7s7           UP             <IPV4> <IPV6> <IPV6> <IPV6> 
+enp1s0f0np0      DOWN           
+enp1s0f1np1      UP             <LOCAL_DATA_IP>/16 <IPV6> 
+enP2p1s0f0np0    DOWN           
+enP2p1s0f1np1    UP             
+wlP9s9           DOWN           
+tailscale0       UNKNOWN        <IPV4> <IPV6> <IPV6> 
+docker0          DOWN           <IPV4> <IPV6> 
+br-4fcff574539c  DOWN           <IPV4> 
+
+[exit_code=0]
+
+===== Routes =====
+$ ip route show
+default via <IPV4> dev enP7s7 proto dhcp src <IPV4> metric 102 
+<IPV4> dev enp1s0f1np1 proto kernel scope link src <LOCAL_DATA_IP> metric 101 
+<IPV4> dev docker0 proto kernel scope link src <IPV4> linkdown 
+<IPV4> dev br-4fcff574539c proto kernel scope link src <IPV4> linkdown 
+<IPV4> dev enP7s7 proto kernel scope link src <IPV4> metric 102 
+<IPV4> dev enp1s0f1np1 proto static scope link metric 101 
+
+[exit_code=0]
+
+===== Data interface link =====
+$ ethtool enp1s0f1np1
+Settings for enp1s0f1np1:
+	Supported ports: [ Backplane ]
+	Supported link modes:   1000baseT/Full
+	                        10000baseT/Full
+	                        1000baseKX/Full
+	                        10000baseKR/Full
+	                        10000baseR_FEC
+	                        40000baseKR4/Full
+	                        40000baseCR4/Full
+	                        40000baseSR4/Full
+	                        40000baseLR4/Full
+	                        25000baseCR/Full
+	                        25000baseKR/Full
+	                        25000baseSR/Full
+	                        50000baseCR2/Full
+	                        50000baseKR2/Full
+	                        100000baseKR4/Full
+	                        100000baseSR4/Full
+	                        100000baseCR4/Full
+	                        100000baseLR4_ER4/Full
+	                        50000baseSR2/Full
+	                        1000baseX/Full
+	                        10000baseCR/Full
+	                        10000baseSR/Full
+	                        10000baseLR/Full
+	                        10000baseER/Full
+	                        50000baseKR/Full
+	                        50000baseSR/Full
+	                        50000baseCR/Full
+	                        50000baseLR_ER_FR/Full
+	                        50000baseDR/Full
+	                        100000baseKR2/Full
+	                        100000baseSR2/Full
+	                        100000baseCR2/Full
+	                        100000baseLR2_ER2_FR2/Full
+	                        100000baseDR2/Full
+	                        200000baseKR4/Full
+	                        200000baseSR4/Full
+	                        200000baseLR4_ER4_FR4/Full
+	                        200000baseDR4/Full
+	                        200000baseCR4/Full
+	                        100000baseKR/Full
+	                        100000baseSR/Full
+	                        100000baseLR_ER_FR/Full
+	                        100000baseCR/Full
+	                        100000baseDR/Full
+	                        200000baseKR2/Full
+	                        200000baseSR2/Full
+	                        200000baseLR2_ER2_FR2/Full
+	                        200000baseDR2/Full
+	                        200000baseCR2/Full
+	Supported pause frame use: Symmetric
+	Supports auto-negotiation: Yes
+	Supported FEC modes: None	 RS	 BASER
+	Advertised link modes:  1000baseT/Full
+	                        10000baseT/Full
+	                        1000baseKX/Full
+	                        10000baseKR/Full
+	                        10000baseR_FEC
+	                        40000baseKR4/Full
+	                        40000baseCR4/Full
+	                        40000baseSR4/Full
+	                        40000baseLR4/Full
+	                        25000baseCR/Full
+	                        25000baseKR/Full
+	                        25000baseSR/Full
+	                        50000baseCR2/Full
+	                        50000baseKR2/Full
+	                        100000baseKR4/Full
+	                        100000baseSR4/Full
+	                        100000baseCR4/Full
+	                        100000baseLR4_ER4/Full
+	                        50000baseSR2/Full
+	                        1000baseX/Full
+	                        10000baseCR/Full
+	                        10000baseSR/Full
+	                        10000baseLR/Full
+	                        10000baseER/Full
+	                        50000baseKR/Full
+	                        50000baseSR/Full
+	                        50000baseCR/Full
+	                        50000baseLR_ER_FR/Full
+	                        50000baseDR/Full
+	                        100000baseKR2/Full
+	                        100000baseSR2/Full
+	                        100000baseCR2/Full
+	                        100000baseLR2_ER2_FR2/Full
+	                        100000baseDR2/Full
+	                        200000baseKR4/Full
+	                        200000baseSR4/Full
+	                        200000baseLR4_ER4_FR4/Full
+	                        200000baseDR4/Full
+	                        200000baseCR4/Full
+	                        100000baseKR/Full
+	                        100000baseSR/Full
+	            netlink error: Operation not permitted
+            100000baseLR_ER_FR/Full
+	                        100000baseCR/Full
+	                        100000baseDR/Full
+	                        200000baseKR2/Full
+	                        200000baseSR2/Full
+	                        200000baseLR2_ER2_FR2/Full
+	                        200000baseDR2/Full
+	                        200000baseCR2/Full
+	Advertised pause frame use: Symmetric
+	Advertised auto-negotiation: Yes
+	Advertised FEC modes: RS
+	Link partner advertised link modes:  Not reported
+	Link partner advertised pause frame use: No
+	Link partner advertised auto-negotiation: Yes
+	Link partner advertised FEC modes: Not reported
+	Speed: 200000Mb/s
+	Lanes: 2
+	Duplex: Full
+	Auto-negotiation: on
+	Port: Direct Attach Copper
+	PHYAD: 0
+	Transceiver: internal
+	Link detected: yes
+
+[exit_code=0]
+
+===== Data interface driver =====
+$ ethtool -i enp1s0f1np1
+driver: mlx5_core
+version: 6.17.0-1029-nvidia
+firmware-version: 28.45.4028 (NVD0000000087)
+expansion-rom-version: 
+bus-info: 0000:01:00.1
+supports-statistics: yes
+supports-test: yes
+supports-eeprom-access: no
+supports-register-dump: no
+supports-priv-flags: yes
+
+[exit_code=0]
+
+===== Relevant PCI devices =====
+$ bash -lc lspci\ -nn\ \|\ grep\ -Ei\ \'NVIDIA\|Mellanox\|Ethernet\|Network\'\ \|\|\ true
+0000:00:00.0 PCI bridge [0604]: NVIDIA Corporation Device [10de:22ce] (rev 01)
+0000:01:00.0 Ethernet controller [0200]: Mellanox Technologies MT2910 Family [ConnectX-7] [15b3:1021]
+0000:01:00.1 Ethernet controller [0200]: Mellanox Technologies MT2910 Family [ConnectX-7] [15b3:1021]
+0002:00:00.0 PCI bridge [0604]: NVIDIA Corporation Device [10de:22ce] (rev 01)
+0002:01:00.0 Ethernet controller [0200]: Mellanox Technologies MT2910 Family [ConnectX-7] [15b3:1021]
+0002:01:00.1 Ethernet controller [0200]: Mellanox Technologies MT2910 Family [ConnectX-7] [15b3:1021]
+0004:00:00.0 PCI bridge [0604]: NVIDIA Corporation Device [10de:22ce] (rev 01)
+0007:00:00.0 PCI bridge [0604]: NVIDIA Corporation Device [10de:22d0] (rev 01)
+0007:01:00.0 Ethernet controller [0200]: Realtek Semiconductor Co., Ltd. Device [10ec:8127] (rev 05)
+0009:00:00.0 PCI bridge [0604]: NVIDIA Corporation Device [10de:22d0] (rev 01)
+0009:01:00.0 Network controller [0280]: MEDIATEK Corp. Device [14c3:7925]
+000f:00:00.0 PCI bridge [0604]: NVIDIA Corporation Device [10de:22d1]
+000f:01:00.0 VGA compatible controller [0300]: NVIDIA Corporation Device [10de:2e12] (rev a1)
+
+[exit_code=0]
+
+===== RDMA links =====
+$ rdma link show
+link rocep1s0f0/1 state DOWN physical_state DISABLED netdev enp1s0f0np0 
+link rocep1s0f1/1 state ACTIVE physical_state LINK_UP netdev enp1s0f1np1 
+link roceP2p1s0f0/1 state DOWN physical_state DISABLED netdev enP2p1s0f0np0 
+link roceP2p1s0f1/1 state ACTIVE physical_state LINK_UP netdev enP2p1s0f1np1 
+
+[exit_code=0]
+
+===== IB verbs devices =====
+$ ibv_devices
+    device          	   node GUID
+    ------          	----------------
+    rocep1s0f0      	<RDMA_GUID>
+    rocep1s0f1      	<RDMA_GUID>
+    roceP2p1s0f0    	<RDMA_GUID>
+    roceP2p1s0f1    	<RDMA_GUID>
+
+[exit_code=0]
+
+===== IB verbs device summary =====
+$ ibv_devinfo -l
+4 HCAs found:
+	rocep1s0f0
+	rocep1s0f1
+	roceP2p1s0f0
+	roceP2p1s0f1
+
+
+[exit_code=0]
+
+===== GID table =====
+$ show_gids
+DEV	PORT	INDEX	GID					IPv4  		VER	DEV
+---	----	-----	---					------------  	---	---
+rocep1s0f0	1	0	<IPV6>			v1	enp1s0f0np0
+rocep1s0f0	1	1	<IPV6>			v2	enp1s0f0np0
+rocep1s0f1	1	0	<IPV6>			v1	enp1s0f1np1
+rocep1s0f1	1	1	<IPV6>			v2	enp1s0f1np1
+rocep1s0f1	1	2	<IPV6>	<LOCAL_DATA_IP>  	v1	enp1s0f1np1
+rocep1s0f1	1	3	<IPV6>	<LOCAL_DATA_IP>  	v2	enp1s0f1np1
+roceP2p1s0f0	1	0	<IPV6>			v1	enP2p1s0f0np0
+roceP2p1s0f0	1	1	<IPV6>			v2	enP2p1s0f0np0
+roceP2p1s0f1	1	0	<IPV6>			v1	enP2p1s0f1np1
+roceP2p1s0f1	1	1	<IPV6>			v2	enP2p1s0f1np1
+n_gids_found=10
+
+[exit_code=0]
+
+===== RDMA/NCCL libraries =====
+$ bash -lc ldconfig\ -p\ \|\ grep\ -E\ \'libnccl\|libmlx5\|libibverbs\'\ \|\|\ true
+	libnccl.so.2 (libc6,AArch64) => <HOME>/workspace/nccl/build/lib/libnccl.so.2
+	libnccl.so (libc6,AArch64) => <HOME>/workspace/nccl/build/lib/libnccl.so
+	libnccl-profiler-inspector.so.0 (libc6,AArch64) => <HOME>/workspace/hpcx/nccl_spectrum-x_plugin/lib/libnccl-profiler-inspector.so.0
+	libnccl-profiler-inspector.so (libc6,AArch64) => <HOME>/workspace/hpcx/nccl_spectrum-x_plugin/lib/libnccl-profiler-inspector.so
+	libnccl-net.so.0 (libc6,AArch64) => <HOME>/workspace/hpcx/nccl_spectrum-x_plugin/lib/libnccl-net.so.0
+	libnccl-net.so (libc6,AArch64) => <HOME>/workspace/hpcx/nccl_spectrum-x_plugin/lib/libnccl-net.so
+	libmlx5.so.1 (libc6,AArch64) => /lib/aarch64-linux-gnu/libmlx5.so.1
+	libmlx5.so (libc6,AArch64) => /lib/aarch64-linux-gnu/libmlx5.so
+	libibverbs.so.1 (libc6,AArch64) => /lib/aarch64-linux-gnu/libibverbs.so.1
+	libibverbs.so (libc6,AArch64) => /lib/aarch64-linux-gnu/libibverbs.so
+
+[exit_code=0]
+
+===== mlx5 library target =====
+$ bash -lc readlink\ -f\ /lib/aarch64-linux-gnu/libmlx5.so.1\ 2\>/dev/null\ \|\|\ true
+/usr/lib/aarch64-linux-gnu/libmlx5.so.1.24.50.0
+
+[exit_code=0]

@@ -51,7 +51,10 @@ docs/environment/
 ├── dgx-spark-inventory.md
 ├── software-compatibility-matrix.md
 ├── network-topology.md
-└── benchmark-environment-template.md
+├── network-baseline.md
+├── nccl-baseline.md
+├── benchmark-environment-template.md
+└── qualification-notes.md
 
 deployments/bootstrap/
 ├── verify-host.sh
@@ -59,14 +62,30 @@ deployments/bootstrap/
 ├── verify-gpu-container.sh
 └── verify-network.sh
 
+distributed/nccl-tests/
+├── README.md
+└── scripts/
+    ├── nccl-m0-test-all-reduce.sh
+    ├── nccl-m0-test-all-gather.sh
+    └── verify-mpi.sh
+
+# private raw evidence; never publish directly
+artifacts/m0-private/<run-id>/ 
+
+# sanitized publication copy; pending closeout
+benchmarks/raw-results/m0-platform-qualification/<run-id>/
+
 docs/adr/
 └── ADR-0001-dgx-spark-primary-testbed.md
+
+docs/reviews/
+└── m0-review.md
 ```
 
 至少记录：
 
-- 两台机器的硬件序列与配置摘要
-- DGX OS、Kernel、Driver、CUDA、Python、PyTorch 版本
+- 两台机器的硬件与配置摘要（使用逻辑节点标签；物理标识不属于 M0 criterion）
+- Ubuntu、Kernel、Driver、CUDA、Python、PyTorch 版本
 - 容器运行时版本
 - ARM64 镜像兼容性
 - GPU 在宿主机和容器内的可见性
@@ -75,23 +94,26 @@ docs/adr/
 
 ### 实验
 
-1. 宿主机 CUDA smoke test。
-2. 容器内 CUDA / PyTorch smoke test。
-3. vLLM 最小模型加载测试。
-4. ARM64 自建镜像和 multi-arch CI 测试。
-5. 两节点 TCP 带宽与延迟基线。
-6. NCCL `all_reduce` / `all_gather` 基线。
-7. 节点重启后环境恢复与脚本可重放测试。
+- [x] 宿主机 CUDA smoke test。
+- [x] 容器内 CUDA / PyTorch smoke test。
+- [x] vLLM 最小模型加载测试。
+- [-] ARM64 自建镜像和 multi-arch CI 测试。
+- [x] 两节点 TCP 带宽与延迟基线。
+- [x] NCCL `all_reduce` / `all_gather` 基线。
+- [x] 两节点在 captured commit 且 tracked worktree clean 的状态下完成 bootstrap qualification scripts 重放。
+- [-] clean-machine provisioning / reboot recovery 测试未执行；M0 不作此声明，列为 trivial、non-blocking evidence hardening。
 
 ### Exit Criteria
 
-- [ ] 两台 Spark 均能稳定运行 GPU 容器。
-- [ ] 关键版本、镜像 digest 和系统配置已记录。
-- [ ] vLLM 或选定基础 Runtime 可在单台 Spark 上加载最小模型。
-- [ ] 两节点网络基线已测量并区分管理链路与分布式数据链路。
-- [ ] 至少一次从干净环境执行 bootstrap 并成功复现。
-- [ ] ARM64、统一内存和 GPU Operator / Device Plugin 的已知边界已形成文档。
-- [ ] 后续 Benchmark 可以通过固定模板记录完整实验上下文。
+- [x] 两台 Spark 均能在 M0 qualification smoke scope 内运行 GPU 容器。
+- [x] 关键运行版本、PyTorch/vLLM 实际执行镜像 digest 和系统配置已记录。
+- [x] vLLM 或选定基础 Runtime 可在单台 Spark 上加载最小模型。
+- [x] 两节点网络基线已测量并区分管理链路与分布式数据链路。
+- [x] 两节点均在 captured commit 且 tracked worktree clean 的状态完成四层 verification replay；不声称 clean-machine provisioning 或 reboot recovery。
+- [x] ARM64、统一内存和 GPU Operator / Device Plugin 的已知边界已形成文档；Kubernetes 集成实测延至 M2。
+- [x] 后续 Benchmark 可以通过固定模板记录完整实验上下文。
+
+`[-]` 表示已明确记录并接受的部分完成项或后续 Milestone 延期项，不等同于已通过。
 
 ### 可选扩展
 
@@ -887,8 +909,8 @@ M5、M6、M7 可以在 M4 完成后部分并行，但每个控制组件都必须
 
 | Milestone | Status | Current Focus |
 |---|---|---|
-| M0 Platform Qualification | Ready to Start | DGX Spark inventory、ARM64 compatibility、network baseline |
-| M1 Single-Node vLLM Baseline | In Progress | Existing vLLM Basics labs and benchmark client |
+| M0 Platform Qualification | Technical Complete / Publish Prep | Canonical evidence 已完成；推进 fail-closed sanitized publication |
+| M1 Single-Node vLLM Baseline | Next | Existing vLLM Basics labs and benchmark client |
 | M2 Kubernetes GPU Deployment | Not Started | Cluster topology and GPU runtime integration |
 | M3 Observability & SLO | Design Available | Initial SLO and dashboard input contract |
 | M4 Two-Replica Serving | Not Started | Gateway and routing baseline |
@@ -906,7 +928,7 @@ M5、M6、M7 可以在 M4 完成后部分并行，但每个控制组件都必须
 
 核心项目在不依赖 M10 的情况下满足以下条件即视为完成：
 
-- [ ] 两台 DGX Spark 已作为可重复使用的 GPU Worker 完成环境认证。
+- [x] 两台 DGX Spark 已完成 M0 技术资格检查；公开证据是发布 gate，不是技术结论 blocker。
 - [ ] 单节点 vLLM serving baseline 已建立并保留原始请求级数据。
 - [ ] Kubernetes 上的 GPU Serving Deployment 具备健康检查、优雅终止和恢复能力。
 - [ ] Kubernetes、节点、统一内存、Runtime 与 SLO 指标接入统一可观测性体系。

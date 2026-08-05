@@ -1,0 +1,22 @@
+
+===== GPU key fields =====
+$ nvidia-smi --query-gpu=timestamp\,name\,driver_version\,memory.total\,memory.used\,utilization.gpu\,temperature.gpu\,power.draw\,pci.bus_id --format=csv\,noheader
+2026/08/05 14:45:17.115, NVIDIA GB10, 580.173.02, [N/A], [N/A], 0 %, 41, 4.12 W, 0000000F:01:00.0
+
+[exit_code=0]
+
+===== NVCC =====
+$ nvcc --version
+nvcc: NVIDIA (R) Cuda compiler driver
+Copyright (c) 2005-2025 NVIDIA Corporation
+Built on Wed_Aug_20_01:57:39_PM_PDT_2025
+Cuda compilation tools, release 13.0, V13.0.88
+Build cuda_13.0.r13.0/compiler.36424714_0
+
+[exit_code=0]
+
+===== CUDA symlink =====
+$ bash -lc readlink\ -f\ /usr/local/cuda\ 2\>/dev/null\ \|\|\ true
+/usr/local/cuda-13.0
+
+[exit_code=0]

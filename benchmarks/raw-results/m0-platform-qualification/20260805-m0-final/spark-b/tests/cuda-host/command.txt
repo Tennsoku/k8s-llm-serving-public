@@ -1,0 +1,1 @@
+bash -lc nvcc\ -O2\ -std=c++17\ deployments/bootstrap/platform-qualification/cuda-smoke/vector_add.cu\ -o\ deployments/bootstrap/platform-qualification/cuda-smoke/vector_add\ \&\&\ ./deployments/bootstrap/platform-qualification/cuda-smoke/vector_add

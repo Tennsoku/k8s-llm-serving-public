@@ -1,0 +1,12 @@
+
+===== Image nvcr.io/nvidia/pytorch@sha256:7531d90bcbe0e43e1f7363029c7e145ce90eebeb494a7b4695fdba0329d7c3c3 =====
+$ docker image inspect nvcr.io/nvidia/pytorch@sha256:7531d90bcbe0e43e1f7363029c7e145ce90eebeb494a7b4695fdba0329d7c3c3 --format id=\{\{.Id\}\}\ repo_digests=\{\{json\ .RepoDigests\}\}\ arch=\{\{.Architecture\}\}\ os=\{\{.Os\}\}
+id=sha256:15b8de8baabe68e46afc51e88f3ccad5042013bafe8f244ec082ce0bb06d47e3 repo_digests=["nvcr.io/nvidia/pytorch@sha256:7531d90bcbe0e43e1f7363029c7e145ce90eebeb494a7b4695fdba0329d7c3c3"] arch=arm64 os=linux
+
+[exit_code=0]
+
+===== Image nvcr.io/nvidia/vllm@sha256:1de8e6bfdb4c81c1f31a806cc9b13b5c6352714a7cec87f4d24964bcc91159b2 =====
+$ docker image inspect nvcr.io/nvidia/vllm@sha256:1de8e6bfdb4c81c1f31a806cc9b13b5c6352714a7cec87f4d24964bcc91159b2 --format id=\{\{.Id\}\}\ repo_digests=\{\{json\ .RepoDigests\}\}\ arch=\{\{.Architecture\}\}\ os=\{\{.Os\}\}
+id=sha256:4c704f1343c7cb3aa7ea5cc57cab5fa1ed1a2160daf4f57d1e0c06fc1e2c7dbb repo_digests=["nvcr.io/nvidia/vllm@sha256:1de8e6bfdb4c81c1f31a806cc9b13b5c6352714a7cec87f4d24964bcc91159b2","nvcr.io/nvidia/vllm@sha256:95c498a475142c20c989c65e5d223348c09fed83ba17ddf44f117610c0bd3268"] arch=arm64 os=linux
+
+[exit_code=0]

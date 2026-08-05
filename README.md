@@ -385,7 +385,7 @@ The following outputs should be maintained throughout the project:
 
 ---
 
-# Repository Structure
+# Target Repository Structure
 
 ```text
 ai-inference-platform/

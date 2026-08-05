@@ -1,0 +1,79 @@
+# captured_at_utc=2026-08-05T19:10:20Z
+# interface=enp1s0f1np1
+
+## ip -s link
+4: enp1s0f1np1: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc mq state UP mode DEFAULT group default qlen 1000
+    link/ether <MAC> brd <MAC>
+    RX:    bytes   packets errors dropped  missed   mcast           
+    473238094288 313461150      0       0   55902    6605 
+    TX:    bytes   packets errors dropped carrier collsns           
+     73707700643  52182831      0       0       0       0 
+
+## ethtool key counters
+     rx_ecn_mark: 0
+     rx_congst_umr: 0
+     rx_xsk_ecn_mark: 0
+     rx_xsk_congst_umr: 0
+     rx_out_of_buffer: 55902
+     rx_vport_rdma_unicast_packets: 106075573
+     rx_vport_rdma_unicast_bytes: 111656429066
+     tx_vport_rdma_unicast_packets: 106073499
+     tx_vport_rdma_unicast_bytes: 111656305490
+     rx_vport_rdma_multicast_packets: 0
+     rx_vport_rdma_multicast_bytes: 0
+     tx_vport_rdma_multicast_packets: 0
+     tx_vport_rdma_multicast_bytes: 0
+     ipsec_rx_bytes: 0
+     ipsec_tx_bytes: 0
+     rx0_ecn_mark: 0
+     rx0_congst_umr: 0
+     rx1_ecn_mark: 0
+     rx1_congst_umr: 0
+     rx2_ecn_mark: 0
+     rx2_congst_umr: 0
+     rx3_ecn_mark: 0
+     rx3_congst_umr: 0
+     rx4_ecn_mark: 0
+     rx4_congst_umr: 0
+     rx5_ecn_mark: 0
+     rx5_congst_umr: 0
+     rx6_ecn_mark: 0
+     rx6_congst_umr: 0
+     rx7_ecn_mark: 0
+     rx7_congst_umr: 0
+     rx8_ecn_mark: 0
+     rx8_congst_umr: 0
+     rx9_ecn_mark: 0
+     rx9_congst_umr: 0
+     rx10_ecn_mark: 0
+     rx10_congst_umr: 0
+     rx11_ecn_mark: 0
+     rx11_congst_umr: 0
+     rx12_ecn_mark: 0
+     rx12_congst_umr: 0
+     rx13_ecn_mark: 0
+     rx13_congst_umr: 0
+     rx14_ecn_mark: 0
+     rx14_congst_umr: 0
+     rx15_ecn_mark: 0
+     rx15_congst_umr: 0
+     rx16_ecn_mark: 0
+     rx16_congst_umr: 0
+     rx17_ecn_mark: 0
+     rx17_congst_umr: 0
+     rx18_ecn_mark: 0
+     rx18_congst_umr: 0
+     rx19_ecn_mark: 0
+     rx19_congst_umr: 0
+     rx_prio0_cong_discard: 0
+     rx_prio1_cong_discard: 0
+     rx_prio2_cong_discard: 0
+     rx_prio3_cong_discard: 0
+     rx_prio4_cong_discard: 0
+     rx_prio5_cong_discard: 0
+     rx_prio6_cong_discard: 0
+     rx_prio7_cong_discard: 0
+     macsec_rx_bytes: 0
+     macsec_rx_bytes_drop: 0
+     macsec_tx_bytes: 0
+     macsec_tx_bytes_drop: 0
