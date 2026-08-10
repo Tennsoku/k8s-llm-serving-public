@@ -26,8 +26,6 @@ The verifier prints OS, CPU, memory, Python, PyTorch, vLLM, CUDA, and GPU data. 
 ## Submission
 
 - Completed `environment.md`
-- Verifier output and dependency lock/freeze
-- Short answers to the five review questions in the parent design
 
 ## Review criteria
 

@@ -17,11 +17,9 @@ Read these files before reviewing or modifying M0 work:
 
 The current milestone is:
 
-- M0 — Platform Qualification & Reproducible Environment
+- M1 — Single-Node vLLM Serving Baseline
 
-Do not treat M0 as a performance-optimization milestone.
-Its purpose is to establish a reproducible and trustworthy hardware,
-software, container, and network baseline.
+M1 implementation plan is in `docs/milestone-plan/m1-plan.md`.
 
 ## Review Principles
 

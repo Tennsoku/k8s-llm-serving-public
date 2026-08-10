@@ -1,0 +1,18 @@
+# M1 Work Log
+
+记录操作过程中的一些步骤和发现。本文是按时间记录的工作日志。
+
+--- 
+
+M1开始前想要规范一下证据的收集和整理流程，主要是为了保证后续的review和publication过程顺利。
+一开始从M0的标准出发，但是发现越做越繁琐，甚至到了cryptographic的程度，这是完全没有必要的。M0之所以做得麻烦了点是因为考虑到涉及到一些敏感信息的收集和整理，必须要保证安全性和可追溯性。
+及时叫停了进一步深入钻牛角尖，现在的目标是保证收集的证据可以被review和publication使用，并检查常见敏感信息。后续milestone会继续沿用简化流程。
+
+Lab0和Lab1跑完了。虽然觉得Lab1为了offline固定环境把整个results都mount进一个container有点蠢，但是后面把这个container分离成serving plane后应该就不需要这么干了。现在跑完出来还要chown整个目录，多少感觉不是container化的做法。
+
+offline阶段的一些理解扩展：
+- max_tokens主要影响的是output tokens，提高会增加decode段的时间和内存占用。decode是compute intensive的，所以elapsed time显著增加，但是memory好像也加了不少。
+- KV$的初次建立在prefill阶段，Decode时在读取当前token的KV$后会在生成新的token的时候追加新的KV$。mem的增加也是这个原因。
+
+Online没什么好说的，主要是把serving plane独立出来，建立了三个基础host脚本。
+

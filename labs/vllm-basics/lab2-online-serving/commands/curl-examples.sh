@@ -7,14 +7,18 @@ MODEL="${MODEL:-Qwen/Qwen2.5-0.5B-Instruct}"
 command -v curl >/dev/null || { echo "error: curl is required" >&2; exit 1; }
 
 echo "== Models =="
-curl --fail-with-body --silent --show-error "${BASE_URL}/v1/models"
+curl --fail-with-body --silent --show-error \
+  --write-out '\nHTTP %{http_code}\n' \
+  "${BASE_URL}/v1/models"
 printf '\n\n== Non-streaming chat completion ==\n'
 curl --fail-with-body --silent --show-error \
+  --write-out '\nHTTP %{http_code}\n' \
   -H 'Content-Type: application/json' \
   -d "{\"model\":\"${MODEL}\",\"messages\":[{\"role\":\"user\",\"content\":\"Explain KV cache in one sentence.\"}],\"temperature\":0,\"max_tokens\":32}" \
   "${BASE_URL}/v1/chat/completions"
 printf '\n\n== Streaming chat completion (SSE) ==\n'
 curl --no-buffer --fail-with-body --silent --show-error \
+  --write-out '\nHTTP %{http_code}\n' \
   -H 'Content-Type: application/json' \
   -d "{\"model\":\"${MODEL}\",\"messages\":[{\"role\":\"user\",\"content\":\"Count from one to five.\"}],\"temperature\":0,\"max_tokens\":32,\"stream\":true}" \
   "${BASE_URL}/v1/chat/completions"

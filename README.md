@@ -1,451 +1,149 @@
 # Kubernetes-Native LLM Inference Platform
 
-A production-oriented AI infrastructure project for learning and implementing the core components of an LLM inference platform on Kubernetes.
+语言：中文 | [English](README-en.md)
 
-The project focuses on four major areas:
+> 基于两台 DGX Spark 的 Kubernetes-native LLM inference platform 实验项目，围绕 inference serving、GPU / unified memory、Kubernetes、observability、scheduling、autoscaling、failure handling 和 distributed extensions 建立可复现、可解释的工程实践。
 
-1. **Serving Data Plane** — running and benchmarking LLM inference engines
-2. **Control Plane** — managing scheduling, memory pressure, and elasticity
-3. **Observability Plane** — monitoring infrastructure, GPUs, inference runtimes, and SLOs
-4. **Workload & Experiment Plane** — generating reproducible traffic, failure, and resource-contention scenarios
+当前状态：**M0 Platform Qualification 已完成；M1 Single-Node vLLM Baseline 进行中。**
 
-The primary goal is not to build a full commercial inference platform, but to implement and validate representative production mechanisms behind modern AI infrastructure systems.
+## 项目目标
 
----
-
-## Project Objectives
-
-- Deploy LLM inference workloads on Kubernetes
-- Understand the architecture and performance characteristics of modern inference engines
-- Build Kubernetes controllers for LLM-specific resource management
-- Establish production-style metrics, dashboards, alerts, and operational runbooks
-- Reproduce common inference-platform bottlenecks and failure scenarios
-- Evaluate design decisions through controlled benchmarks
-- Produce reusable architecture documents, experiment reports, and postmortems
-
----
-
-# Architecture Overview
+学习并落地一套较为完整的 AI Infra 工程链路：
 
 ```text
-                         Client / Load Generator
-                                   |
-                                   v
-                         API / Gateway Layer
-                                   |
-                                   v
-+----------------------------------------------------------------+
-|                    Serving Data Plane                          |
-|       vLLM / SGLang / llama.cpp / TensorRT-LLM                 |
-+----------------------------------------------------------------+
-            |                                  ^
-            | metrics / state                  | control actions
-            v                                  |
-+---------------------------+      +-----------------------------+
-| Observability Plane       |      | Control Plane               |
-| Prometheus / Grafana      |      | Memory Supervisor           |
-| GPU Exporter / SLO        |      | Scheduler Plugin            |
-| Alerts / Runbooks         |      | LLM-Aware Autoscaler        |
-+---------------------------+      +-----------------------------+
-            ^                                  ^
-            |                                  |
-            +----------------------------------+
-                           |
-+----------------------------------------------------------------+
-|               Workload & Experiment Plane                      |
-| benchmark / burst / long-context / noisy-neighbor / failures   |
-+----------------------------------------------------------------+
+Runtime
+  → Resource
+  → Scheduling
+  → Observability
+  → Control Loop
+  → Reliability
 ```
 
-The **Workload & Experiment Plane** interacts with all other planes by generating traffic, resource contention, failures, and benchmark scenarios.
+项目以受控 workload 和 failure scenario 为实验方法，观察 Runtime、GPU/内存、Kubernetes 控制机制与服务质量之间的关系，并把结论落到代码、原始结果、设计文档和运行边界中。
 
----
+## 目标架构
 
-# 1. Serving Data Plane
-
-## Purpose
-
-The Serving Data Plane hosts the model inference runtimes that receive requests and execute model inference.
-
-This plane provides the workload being managed, observed, and optimized by the rest of the platform.
-
-## Main Goals
-
-- Deploy the same or equivalent model across multiple inference runtimes
-- Standardize runtime configuration and deployment
-- Measure latency, throughput, resource consumption, and stability
-- Understand why runtimes perform differently under different workloads
-- Identify suitable runtime choices for different production scenarios
-
-## Target Runtimes
-
-- [ ] vLLM
-- [ ] SGLang
-- [ ] llama.cpp
-- [ ] TensorRT-LLM
-
-## Benchmark Dimensions
-
-- Time to First Token — TTFT
-- Time per Output Token — TPOT
-- End-to-end latency
-- Request throughput
-- Input and output token throughput
-- Maximum stable concurrency
-- GPU utilization
-- GPU memory utilization
-- Host memory and CPU utilization
-- KV-cache utilization
-- Prefix-cache effectiveness
-- Cold-start and model-loading time
-- Failure, timeout, and OOM rate
-
-## Completion Criteria
-
-- [ ] A model can be deployed and queried through each selected runtime
-- [ ] Runtime deployments use reproducible configurations
-- [ ] Benchmark conditions are documented and controlled
-- [ ] Raw benchmark results are retained
-- [ ] Runtime differences are explained through architecture and workload analysis
-- [ ] A final runtime comparison report is produced
-
----
-
-# 2. Control Plane
-
-## Purpose
-
-The Control Plane manages the lifecycle and resource behavior of inference workloads running on Kubernetes.
-
-It introduces LLM-aware control mechanisms beyond standard CPU-based Kubernetes scheduling and autoscaling.
-
-## Main Components
-
-### 2.1 Memory Supervisor
-
-Monitors memory pressure and protects inference workloads from resource exhaustion and noisy-neighbor interference.
-
-Target resources include:
-
-- Container memory
-- Node memory
-- cgroup v2 memory pressure
-- GPU VRAM
-- KV-cache pressure
-- Pinned host memory
-- Pod eviction and OOM risk
-
-Progress:
-
-- [ ] Define memory-pressure signals
-- [ ] Implement metrics collection
-- [ ] Define workload priority classes
-- [ ] Detect memory-pressure conditions
-- [ ] Implement protective control actions
-- [ ] Test noisy-neighbor scenarios
-- [ ] Document recovery and failure behavior
-
-### 2.2 Scheduler Extension
-
-Places inference workloads according to GPU capacity, workload requirements, and runtime locality.
-
-Potential scheduling signals include:
-
-- GPU model and VRAM capacity
-- Available GPU memory
-- Existing model placement
-- NUMA topology
-- Node utilization
-- Model-loading cost
-- Request queue state
-- Workload priority
-
-The initial implementation should use Kubernetes scheduling extensions rather than replacing the complete scheduler.
-
-Progress:
-
-- [ ] Define scheduling requirements
-- [ ] Build a basic Scheduler Framework plugin
-- [ ] Implement Filter logic
-- [ ] Implement Score logic
-- [ ] Add GPU-aware scheduling signals
-- [ ] Add model-locality awareness
-- [ ] Compare custom scheduling with the default scheduler
-
-### 2.3 LLM-Aware Autoscaler
-
-Scales inference replicas according to serving demand and latency objectives rather than CPU utilization alone.
-
-Candidate signals include:
-
-- Waiting request count
-- Running request count
-- Queue latency
-- TTFT
-- TPOT
-- Token throughput
-- KV-cache utilization
-- GPU utilization
-- SLO violation rate
-
-Progress:
-
-- [ ] Establish an HPA baseline
-- [ ] Test Prometheus Adapter or KEDA
-- [ ] Define LLM-specific scaling signals
-- [ ] Implement a custom autoscaling controller
-- [ ] Add stabilization and cooldown policies
-- [ ] Evaluate scaling under burst traffic
-- [ ] Compare HPA, KEDA, and custom autoscaling
-
-## Completion Criteria
-
-- [ ] Controllers reconcile resources through Kubernetes APIs
-- [ ] Control decisions are driven by observable metrics
-- [ ] Each controller has a clearly defined policy and failure model
-- [ ] Control behavior is validated through repeatable experiments
-- [ ] Default Kubernetes mechanisms are used as comparison baselines
-- [ ] Design trade-offs are documented through ADRs
-
----
-
-# 3. Observability Plane
-
-## Purpose
-
-The Observability Plane provides the metrics, dashboards, alerts, and operational information required to understand and manage the platform.
-
-It must support both human operations and automated control-plane decisions.
-
-## Monitoring Layers
-
-### Kubernetes Layer
-
-- Node CPU and memory
-- Pod CPU and memory
-- Pod restart count
-- OOMKilled events
-- Pending pods
-- Evictions
-- Node pressure
-- cgroup throttling
-
-### GPU Layer
-
-- GPU utilization
-- GPU memory usage
-- SM utilization
-- Tensor Core utilization
-- Temperature and power
-- PCIe or NVLink activity
-- GPU error events
-
-### Inference Runtime Layer
-
-- Request rate
-- Running and waiting requests
-- TTFT
-- TPOT
-- Token throughput
-- Batch size
-- Queue length
-- KV-cache utilization
-- Prefix-cache statistics
-- Request failure rate
-
-### Service-Level Layer
-
-- Availability
-- P95 and P99 latency
-- SLO compliance
-- Error-budget consumption
-- Capacity saturation
-- Scaling effectiveness
-
-## Target Stack
-
-- [ ] Prometheus
-- [ ] Grafana
-- [ ] kube-state-metrics
-- [ ] Node Exporter
-- [ ] NVIDIA DCGM Exporter
-- [ ] Alertmanager
-- [ ] Prometheus Adapter or KEDA metrics integration
-
-## Operational Deliverables
-
-- [ ] Kubernetes cluster dashboard
-- [ ] GPU utilization dashboard
-- [ ] LLM inference dashboard
-- [ ] SLO dashboard
-- [ ] Alert rules
-- [ ] Recording rules
-- [ ] Capacity-planning report
-- [ ] Incident runbooks
-
-## Completion Criteria
-
-- [ ] Infrastructure, GPU, runtime, and SLO metrics are correlated
-- [ ] Dashboards support diagnosis rather than visualization only
-- [ ] Alerts identify actionable conditions
-- [ ] Controller metrics and decisions are observable
-- [ ] Benchmark results can be associated with platform metrics
-- [ ] At least one failure scenario is diagnosed using the monitoring stack
-
----
-
-# 4. Workload & Experiment Plane
-
-## Purpose
-
-The Workload & Experiment Plane generates reproducible production-like conditions for validating the Serving, Control, and Observability planes.
-
-It ensures that platform decisions are supported by measurable evidence rather than isolated demonstrations.
-
-## Target Workload Scenarios
-
-- [ ] Constant low-concurrency traffic
-- [ ] Gradually increasing concurrency
-- [ ] Burst traffic
-- [ ] Long-context requests
-- [ ] Mixed input and output lengths
-- [ ] Shared-prefix workloads
-- [ ] Mixed-priority tenants
-- [ ] CPU and memory noisy neighbors
-- [ ] GPU memory pressure
-- [ ] Model cold start
-- [ ] Pod termination and node failure
-- [ ] Rolling update
-- [ ] Autoscaling oscillation
-- [ ] Partial runtime degradation
-
-## Experiment Requirements
-
-Each experiment should define:
-
-- Hypothesis
-- Environment
-- Hardware and software versions
-- Model and precision
-- Request distribution
-- Independent variables
-- Controlled variables
-- Metrics collected
-- Success criteria
-- Results
-- Interpretation
-- Limitations
-- Follow-up actions
-
-## Completion Criteria
-
-- [ ] Workloads are reproducible
-- [ ] Experiment configurations are version-controlled
-- [ ] Raw results are preserved
-- [ ] Results can be connected to Prometheus metrics
-- [ ] Each control-plane component has at least one validation scenario
-- [ ] Major findings are documented in benchmark or postmortem reports
-
----
-
-# Cross-Plane Deliverables
-
-The following outputs should be maintained throughout the project:
-
-## Architecture
-
-- [ ] System context diagram
-- [ ] Component architecture
-- [ ] Request-flow diagram
-- [ ] Metrics-flow diagram
-- [ ] Control-loop diagrams
-- [ ] Failure-domain analysis
-
-## Engineering Documentation
-
-- [ ] Architecture Decision Records
-- [ ] Deployment instructions
-- [ ] Local development guide
-- [ ] Benchmark methodology
-- [ ] Operational runbooks
-- [ ] Incident postmortems
-- [ ] Known limitations
-
-## Production Readiness
-
-- [ ] Health checks
-- [ ] Resource requests and limits
-- [ ] Graceful shutdown
-- [ ] Pod disruption handling
-- [ ] Configuration management
-- [ ] Upgrade strategy
-- [ ] Failure recovery
-- [ ] Security boundaries
-- [ ] SLO definitions
-
----
-
-# Target Repository Structure
+下图是项目逐个 Milestone 实现的目标结构。当前不代表所有组件当前均已完成：
 
 ```text
-ai-inference-platform/
-├── control-plane/
-│   ├── memory-supervisor/
-│   ├── scheduler-plugin/
-│   └── llm-autoscaler/
-│
-├── serving/
-│   ├── vllm/
-│   ├── sglang/
-│   ├── llama-cpp/
-│   └── tensorrt-llm/
-│
-├── observability/
-│   ├── prometheus/
-│   ├── grafana/
-│   ├── alertmanager/
-│   └── recording-rules/
-│
-├── workloads/
-│   ├── load-generator/
-│   ├── scenarios/
-│   └── datasets/
-│
-├── benchmarks/
-│   ├── configs/
-│   ├── raw-results/
-│   ├── analysis/
-│   └── reports/
-│
-├── deployments/
-│   ├── kind/
-│   ├── kubernetes/
-│   └── helm/
-│
-├── docs/
-│   ├── architecture/
-│   ├── adr/
-│   ├── runbooks/
-│   └── postmortems/
-│
-└── README.md
+Client / Load Generator
+        |
+        v
+Gateway / API
+        |
+        v
+Serving Data Plane
+        |
+   +----+----+
+   |         |
+   v         v
+Observability   Control Plane
+        \       /
+         \     /
+      Workload / Experiment
 ```
 
-# Roadmap
+- **Serving Data Plane**：vLLM 起步，逐步比较不同 inference runtime。
+- **Observability**：关联 Kubernetes、GPU/内存、Runtime、TTFT/TPOT/E2E、Goodput 与 SLO。
+- **Control Plane**：研究 memory protection、locality-aware scheduling 和 LLM-aware autoscaling。
+- **Workload / Experiment**：产生 concurrency、long-context、burst、contention 和 failure 场景，验证其他平面。
 
-See [ROADMAP.md](docs/Roadmap.md) for a detailed plan and milestones.
+## Testbed
 
----
-
-# Showcase Reading Guide
-
-| Review Focus | Recommended Evidence |
+| 项目 | 当前实验环境 |
 |---|---|
-| LLM Serving | `serving/`、M1/M4/M8 benchmark reports |
-| Kubernetes / Platform Engineering | `deployments/`、M2、`control-plane/` |
-| GPU & Memory Management | M0 environment report、M5 Memory Supervisor |
-| Scheduling & Distributed Systems | M6 Scheduler、M10 distributed experiments |
-| Elastic Serving | M7 Autoscaler、burst traffic report |
-| Observability / SRE | M3 dashboards、M9 Runbooks and Postmortems |
-| Architecture Decision-Making | `docs/adr/`、runtime and control-policy reports |
-| Production Readiness | M4 failure handling、M9 final simulation |
+| 节点 | 2 × DGX Spark |
+| Compute | NVIDIA GB10 Grace Blackwell |
+| 架构 | ARM64 / AArch64 |
+| 内存模型 | CPU 与 GPU 共享的 Unified Memory；不按离散 GPU VRAM 解释 |
+| 网络 | ConnectX-7；M0 记录的高速数据链路协商速率为 200 Gb/s |
+| 主要用途 | 单节点 serving baseline、双副本、资源治理与可选 distributed experiments |
+
+> 双节点实验环境，不等价于生产 DGX/H100/H200/B200 集群。
+
+M0 的 NCCL qualification 只验证 collective 与网络基线。跨节点模型并行尚未验证。
+
+## Current Progress
+
+| Milestone | 状态 | 当前口径 |
+|---|---|---|
+| M0 — Platform Qualification | ✅ Complete | 两节点在 M0 smoke scope 内完成 host CUDA、GPU container、TCP/NCCL 与兼容性边界验证 |
+| M1 — Single-Node vLLM Baseline | 🚧 In Progress | Lab进度过半；正式 benchmark baseline 与容量结论尚未完成 |
+| M2 — Kubernetes GPU Deployment | Planned | GPU worker、RuntimeClass / Device Plugin 与 vLLM workload |
+| M3 — Observability & SLO | Planned / Design available | 已有初始 SLO draft；metrics、dashboard 和 alert 尚待实现 |
+| M4 — Two-Replica Serving | Planned | Routing、failover、rolling update |
+| M5–M7 — Control Plane | Planned | Memory Supervisor、Scheduler Plugin、LLM Autoscaler |
+| M8 — Multi-Runtime Benchmark | Planned | 统一 workload 下的 runtime comparison |
+| M9 — Production Simulation | Planned | 跨 Plane failure、recovery 与 capacity evaluation |
+| M10 — Distributed Extensions | Optional | NCCL、Tensor Parallel 与跨节点 failure boundary |
+
+每个 Milestone 的范围和 Exit Criteria 见 [Roadmap](docs/Roadmap.md)。
+
+## M0 Highlights
+
+- 两台节点的 host CUDA、digest-pinned PyTorch GPU-container smoke 和四层 bootstrap replay 均通过。
+- 固定 digest 的 vLLM runtime image 在两节点完成 model load 并返回 HTTP 200；outer wrapper 的 exit `141` 被保留为 lifecycle harness limitation。
+- TCP 初始 baseline 在 4 streams / 30 seconds 下记录 96.7404 Gbit/s receiver throughput；同时保留 43,506 retransmissions，因此不把它描述为 tuning limit。
+- NCCL `all_reduce` 与 `all_gather` 均 exit `0`，correctness 和 out-of-bounds error 为 `0`。
+- NCCL channel log 与两端 raw RDMA counter before/after 变化共同支持 built-in `NET/IB` over mlx5 RoCE 承载 collective traffic；`GDR 0`，GPUDirect RDMA 未启用。
+- 官方 ARM64 镜像 smoke 已通过；Unified Memory telemetry、自建 multi-arch 镜像与 Kubernetes GPU integration 的边界已明确记录。
+
+详细证据与限制请参见 [M0 Final Review](docs/reviews/m0-review.md)。
+
+## M1 Current Focus
+
+[vLLM Basics](labs/vllm-basics/README.md) 推进中。
+
+当前工作集中在：
+
+- Offline inference 与 OpenAI-compatible online serving；
+- Prefill、Decode、KV Cache、PagedAttention、Continuous Batching；
+- request-level TTFT、TPOT、E2E、token throughput 与 success/failure；
+- `1 / 2 / 4 / 8 / 16` concurrency sweep，并按证据逐级寻找 saturation；
+- short/long input-output workload shape；
+- Grace Blackwell Unified Memory 下的 performance knee 与 capacity boundary。
+
+Streaming client 会测量 first generated content；在验证映射关系前，不把 HTTP chunk interval 直接声称为 token-level ITL。
+
+## Experiment Method
+
+与 M0 的严格 evidence/publication framework 不同，M1 起使用 [Lightweight Experiment Repository Convention](docs/experiments/README.md)：
+
+- 固定 Runtime、model/revision、配置和 workload；
+- 一次只改变一个关键变量；
+- warm-up 与 measured run 分开；
+- 保留 raw result，derived summary 可以重新生成；
+- timeout、OOM、non-zero exit 和其他失败不删除；
+- Observed Fact、Interpretation 与 Hypothesis 分开书写。
+
+Private run 使用 `artifacts/private/<milestone>/<run-id>/`；人工确认并脱敏后的 representative result 才进入 `benchmarks/raw-results/<experiment-family>/<run-id>/`。
+
+## Repository Navigation
+
+| 路径 | 用途 | 当前状态 |
+|---|---|---|
+| [`labs/`](labs/) | 学习与机制实验 | vLLM Basics Labs 0–4、kind basics 已存在 |
+| [`serving/`](serving/) | Inference runtime 的可复用启动与配置 | M1 planned |
+| [`control-plane/`](control-plane/) | Controller、Scheduler、Autoscaler | M5–M7 planned |
+| [`observability/`](observability/) | Metrics、dashboard、recording rule、alert | M3 planned |
+| [`workloads/`](workloads/) | Workload contract 与 load generation | M1/M3 planned |
+| [`benchmarks/`](benchmarks/) | Config、public raw result、analysis、report | 当前含 M0 public raw results；M1 report planned |
+| [`deployments/`](deployments/) | Host bootstrap 与后续 Kubernetes deployment | M0 bootstrap 已存在；M2 planned |
+| [`distributed/`](distributed/) | NCCL baseline 与 distributed inference extension | M0 NCCL tests 已存在；M10 model parallel optional |
+| [`docs/`](docs/) | Roadmap、ADR、environment、SLO、review、后续 architecture/runbook | 持续维护 |
+
+Planned 路径按对应 Milestone 落地；本 README 不把目标目录写成现有实现。
+
+## Roadmap / Showcase Navigation
+
+| Reviewer 关注点 | 首选入口 |
+|---|---|
+| 项目路线与完成标准 | [`docs/Roadmap.md`](docs/Roadmap.md) |
+| 当前 Runtime 学习与 M1 起点 | [`labs/vllm-basics/`](labs/vllm-basics/README.md) |
+| 实验约定 | [`docs/experiments/`](docs/experiments/README.md) |
+| Benchmark 结论 | `benchmarks/reports/` — M1 起逐步落地 |
+| Architecture | `docs/architecture/` — planned；当前决策见 [ADR-0001](docs/adr/ADR-0001-dgx-spark-primary-testbed.md) |
+| Control Plane 实现 | `control-plane/` — M5–M7 planned |
+| Observability 实现 | `observability/` — M3 planned；当前输入见 [SLO draft](docs/SLO/inference-service-slo.md) |
+
+M0 closeout 文档保留为历史与深入审阅资料，但不是后续 Milestone 的默认模板或普通 reviewer 的第一阅读路径。

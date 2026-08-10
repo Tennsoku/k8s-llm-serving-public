@@ -1,0 +1,19 @@
+# Starting point for an experiment run. Milestones may add fields as needed.
+run_id:
+milestone:
+experiment:
+timestamp_utc:
+
+git:
+  commit:
+  dirty:
+
+environment:
+  node:
+
+runtime: {}
+
+workload: {}
+
+repeat:
+outcome:

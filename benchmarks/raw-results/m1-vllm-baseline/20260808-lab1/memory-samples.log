@@ -1,0 +1,575 @@
+2026-08-08T04:38:20+00:00
+               total        used        free      shared  buff/cache   available
+Mem:     130663165952 74119761920 26026913792    91459584 32328482816 56543404032
+
+20260808T043820Z cgroup_memory_current=4841472
+2026-08-08T04:38:22+00:00
+               total        used        free      shared  buff/cache   available
+Mem:     130663165952 73992499200 26154176512    91459584 32328486912 56670666752
+
+20260808T043822Z cgroup_memory_current=5521408
+2026-08-08T04:38:24+00:00
+               total        used        free      shared  buff/cache   available
+Mem:     130663165952 74015068160 26131595264    91463680 32328499200 56648097792
+
+20260808T043824Z cgroup_memory_current=18395136
+2026-08-08T04:38:26+00:00
+               total        used        free      shared  buff/cache   available
+Mem:     130663165952 74480140288 25663934464    91463680 32333684736 56183025664
+
+20260808T043826Z cgroup_memory_current=476008448
+2026-08-08T04:38:28+00:00
+               total        used        free      shared  buff/cache   available
+Mem:     130663165952 74677088256 25452240896    91463680 32363061248 55986077696
+
+20260808T043828Z cgroup_memory_current=662675456
+2026-08-08T04:38:30+00:00
+               total        used        free      shared  buff/cache   available
+Mem:     130663165952 75321827328 24807202816   135700480 32407883776 55341338624
+
+20260808T043830Z cgroup_memory_current=1130184704
+2026-08-08T04:38:32+00:00
+               total        used        free      shared  buff/cache   available
+Mem:     130663165952 75478220800 24650809344   135700480 32407883776 55184945152
+
+20260808T043832Z cgroup_memory_current=1296785408
+2026-08-08T04:38:34+00:00
+               total        used        free      shared  buff/cache   available
+Mem:     130663165952 74957488128 25171296256   135700480 32408387584 55705677824
+
+20260808T043834Z cgroup_memory_current=776720384
+2026-08-08T04:38:36+00:00
+               total        used        free      shared  buff/cache   available
+Mem:     130663165952 75341029376 24787755008   135700480 32408387584 55322136576
+
+20260808T043836Z cgroup_memory_current=1157996544
+2026-08-08T04:38:38+00:00
+               total        used        free      shared  buff/cache   available
+Mem:     130663165952 75817840640 24310927360   135700480 32408416256 54845325312
+
+20260808T043838Z cgroup_memory_current=1652187136
+2026-08-08T04:38:40+00:00
+               total        used        free      shared  buff/cache   available
+Mem:     130663165952 76007317504 24121196544   171352064 32444567552 54655848448
+
+20260808T043840Z cgroup_memory_current=1824645120
+2026-08-08T04:38:42+00:00
+               total        used        free      shared  buff/cache   available
+Mem:     130663165952 77927374848 22200328192   205373440 32480194560 52735791104
+
+20260808T043842Z cgroup_memory_current=2331967488
+2026-08-08T04:38:44+00:00
+               total        used        free      shared  buff/cache   available
+Mem:     130663165952 78272102400 21855600640   205373440 32480202752 52391063552
+
+20260808T043844Z cgroup_memory_current=2691960832
+2026-08-08T04:38:46+00:00
+               total        used        free      shared  buff/cache   available
+Mem:     130663165952 78650892288 21476810752   205373440 32480202752 52012273664
+
+20260808T043846Z cgroup_memory_current=3060297728
+2026-08-08T04:38:48+00:00
+               total        used        free      shared  buff/cache   available
+Mem:     130663165952 77996609536 22130405376   205373440 32481579008 52666556416
+
+20260808T043848Z cgroup_memory_current=2204921856
+2026-08-08T04:38:50+00:00
+               total        used        free      shared  buff/cache   available
+Mem:     130663165952 77997920256 22129041408   205373440 32481673216 52665245696
+
+20260808T043850Z cgroup_memory_current=2249572352
+2026-08-08T04:38:52+00:00
+               total        used        free      shared  buff/cache   available
+Mem:     130663165952 78408335360 21713375232   205373440 32487256064 52254830592
+
+20260808T043852Z cgroup_memory_current=2270392320
+2026-08-08T04:38:54+00:00
+               total        used        free      shared  buff/cache   available
+Mem:     130663165952 78525808640 21590708224   205373440 32492511232 52137357312
+
+20260808T043854Z cgroup_memory_current=2292895744
+2026-08-08T04:38:56+00:00
+               total        used        free      shared  buff/cache   available
+Mem:     130663165952 79370338304 20611854336   205373440 32626872320 51292827648
+
+20260808T043856Z cgroup_memory_current=2793488384
+2026-08-08T04:38:58+00:00
+               total        used        free      shared  buff/cache   available
+Mem:     130663165952 79451099136 20527403008   205373440 32630558720 51212066816
+
+20260808T043858Z cgroup_memory_current=2947084288
+2026-08-08T04:39:00+00:00
+               total        used        free      shared  buff/cache   available
+Mem:     130663165952 84966748160 15011164160   205373440 32631140352 45696417792
+
+20260808T043900Z cgroup_memory_current=2862338048
+2026-08-08T04:39:02+00:00
+               total        used        free      shared  buff/cache   available
+Mem:     130663165952 96525750272  3452121088   205373440 32631226368 34137415680
+
+20260808T043902Z cgroup_memory_current=3173072896
+2026-08-08T04:39:04+00:00
+               total        used        free      shared  buff/cache   available
+Mem:     130663165952 79613288448 20364439552   205377536 32631386112 51049877504
+
+20260808T043904Z cgroup_memory_current=3300343808                                   # CASE A Peak 
+2026-08-08T04:39:06+00:00
+               total        used        free      shared  buff/cache   available
+Mem:     130663165952 75344637952 24633081856   135704576 32561713152 55318528000
+
+20260808T043906Z cgroup_memory_current=1249599488
+2026-08-08T04:39:08+00:00
+               total        used        free      shared  buff/cache   available
+Mem:     130663165952 74085310464 25892417536    91459584 32517464064 56577855488
+
+20260808T043908Z cgroup_memory_current=207544320
+2026-08-08T04:39:10+00:00
+               total        used        free      shared  buff/cache   available
+Mem:     130663165952 74076086272 25901641728    91459584 32517464064 56587079680
+
+20260808T043910Z cgroup_memory_current=206835712
+2026-08-08T04:39:12+00:00
+               total        used        free      shared  buff/cache   available
+Mem:     130663165952 74059345920 25918382080    91459584 32517468160 56603820032
+
+20260808T043912Z cgroup_memory_current=207757312
+2026-08-08T04:39:14+00:00
+               total        used        free      shared  buff/cache   available
+Mem:     130663165952 74042781696 25934942208    91459584 32517476352 56620384256
+
+20260808T043914Z cgroup_memory_current=207618048
+2026-08-08T04:39:16+00:00
+               total        used        free      shared  buff/cache   available
+Mem:     130663165952 74287767552 25689960448    91463680 32517464064 56375398400
+
+20260808T043916Z cgroup_memory_current=432775168
+2026-08-08T04:39:18+00:00
+               total        used        free      shared  buff/cache   available
+Mem:     130663165952 74545410048 25432317952    91463680 32517468160 56117755904
+
+20260808T043918Z cgroup_memory_current=678256640
+2026-08-08T04:39:20+00:00
+               total        used        free      shared  buff/cache   available
+Mem:     130663165952 74982170624 24995549184   135700480 32561713152 55680995328
+
+20260808T043920Z cgroup_memory_current=916090880
+2026-08-08T04:39:22+00:00
+               total        used        free      shared  buff/cache   available
+Mem:     130663165952 75369316352 24608395264   135700480 32561729536 55293849600
+
+20260808T043922Z cgroup_memory_current=1303199744
+2026-08-08T04:39:24+00:00
+               total        used        free      shared  buff/cache   available
+Mem:     130663165952 75832680448 24145014784   135700480 32561754112 54830485504
+
+20260808T043924Z cgroup_memory_current=1765462016
+2026-08-08T04:39:26+00:00
+               total        used        free      shared  buff/cache   available
+Mem:     130663165952 75986386944 23991300096   135700480 32561766400 54676779008
+
+20260808T043926Z cgroup_memory_current=1931980800
+2026-08-08T04:39:28+00:00
+               total        used        free      shared  buff/cache   available
+Mem:     130663165952 77869469696 22108205056   205373440 32631451648 52793696256
+
+20260808T043928Z cgroup_memory_current=2420060160
+2026-08-08T04:39:30+00:00
+               total        used        free      shared  buff/cache   available
+Mem:     130663165952 78186016768 21791653888   205373440 32631459840 52477149184
+
+20260808T043930Z cgroup_memory_current=2714263552
+2026-08-08T04:39:32+00:00
+               total        used        free      shared  buff/cache   available
+Mem:     130663165952 78495567872 21482098688   205373440 32631459840 52167598080
+
+20260808T043932Z cgroup_memory_current=3033804800                                   # CASE B Peak 1
+2026-08-08T04:39:34+00:00
+               total        used        free      shared  buff/cache   available
+Mem:     130663165952 77981106176 21996556288   205373440 32631468032 52682059776
+
+20260808T043934Z cgroup_memory_current=2325270528
+2026-08-08T04:39:36+00:00
+               total        used        free      shared  buff/cache   available
+Mem:     130663165952 78988689408 20988149760   205373440 32632291328 51674476544
+
+20260808T043936Z cgroup_memory_current=2723901440
+2026-08-08T04:39:38+00:00
+               total        used        free      shared  buff/cache   available
+Mem:     130663165952 79172448256 20800708608   205373440 32635973632 51490717696
+
+20260808T043938Z cgroup_memory_current=2850275328
+2026-08-08T04:39:40+00:00
+               total        used        free      shared  buff/cache   available
+Mem:     130663165952 84907298816 15065272320   205373440 32636559360 45755867136
+
+20260808T043940Z cgroup_memory_current=2792673280
+2026-08-08T04:39:42+00:00
+               total        used        free      shared  buff/cache   available
+Mem:     130663165952 96456654848  3515912192   205373440 32636559360 34206511104
+
+20260808T043942Z cgroup_memory_current=3104894976
+2026-08-08T04:39:44+00:00
+               total        used        free      shared  buff/cache   available
+Mem:     130663165952 79342600192 20629823488   205377536 32636715008 51320565760
+
+20260808T043944Z cgroup_memory_current=3285553152                                   # CASE B Peak 2
+2026-08-08T04:39:46+00:00
+               total        used        free      shared  buff/cache   available
+Mem:     130663165952 74859376640 25112981504   135704576 32567103488 55803789312
+
+20260808T043946Z cgroup_memory_current=628002816
+2026-08-08T04:39:48+00:00
+               total        used        free      shared  buff/cache   available
+Mem:     130663165952 74100826112 25871536128    91459584 32522858496 56562339840
+
+20260808T043948Z cgroup_memory_current=212979712
+2026-08-08T04:39:50+00:00
+               total        used        free      shared  buff/cache   available
+Mem:     130663165952 74082156544 25890201600    91459584 32522862592 56581009408
+
+20260808T043950Z cgroup_memory_current=212779008
+2026-08-08T04:39:52+00:00
+               total        used        free      shared  buff/cache   available
+Mem:     130663165952 74057625600 25914732544    91459584 32522862592 56605540352
+
+20260808T043952Z cgroup_memory_current=212840448
+2026-08-08T04:39:54+00:00
+               total        used        free      shared  buff/cache   available
+Mem:     130663165952 74370187264 25602170880    91463680 32522870784 56292978688
+
+20260808T043954Z cgroup_memory_current=544063488
+2026-08-08T04:39:56+00:00
+               total        used        free      shared  buff/cache   available
+Mem:     130663165952 74586365952 25385984000    91463680 32522870784 56076800000
+
+20260808T043956Z cgroup_memory_current=748896256
+2026-08-08T04:39:58+00:00
+               total        used        free      shared  buff/cache   available
+Mem:     130663165952 75054653440 24917700608   135700480 32567107584 55608512512
+
+20260808T043958Z cgroup_memory_current=1040728064
+2026-08-08T04:40:00+00:00
+               total        used        free      shared  buff/cache   available
+Mem:     130663165952 75470979072 24501362688   135700480 32567115776 55192186880
+
+20260808T044000Z cgroup_memory_current=1453506560
+2026-08-08T04:40:02+00:00
+               total        used        free      shared  buff/cache   available
+Mem:     130663165952 75829776384 24142565376   135700480 32567115776 54833389568
+
+20260808T044002Z cgroup_memory_current=1807499264
+2026-08-08T04:40:04+00:00
+               total        used        free      shared  buff/cache   available
+Mem:     130663165952 76243947520 23728386048   179937280 32611364864 54419218432
+
+20260808T044004Z cgroup_memory_current=2027405312
+2026-08-08T04:40:06+00:00
+               total        used        free      shared  buff/cache   available
+Mem:     130663165952 77947904000 22024421376   205373440 32636805120 52715261952
+
+20260808T044006Z cgroup_memory_current=2490605568
+2026-08-08T04:40:08+00:00
+               total        used        free      shared  buff/cache   available
+Mem:     130663165952 78203129856 21769191424   205373440 32636809216 52460036096
+
+20260808T044008Z cgroup_memory_current=2766426112
+2026-08-08T04:40:10+00:00
+               total        used        free      shared  buff/cache   available
+Mem:     130663165952 78522109952 21450211328   205373440 32636809216 52141056000
+
+20260808T044010Z cgroup_memory_current=3070631936                                   # CASE C Peak 1
+2026-08-08T04:40:12+00:00
+               total        used        free      shared  buff/cache   available
+Mem:     130663165952 78058082304 21914238976   205373440 32636809216 52605083648
+
+20260808T044012Z cgroup_memory_current=2330435584
+2026-08-08T04:40:14+00:00
+               total        used        free      shared  buff/cache   available
+Mem:     130663165952 78844968960 21127344128   205373440 32636821504 51818196992
+
+20260808T044014Z cgroup_memory_current=2757464064
+2026-08-08T04:40:16+00:00
+               total        used        free      shared  buff/cache   available
+Mem:     130663165952 95769059328  4203253760   205373440 32636821504 34894106624
+
+20260808T044016Z cgroup_memory_current=3030847488
+2026-08-08T04:40:18+00:00
+               total        used        free      shared  buff/cache   available
+Mem:     130663165952 80256786432 19715526656   205377536 32636821504 50406379520
+
+20260808T044018Z cgroup_memory_current=3288125440                                   # CASE C Peak 2
+2026-08-08T04:40:20+00:00
+               total        used        free      shared  buff/cache   available
+Mem:     130663165952 75540676608 24431632384   135704576 32567156736 55122489344
+
+20260808T044020Z cgroup_memory_current=1244676096
+2026-08-08T04:40:22+00:00
+               total        used        free      shared  buff/cache   available
+Mem:     130663165952 74274172928 25698136064    91459584 32522919936 56388993024
+
+20260808T044022Z cgroup_memory_current=213254144
+2026-08-08T04:40:24+00:00
+               total        used        free      shared  buff/cache   available
+Mem:     130663165952 74223050752 25749254144    91459584 32522915840 56440115200
+
+20260808T044024Z cgroup_memory_current=213299200
+2026-08-08T04:40:26+00:00
+               total        used        free      shared  buff/cache   available
+Mem:     130663165952 74198740992 25773563904    91459584 32522915840 56464424960
+
+20260808T044026Z cgroup_memory_current=213221376
+2026-08-08T04:40:28+00:00
+               total        used        free      shared  buff/cache   available
+Mem:     130663165952 74434789376 25537527808    91463680 32522903552 56228376576
+
+20260808T044028Z cgroup_memory_current=460697600
+2026-08-08T04:40:30+00:00
+               total        used        free      shared  buff/cache   available
+Mem:     130663165952 74640015360 25332297728    91463680 32522907648 56023150592
+
+20260808T044030Z cgroup_memory_current=687013888
+2026-08-08T04:40:32+00:00
+               total        used        free      shared  buff/cache   available
+Mem:     130663165952 75058880512 24913432576   135700480 32567148544 55604285440
+
+20260808T044032Z cgroup_memory_current=923074560
+2026-08-08T04:40:34+00:00
+               total        used        free      shared  buff/cache   available
+Mem:     130663165952 75411603456 24560701440   135700480 32567160832 55251562496
+
+20260808T044034Z cgroup_memory_current=1317826560
+2026-08-08T04:40:36+00:00
+               total        used        free      shared  buff/cache   available
+Mem:     130663165952 75884859392 24087445504   135700480 32567156736 54778306560
+
+20260808T044036Z cgroup_memory_current=1789931520
+2026-08-08T04:40:38+00:00
+               total        used        free      shared  buff/cache   available
+Mem:     130663165952 76057264128 23915036672   155705344 32587169792 54605901824
+
+20260808T044038Z cgroup_memory_current=1971236864
+2026-08-08T04:40:40+00:00
+               total        used        free      shared  buff/cache   available
+Mem:     130663165952 77947936768 22024359936   205373440 32636837888 52715229184
+
+20260808T044040Z cgroup_memory_current=2477805568
+2026-08-08T04:40:42+00:00
+               total        used        free      shared  buff/cache   available
+Mem:     130663165952 78283550720 21688741888   205373440 32636837888 52379615232
+
+20260808T044042Z cgroup_memory_current=2817851392
+2026-08-08T04:40:44+00:00
+               total        used        free      shared  buff/cache   available
+Mem:     130663165952 78641885184 21330403328   205373440 32636846080 52021280768
+
+20260808T044044Z cgroup_memory_current=3181539328                                   # CASE D Peak 1
+2026-08-08T04:40:46+00:00
+               total        used        free      shared  buff/cache   available
+Mem:     130663165952 78223519744 21748768768   205373440 32636846080 52439646208
+
+20260808T044046Z cgroup_memory_current=2548080640
+2026-08-08T04:40:48+00:00
+               total        used        free      shared  buff/cache   available
+Mem:     130663165952 95738277888  4234002432   205373440 32636858368 34924888064
+
+20260808T044048Z cgroup_memory_current=2799386624
+2026-08-08T04:40:50+00:00
+               total        used        free      shared  buff/cache   available
+Mem:     130663165952 96683470848  3288805376   205377536 32636862464 33979695104
+
+20260808T044050Z cgroup_memory_current=3282616320
+2026-08-08T04:40:52+00:00
+               total        used        free      shared  buff/cache   available
+Mem:     130663165952 79357521920 20614750208   205377536 32636866560 51305644032
+
+20260808T044052Z cgroup_memory_current=3294208000                                   # CASE D Peak 2
+2026-08-08T04:40:54+00:00
+               total        used        free      shared  buff/cache   available
+Mem:     130663165952 74300735488 25671532544    91459584 32522960896 56362430464
+
+20260808T044054Z cgroup_memory_current=213938176
+2026-08-08T04:40:56+00:00
+               total        used        free      shared  buff/cache   available
+Mem:     130663165952 74261561344 25710706688    91459584 32522956800 56401604608
+
+20260808T044056Z cgroup_memory_current=213430272
+2026-08-08T04:40:58+00:00
+               total        used        free      shared  buff/cache   available
+Mem:     130663165952 74239315968 25732947968    91459584 32522956800 56423849984
+
+20260808T044058Z cgroup_memory_current=213004288
+2026-08-08T04:41:00+00:00
+               total        used        free      shared  buff/cache   available
+Mem:     130663165952 74209234944 25763028992    91459584 32522960896 56453931008
+
+20260808T044100Z cgroup_memory_current=212983808
+2026-08-08T04:41:02+00:00
+               total        used        free      shared  buff/cache   available
+Mem:     130663165952 74244161536 25728110592    91463680 32522956800 56419004416
+
+20260808T044102Z cgroup_memory_current=225865728
+2026-08-08T04:41:04+00:00
+               total        used        free      shared  buff/cache   available
+Mem:     130663165952 74691792896 25280471040    91463680 32522964992 55971373056
+
+20260808T044104Z cgroup_memory_current=679014400
+2026-08-08T04:41:06+00:00
+               total        used        free      shared  buff/cache   available
+Mem:     130663165952 74841616384 25130647552    91463680 32522969088 55821549568
+
+20260808T044106Z cgroup_memory_current=840171520
+2026-08-08T04:41:08+00:00
+               total        used        free      shared  buff/cache   available
+Mem:     130663165952 75385667584 24586588160   135700480 32567205888 55277498368
+
+20260808T044108Z cgroup_memory_current=1212633088
+2026-08-08T04:41:10+00:00
+               total        used        free      shared  buff/cache   available
+Mem:     130663165952 75845951488 24126300160   135700480 32567209984 54817214464
+
+20260808T044110Z cgroup_memory_current=1704816640
+2026-08-08T04:41:12+00:00
+               total        used        free      shared  buff/cache   available
+Mem:     130663165952 76020531200 23951716352   135700480 32567214080 54642634752
+
+20260808T044112Z cgroup_memory_current=1878220800
+2026-08-08T04:41:14+00:00
+               total        used        free      shared  buff/cache   available
+Mem:     130663165952 77880393728 22091841536   205373440 32636907520 52782772224
+
+20260808T044114Z cgroup_memory_current=2365526016
+2026-08-08T04:41:16+00:00
+               total        used        free      shared  buff/cache   available
+Mem:     130663165952 78219677696 21752557568   205373440 32636907520 52443488256
+
+20260808T044116Z cgroup_memory_current=2709389312
+2026-08-08T04:41:18+00:00
+               total        used        free      shared  buff/cache   available
+Mem:     130663165952 78579916800 21392310272   205373440 32636915712 52083249152
+
+20260808T044118Z cgroup_memory_current=3075465216                                   # CASE B Gen 2 Peak 1
+2026-08-08T04:41:20+00:00
+               total        used        free      shared  buff/cache   available
+Mem:     130663165952 78103941120 21868285952   205373440 32636919808 52559224832
+
+20260808T044120Z cgroup_memory_current=2342117376
+2026-08-08T04:41:22+00:00
+               total        used        free      shared  buff/cache   available
+Mem:     130663165952 84423598080 15548616704   205373440 32636940288 46239567872
+
+20260808T044122Z cgroup_memory_current=2776715264
+2026-08-08T04:41:24+00:00
+               total        used        free      shared  buff/cache   available
+Mem:     130663165952 96469917696  3502288896   205373440 32636944384 34193248256
+
+20260808T044124Z cgroup_memory_current=3106250752
+2026-08-08T04:41:26+00:00
+               total        used        free      shared  buff/cache   available
+Mem:     130663165952 79334592512 20637618176   205377536 32636952576 51328573440
+
+20260808T044126Z cgroup_memory_current=3295158272                                   # CASE B Gen 2 Peak 2
+2026-08-08T04:41:28+00:00
+               total        used        free      shared  buff/cache   available
+Mem:     130663165952 74186371072 25785839616    91459584 32523026432 56476794880
+
+20260808T044128Z cgroup_memory_current=213692416
+2026-08-08T04:41:30+00:00
+               total        used        free      shared  buff/cache   available
+Mem:     130663165952 74193342464 25778864128    91459584 32523046912 56469823488
+
+20260808T044130Z cgroup_memory_current=213196800
+2026-08-08T04:41:32+00:00
+               total        used        free      shared  buff/cache   available
+Mem:     130663165952 74206515200 25765675008    91459584 32523051008 56456650752
+
+20260808T044132Z cgroup_memory_current=212611072
+2026-08-08T04:41:34+00:00
+               total        used        free      shared  buff/cache   available
+Mem:     130663165952 74198413312 25773772800    91459584 32523046912 56464752640
+
+20260808T044134Z cgroup_memory_current=212586496
+2026-08-08T04:41:36+00:00
+               total        used        free      shared  buff/cache   available
+Mem:     130663165952 74566135808 25406066688    91463680 32523038720 56097030144
+
+20260808T044136Z cgroup_memory_current=547164160
+2026-08-08T04:41:38+00:00
+               total        used        free      shared  buff/cache   available
+Mem:     130663165952 74752847872 25219334144    91463680 32523071488 55910318080
+
+20260808T044138Z cgroup_memory_current=743305216
+2026-08-08T04:41:40+00:00
+               total        used        free      shared  buff/cache   available
+Mem:     130663165952 75214331904 24757850112   135700480 32567316480 55448834048
+
+20260808T044140Z cgroup_memory_current=1044140032
+2026-08-08T04:41:42+00:00
+               total        used        free      shared  buff/cache   available
+Mem:     130663165952 75720376320 24251797504   135700480 32567316480 54942789632
+
+20260808T044142Z cgroup_memory_current=1533001728
+2026-08-08T04:41:44+00:00
+               total        used        free      shared  buff/cache   available
+Mem:     130663165952 75994501120 23977660416   135700480 32567324672 54668664832
+
+20260808T044144Z cgroup_memory_current=1818611712
+2026-08-08T04:41:46+00:00
+               total        used        free      shared  buff/cache   available
+Mem:     130663165952 76404396032 23567769600   179937280 32611565568 54258769920
+
+20260808T044146Z cgroup_memory_current=2056372224
+2026-08-08T04:41:48+00:00
+               total        used        free      shared  buff/cache   available
+Mem:     130663165952 78080856064 21891301376   205373440 32637005824 52582309888
+
+20260808T044148Z cgroup_memory_current=2493464576
+2026-08-08T04:41:50+00:00
+               total        used        free      shared  buff/cache   available
+Mem:     130663165952 78349967360 21622190080   205373440 32637009920 52313198592
+
+20260808T044150Z cgroup_memory_current=2780807168
+2026-08-08T04:41:52+00:00
+               total        used        free      shared  buff/cache   available
+Mem:     130663165952 78667735040 21304414208   205373440 32637014016 51995430912
+
+20260808T044152Z cgroup_memory_current=3085578240                                   # CASE B Max 128 Peak 1
+2026-08-08T04:41:54+00:00
+               total        used        free      shared  buff/cache   available
+Mem:     130663165952 78111322112 21860827136   205373440 32637018112 52551843840
+
+20260808T044154Z cgroup_memory_current=2332282880
+2026-08-08T04:41:56+00:00
+               total        used        free      shared  buff/cache   available
+Mem:     130663165952 78705827840 21266309120   205373440 32637030400 51957338112
+
+20260808T044156Z cgroup_memory_current=2756894720
+2026-08-08T04:41:58+00:00
+               total        used        free      shared  buff/cache   available
+Mem:     130663165952 95733448704  4238688256   205373440 32637034496 34929717248
+
+20260808T044158Z cgroup_memory_current=3043573760
+2026-08-08T04:42:00+00:00
+               total        used        free      shared  buff/cache   available
+Mem:     130663165952 96583245824  3388887040   205377536 32637046784 34079920128
+
+20260808T044200Z cgroup_memory_current=3320725504                                   # CASE B Max 128 Peak 2
+2026-08-08T04:42:02+00:00
+               total        used        free      shared  buff/cache   available
+Mem:     130663165952 75450892288 24521232384   135704576 32567377920 55212273664
+
+20260808T044202Z cgroup_memory_current=1299382272
+2026-08-08T04:42:04+00:00
+               total        used        free      shared  buff/cache   available
+Mem:     130663165952 74057228288 25914892288    91459584 32523145216 56605937664
+
+20260808T044204Z cgroup_memory_current=213086208
+2026-08-08T04:42:06+00:00
+               total        used        free      shared  buff/cache   available
+Mem:     130663165952 74073956352 25898168320    91459584 32523141120 56589209600
+
+20260808T044206Z cgroup_memory_current=212905984
+2026-08-08T04:42:08+00:00
+               total        used        free      shared  buff/cache   available
+Mem:     130663165952 74068529152 25903595520    91459584 32523141120 56594636800
+
+20260808T044208Z cgroup_memory_current=212803584

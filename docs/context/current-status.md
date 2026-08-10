@@ -3,7 +3,7 @@
 ## Milestone
 
 M0 — Platform Qualification & Reproducible Environment is complete. 
-M1 has started.
+M1 has started. Current minor step: M1.2a — Lightweight Experiment Convention
 
 ## Confirmed
 

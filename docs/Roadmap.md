@@ -909,8 +909,8 @@ M5、M6、M7 可以在 M4 完成后部分并行，但每个控制组件都必须
 
 | Milestone | Status | Current Focus |
 |---|---|---|
-| M0 Platform Qualification | Technical Complete / Publish Prep | Canonical evidence 已完成；推进 fail-closed sanitized publication |
-| M1 Single-Node vLLM Baseline | Next | Existing vLLM Basics labs and benchmark client |
+| M0 Platform Qualification | Publish Complete / Closed | Canonical evidence 已完成；推进 fail-closed sanitized publication |
+| M1 Single-Node vLLM Baseline | In progress | Existing vLLM Basics labs and benchmark client |
 | M2 Kubernetes GPU Deployment | Not Started | Cluster topology and GPU runtime integration |
 | M3 Observability & SLO | Design Available | Initial SLO and dashboard input contract |
 | M4 Two-Replica Serving | Not Started | Gateway and routing baseline |
