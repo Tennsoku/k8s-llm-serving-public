@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "case-events.schema.jsonl",
+  "title": "vLLM benchmark case boundary event",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version", "record_type", "event_type", "run_id", "case_id",
+    "measured", "model", "concurrency", "repetition", "planned_requests",
+    "timestamp_utc", "monotonic_ns", "wall_time_seconds",
+    "completed_requests", "successful_requests", "failed_requests", "outcome"
+  ],
+  "properties": {
+    "schema_version": {"const": 1},
+    "record_type": {"const": "case_event"},
+    "event_type": {"enum": ["start", "end"]},
+    "run_id": {"type": "string", "minLength": 1},
+    "case_id": {"type": "string", "minLength": 1},
+    "measured": {"type": "boolean"},
+    "model": {"type": "string", "minLength": 1},
+    "concurrency": {"type": "integer", "minimum": 1},
+    "repetition": {"type": "integer", "minimum": 0},
+    "planned_requests": {"type": "integer", "minimum": 1},
+    "timestamp_utc": {"type": "string", "format": "date-time"},
+    "monotonic_ns": {"type": "integer", "minimum": 0},
+    "wall_time_seconds": {"type": ["number", "null"], "minimum": 0},
+    "completed_requests": {"type": ["integer", "null"], "minimum": 0},
+    "successful_requests": {"type": ["integer", "null"], "minimum": 0},
+    "failed_requests": {"type": ["integer", "null"], "minimum": 0},
+    "outcome": {"enum": ["running", "success", "partial_failure", "failed"]}
+  }
+}

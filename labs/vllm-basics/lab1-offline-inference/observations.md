@@ -4,7 +4,7 @@
 |---|---|
 | Model and immutable revision | Qwen2.5-0.5B-Instruct `7ae557604adf67be50417f59c2c2f167def9a775` |
 | Runtime/container identity | `nvcr.io/nvidia/vllm@sha256:1de8e6bfdb4c81c1f31a806cc9b13b5c6352714a7cec87f4d24964bcc91159b2` |
-| Exact command and vLLM/PyTorch version | `cd /workspace/lab && ./run.sh -c A -t 32 -r 1`, PyTorch `2.13.0a0+9186a08b2c.nv26.07` |
+| Exact command and vLLM/PyTorch version | `cd /workspace/lab && ./run.sh -c A -t 32 -r 1`, vLLM `0.24.0+092c4842.dev`, PyTorch `2.13.0a0+9186a08b2c.nv26.07` |
 | Fixed prompt source | `offline_inference.py:CASE_PROMPTS` at `37b5420d83390018b34485d4331144da4e0dae14` commit |
 | Sampling parameters | `temperature=0`, `seed=42`; deviations: N/A |
 | Initialization time | 34.420s |

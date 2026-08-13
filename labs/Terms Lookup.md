@@ -4,7 +4,7 @@ TTFT - Time to First Token, 模型从接收到请求到生成第一个 token 的
 
 TPOT - Time per Output Token，模型生成每个 token 所需的时间，通常用于衡量模型的吞吐能力。
 
-ITL - Inter-Token Latency，相邻输出 token 之间的延迟
+ITL - Inter-Token Latency，相邻输出 token 之间的延迟, 在大多数情况下，ITL = TPOT。
 
 # Distributed Training相关
 

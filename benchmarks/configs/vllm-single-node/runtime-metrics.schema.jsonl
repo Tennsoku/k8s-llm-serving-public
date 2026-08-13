@@ -1,0 +1,45 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "runtime-metrics.schema.jsonl",
+  "title": "vLLM runtime metric sample",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version", "record_type", "run_id", "timestamp_utc",
+    "monotonic_ns", "elapsed_seconds", "configured_interval_seconds",
+    "scrape_duration_seconds", "scrape_success", "http_status", "error",
+    "running_requests", "waiting_requests", "kv_cache_usage_ratio",
+    "preemption_events_total", "prompt_tokens_total", "generation_tokens_total",
+    "request_success_total", "prefix_cache_queries_total",
+    "prefix_cache_hits_total", "avg_prompt_throughput_tps",
+    "avg_generation_throughput_tps", "metric_names"
+  ],
+  "properties": {
+    "schema_version": {"const": 1},
+    "record_type": {"const": "runtime_sample"},
+    "run_id": {"type": "string", "minLength": 1},
+    "timestamp_utc": {"type": "string", "format": "date-time"},
+    "monotonic_ns": {"type": "integer", "minimum": 0},
+    "elapsed_seconds": {"type": "number", "minimum": 0},
+    "configured_interval_seconds": {"type": "number", "exclusiveMinimum": 0},
+    "scrape_duration_seconds": {"type": "number", "minimum": 0},
+    "scrape_success": {"type": "boolean"},
+    "http_status": {"type": ["integer", "null"], "minimum": 100, "maximum": 599},
+    "error": {"type": ["string", "null"]},
+    "running_requests": {"type": ["number", "null"], "minimum": 0},
+    "waiting_requests": {"type": ["number", "null"], "minimum": 0},
+    "kv_cache_usage_ratio": {"type": ["number", "null"], "minimum": 0},
+    "preemption_events_total": {"type": ["number", "null"], "minimum": 0},
+    "prompt_tokens_total": {"type": ["number", "null"], "minimum": 0},
+    "generation_tokens_total": {"type": ["number", "null"], "minimum": 0},
+    "request_success_total": {"type": ["number", "null"], "minimum": 0},
+    "prefix_cache_queries_total": {"type": ["number", "null"], "minimum": 0},
+    "prefix_cache_hits_total": {"type": ["number", "null"], "minimum": 0},
+    "avg_prompt_throughput_tps": {"type": ["number", "null"], "minimum": 0},
+    "avg_generation_throughput_tps": {"type": ["number", "null"], "minimum": 0},
+    "metric_names": {
+      "type": "object",
+      "additionalProperties": {"type": ["string", "null"]}
+    }
+  }
+}

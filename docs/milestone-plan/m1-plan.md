@@ -653,11 +653,11 @@ success/failure
 
 ## Exit Criteria
 
-- [ ] async client 可用；
-- [ ] C1/2/4/8/16 可执行；
-- [ ] p50/p95/p99 正确；
-- [ ] failure 不会被 silent ignore；
-- [ ] warm-up 与 measured run 能区分。
+- [x] async client 可用；
+- [x] C1/2/4/8/16 可执行；
+- [x] p50/p95/p99 正确；
+- [x] failure 不会被 silent ignore；
+- [x] warm-up 与 measured run 能区分。
 
 ---
 
@@ -710,9 +710,9 @@ Wall-clock timestamp 只用于跨日志关联。
 因此：
 
 - first non-empty generated content 可用于 client-side TTFT；
-- chunk inter-arrival 不直接宣称为 ITL；
+- chunk inter-arrival 不直接宣称为 TPOT；
 - TPOT 可以由 decode duration / output token count 计算；
-- 真正 ITL 可以结合 vLLM server metric。
+- 真正 TPOT 可以结合 vLLM server metric。
 
 正确 metric semantics 比“多测一个数字”更重要。
 
@@ -727,7 +727,7 @@ KV Cache usage
 prompt tokens
 generation tokens
 TTFT server histogram
-ITL / decode metric
+TPOT / decode metric
 preemption if available
 ```
 
@@ -735,12 +735,12 @@ preemption if available
 
 ## Exit Criteria
 
-- [ ] measurement boundary 写清楚；
-- [ ] request-level JSONL 可用；
-- [ ] TTFT/E2E/TPOT 可稳定计算；
-- [ ] token count 可靠；
-- [ ] timeout/error 分类明确；
-- [ ] client 与 server metric 可以进行基本 cross-check。
+- [x] measurement boundary 写清楚；
+- [x] request-level JSONL 可用；
+- [x] TTFT/E2E/TPOT 可稳定计算；
+- [x] token count 可靠；
+- [x] timeout/error 分类明确；
+- [x] client 与 server metric 可以进行基本 cross-check。
 
 ---
 
@@ -843,10 +843,10 @@ P95 TTFT
 
 ## Exit Criteria
 
-- [ ] C1–16 baseline 完成；
-- [ ] 必要时扩到 saturation；
-- [ ] request-level raw data 保留；
-- [ ] benchmark 可重复；
+- [x] C1–16 baseline 完成；
+- [x] 必要时扩到 saturation；
+- [x] request-level raw data 保留；
+- [x] benchmark 可重复；
 - [ ] 至少形成一个 performance-knee hypothesis。
 
 ---

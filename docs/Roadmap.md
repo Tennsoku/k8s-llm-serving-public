@@ -141,7 +141,7 @@ docs/reviews/
 - PagedAttention
 - Continuous Batching
 - Request Scheduler 与 Admission
-- TTFT、ITL、TPOT、E2E Latency
+- TTFT、ITL/TPOT、E2E Latency
 - Request Throughput、Token Throughput、Goodput
 - Warm-up、CUDA Graph、Cold Start
 - Unified Memory 下的模型权重、KV Cache 和系统内存关系

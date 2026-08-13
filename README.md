@@ -141,7 +141,7 @@ Planned 路径按对应 Milestone 落地；本 README 不把目标目录写成�
 | 项目路线与完成标准 | [`docs/Roadmap.md`](docs/Roadmap.md) |
 | 当前 Runtime 学习与 M1 起点 | [`labs/vllm-basics/`](labs/vllm-basics/README.md) |
 | 实验约定 | [`docs/experiments/`](docs/experiments/README.md) |
-| Benchmark 结论 | `benchmarks/reports/` — M1 起逐步落地 |
+| Benchmark 快速查看 / 结论 | [中文 Summary 查看器](benchmarks/reports/benchmark-summary-viewer.html)；M1 baseline report 逐步落地 |
 | Architecture | `docs/architecture/` — planned；当前决策见 [ADR-0001](docs/adr/ADR-0001-dgx-spark-primary-testbed.md) |
 | Control Plane 实现 | `control-plane/` — M5–M7 planned |
 | Observability 实现 | `observability/` — M3 planned；当前输入见 [SLO draft](docs/SLO/inference-service-slo.md) |

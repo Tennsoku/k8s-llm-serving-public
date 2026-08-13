@@ -15,3 +15,9 @@ helper/
 # Interrupted publisher scratch/backup directories (staging may be unsanitized)
 benchmarks/raw-results/m0-platform-qualification/.*.staging.*/
 benchmarks/raw-results/m0-platform-qualification/.*.previous.*/
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd

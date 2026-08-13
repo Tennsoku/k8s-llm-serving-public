@@ -156,3 +156,147 @@ lifecycle_success=true
 
 Both runs must use the same image, model, served name, memory setting, and
 runtime arguments. Unexpected failures remain in their original run directory.
+
+## M1.2b/M1.3 benchmark runner
+
+The canonical host-side runner combines measurement hardening and the
+single-node concurrency sweep:
+
+```text
+start server
+  -> wait ready
+  -> capture run metadata
+  -> capture initial exposition
+  -> warm-up
+  -> wait idle
+  -> start runtime/system samplers
+  -> for every concurrency and repetition:
+       wait idle
+       capture metrics-before.prom
+       run streaming requests
+       wait idle
+       capture metrics-after.prom
+  -> stop samplers
+  -> capture final exposition
+  -> stop server
+  -> validate raw JSONL and derive summaries
+```
+
+The per-repetition exposition boundary is required. A single exposition before
+and after the complete sweep cannot attribute counter or histogram deltas to a
+specific concurrency/repetition. The long-running samplers complement these
+snapshots: gauges such as running requests, waiting requests, KV-cache usage,
+container memory, host memory, and GPU utilization require a time series.
+
+Install the host-side dependencies in the selected Python environment:
+
+```bash
+python3 -m pip install -r serving/vllm/benchmark/requirements-benchmark.txt
+```
+
+Validate the config and expanded sweep without starting Docker:
+
+```bash
+serving/vllm/run-benchmark.sh \
+  --node-label spark-a \
+  --purpose exploratory \
+  --dry-run
+```
+
+The default workload is the measurement run: 1,000 requests for each of 6
+concurrency levels and 3 repetitions, or 18,000 measured requests in total.
+At C1, one repetition can take several minutes because requests are serialized.
+The runner prints each phase and the active client reports
+`completed/planned`, request throughput, and ETA every 10 seconds while also
+retaining that output in the case client log.
+
+Use the smoke workload to validate the complete lifecycle before a full run:
+
+```bash
+serving/vllm/run-benchmark.sh \
+  --config benchmarks/configs/vllm-single-node/benchmark-workload-smoke.yaml \
+  --node-label spark-a \
+  --purpose exploratory \
+  --run-id "$(date -u +%Y%m%dT%H%M%SZ)-m1-smoke"
+```
+
+The smoke workload keeps every configured concurrency but uses 32 requests and
+one repetition. It validates orchestration and evidence production; its output
+is not a substitute for the measurement workload.
+
+Run into a new private directory:
+
+```bash
+serving/vllm/run-benchmark.sh \
+  --node-label spark-a \
+  --purpose canonical \
+  --model-revision <revision-or-snapshot-id> \
+  --run-id "$(date -u +%Y%m%dT%H%M%SZ)-m1-baseline"
+```
+
+Additional runtime flags are passed as array elements and retained in the
+expanded server command:
+
+```bash
+serving/vllm/run-benchmark.sh \
+  --node-label spark-a \
+  --vllm-arg=--disable-prefix-caching
+```
+
+Use a new run ID when changing runtime flags. Do not combine repetitions from
+different server configurations.
+
+### Raw and derived contract
+
+```text
+<run-dir>/
+├── run.yaml
+├── raw/
+│   ├── workload.yaml
+│   ├── requests.jsonl
+│   ├── case-events.jsonl
+│   ├── runtime-samples.jsonl
+│   ├── system-samples.jsonl
+│   ├── exposition/
+│   │   ├── run-initial.prom
+│   │   └── run-after.prom
+│   ├── cases/<case-id>/
+│   │   ├── metrics-before.prom
+│   │   ├── metrics-after.prom
+│   │   ├── idle-before.jsonl
+│   │   ├── idle-after.jsonl
+│   │   └── client logs and exit codes
+│   └── server/
+└── derived/
+    ├── summary.json
+    ├── cases.jsonl
+    └── concurrency-summary.jsonl
+```
+
+`requests.jsonl` records client-observed TTFT, E2E, derived TPOT, final server
+usage, request IDs, and every failure. First generated content is the TTFT
+boundary; HTTP chunk intervals are not called token-level ITL. TPOT is
+`(last_content - first_content) / (output_tokens - 1)` and is null when fewer
+than two output tokens are observed.
+
+Runtime counters and histograms are derived from each case's before/after raw
+Prometheus exposition. `num_preemptions` is reported as an event delta, not as
+a count of unique preempted requests. vLLM average-throughput gauges are
+supporting telemetry; canonical token throughput is derived from request token
+counts and the measured client wall time.
+
+The runtime and system collectors intentionally run on the host. `/metrics` is
+already exposed by the API server, and the host can resolve the container
+cgroup and NVIDIA telemetry. No Dockerfile, collector mount, or file copy into
+the serving image is required. This keeps the digest-pinned runtime independent
+from the benchmark implementation.
+
+On DGX Spark, `gpu_memory_used_mib` may be null because aggregate framebuffer
+memory reporting is unsupported. `gpu_fb_memory_status` distinguishes that
+expected `unsupported` result from a query `error`. The collector separately
+sums NVML per-process memory only for host PIDs in the serving container's
+cgroup as `container_nvml_process_gpu_memory_used_bytes`. This is a
+driver-reported, container-attributed allocation signal, not dedicated VRAM.
+Correlate it with KV-cache usage, container cgroup memory, host
+`MemAvailable`, reclaim/swap counters, and failures; do not reinterpret the
+aggregate framebuffer null as zero.

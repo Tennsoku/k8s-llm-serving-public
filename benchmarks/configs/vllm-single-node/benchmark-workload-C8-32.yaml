@@ -1,0 +1,35 @@
+schema_version: 1
+
+workload:
+  name: m1-concurrency-baseline
+  input_tokens_target: 128
+  prompt: >-
+    Explain how continuous batching, PagedAttention, the request scheduler, and
+    the KV cache interact in an online LLM inference server. Describe the
+    prefill and decode phases, why multiple active requests can improve token
+    throughput, and why queueing and memory pressure can increase time to first
+    token. Distinguish client concurrency from the active batch, explain how
+    queue depth signals saturation, and describe how preemption or recomputation
+    can increase latency without necessarily failing the HTTP request. End by
+    identifying the measurements needed to locate a performance knee. Keep the
+    answer technically precise and do not use a table.
+  max_output_tokens: 64
+  total_requests_per_repetition: 1000
+  request_timeout_seconds: 120
+
+sampling:
+  temperature: 0.0
+  seed: 42
+  stream: true
+  include_usage: true
+
+warmup:
+  requests: 3
+  concurrency: 1
+
+sweep:
+  concurrency: [8, 16, 24, 28, 30, 32]
+  measured_repetitions: 3
+
+metrics:
+  sample_interval_seconds: 1.0

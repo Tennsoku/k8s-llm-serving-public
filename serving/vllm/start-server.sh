@@ -15,13 +15,15 @@ Options:
   -g, --gpu-memory-utilization N    vLLM GPU memory utilization (default: 0.15)
       --served-model-name NAME      Model name exposed by the API
       --dtype DTYPE                 vLLM dtype (default: auto)
+      --enable-request-id-headers   Echo X-Request-Id for benchmark correlation
+      --vllm-arg ARG                Repeatable additional vLLM argument
       --help                        Show this help
 HELP
 }
 
 OPTS="$(getopt \
   -o o:h:p:m:n:i:g: \
-  --long output-dir:,host:,port:,model:,name:,image:,gpu-memory-utilization:,served-model-name:,dtype:,help \
+  --long output-dir:,host:,port:,model:,name:,image:,gpu-memory-utilization:,served-model-name:,dtype:,enable-request-id-headers,vllm-arg:,help \
   -n 'start-server.sh' -- "$@")" || {
   usage >&2
   exit 2
@@ -37,6 +39,8 @@ CONTAINER_NAME="vllm-m1"
 GPU_MEMORY_UTILIZATION="0.15"
 SERVED_MODEL_NAME="qwen2.5-0.5b-instruct"
 DTYPE="auto"
+ENABLE_REQUEST_ID_HEADERS=false
+VLLM_EXTRA_ARGS=()
 
 while true; do
   case "$1" in
@@ -49,6 +53,8 @@ while true; do
     -g|--gpu-memory-utilization) GPU_MEMORY_UTILIZATION="$2"; shift 2 ;;
     --served-model-name) SERVED_MODEL_NAME="$2"; shift 2 ;;
     --dtype) DTYPE="$2"; shift 2 ;;
+    --enable-request-id-headers) ENABLE_REQUEST_ID_HEADERS=true; shift ;;
+    --vllm-arg) VLLM_EXTRA_ARGS+=("$2"); shift 2 ;;
     --help) usage; exit 0 ;;
     --) shift; break ;;
     *) usage >&2; exit 2 ;;
@@ -113,6 +119,13 @@ docker_cmd=(
   --served-model-name "${SERVED_MODEL_NAME}"
   --gpu-memory-utilization "${GPU_MEMORY_UTILIZATION}"
 )
+
+if [[ "${ENABLE_REQUEST_ID_HEADERS}" == true ]]; then
+  docker_cmd+=(--enable-request-id-headers)
+fi
+if (( ${#VLLM_EXTRA_ARGS[@]} > 0 )); then
+  docker_cmd+=("${VLLM_EXTRA_ARGS[@]}")
+fi
 
 date +%s%N >"${OUTPUT_DIR}/server-start-ns.txt"
 date --iso-8601=seconds >"${OUTPUT_DIR}/server-start-time.txt"

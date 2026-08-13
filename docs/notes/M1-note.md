@@ -16,3 +16,36 @@ offline阶段的一些理解扩展：
 
 Online没什么好说的，主要是把serving plane独立出来，建立了三个基础host脚本。
 
+## Metrics 
+
+进入Canonical capture以后逐渐感觉事情变得复杂起来了。runtime/client/system三个环境的数据都要采集，目前的设计的流程是这样的：
+```text
+start server
+    ↓
+wait ready
+    ↓
+capture run metadata
+    ↓
+capture run exposition
+    ↓
+warm-up
+    ↓
+Concurreny levels: 1 2 4 8 16 32 × 3 repetitions
+    ↓
+stop metric sampler
+    ↓
+capture after exposition
+    ↓
+stop server
+    ↓
+derive summary
+```
+
+一开始想着runtime和system的采集都在serving plane上进行了，但是被教育会和vLLM竞争资源，污染benchmark，并且在host上的cgroup和proc指标更准确。想想后续monitoring和profiling也是独立的plane进行，确实是我考虑没到位了。
+
+可能是Spark比较强悍，C16根本摸不到knee，拉个C32跑一下试试看
+
+麻了，拉到128也看不到knee。先往后推吧。
+
+M1.3之前的scope最大问题是一直使用同一个prompt, Prefix Cache Hit高达99.31%。prefill几乎没有压力，KV cache也很难扩展。 E2E在C24的时候接近初版SLO的边界了(500ms)，不过曲线一直很平滑，一直到C128为止还是没有达到Saturation，没有出现明显的knee。后续的scope会使用不同的prompt，增加prefill和KV cache的压力。（Spark果然还是太强了
+
