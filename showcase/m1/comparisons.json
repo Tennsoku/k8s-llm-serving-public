@@ -1,0 +1,112 @@
+{
+  "schema_version": 1,
+  "default_study": "m1.5-max-model-len",
+  "runs": {
+    "m1.4-long-long-canonical": {
+      "label": "M1.4 long-long canonical",
+      "summary_path": "../../benchmarks/raw-results/m1-vllm-baseline/20260814-m1.4-l-l/derived/summary.json",
+      "expected_run_id": "20260814-m1.4-l-l",
+      "expected_config_id": "m1.4-long-long-canonical-v1",
+      "source_status": "published"
+    },
+    "m1.5-max-model-len": {
+      "label": "max_model_len alternate",
+      "summary_path": "../../benchmarks/raw-results/m1-vllm-baseline/20260814-m1.5-ovat-model-len/derived/summary.json",
+      "expected_run_id": "20260814-m1.5-ovat-model-len",
+      "expected_config_id": "m1.5-ovat-max-model-len-v1",
+      "source_status": "published"
+    },
+    "m1.5-max-num-seqs": {
+      "label": "max_num_seqs alternate",
+      "summary_path": "../../benchmarks/raw-results/m1-vllm-baseline/20260814-m1.5-ovat-seq/derived/summary.json",
+      "expected_run_id": "20260814-m1.5-ovat-seq",
+      "expected_config_id": "m1.5-ovat-max-num-seqs-v1",
+      "source_status": "published"
+    },
+    "m1.5-gpu-memory-utilization": {
+      "label": "gpu_memory_utilization alternate",
+      "summary_path": "../../benchmarks/raw-results/m1-vllm-baseline/20260814-m1.5-ovat-gpu/derived/summary.json",
+      "expected_run_id": "20260814-m1.5-ovat-gpu",
+      "expected_config_id": "m1.5-ovat-gpu-memory-utilization-v1",
+      "source_status": "published"
+    },
+    "m1.6-small-baseline": {
+      "label": "Qwen/Qwen2.5-0.5B small-model baseline",
+      "summary_path": "../../benchmarks/raw-results/m1-vllm-baseline/20260814-m1.6-small-baseline/derived/summary.json",
+      "expected_run_id": "20260814-m1.6-small-baseline",
+      "expected_config_id": "m1.6-small-common-v1",
+      "source_status": "published"
+    },
+    "m1.6-medium": {
+      "label": "Qwen/Qwen2.5-7B medium-model candidate",
+      "summary_path": "../../benchmarks/raw-results/m1-vllm-baseline/20260814-m1.6-medium/derived/summary.json",
+      "expected_run_id": "20260814-m1.6-medium",
+      "expected_config_id": "m1.6-medium-v2",
+      "source_status": "published"
+    }
+  },
+  "studies": [
+    {
+      "id": "m1.5-max-model-len",
+      "label": "max_model_len · 8192 → 16384",
+      "stage": "M1.5 runtime OVAT",
+      "status": "reviewed",
+      "policy": "runtime_ovat_v1",
+      "axis": "runtime.max_model_len",
+      "baseline_run": "m1.4-long-long-canonical",
+      "candidate_run": "m1.5-max-model-len",
+      "concurrencies": [8],
+      "metric_set": "m1_core_v1",
+      "expected_changed_paths": ["/runtime/max_model_len"],
+      "analysis_path": "analysis/comparisons/max-model-len.json"
+    },
+    {
+      "id": "m1.5-max-num-seqs",
+      "label": "max_num_seqs · 128 → 4",
+      "stage": "M1.5 runtime OVAT",
+      "status": "reviewed",
+      "policy": "runtime_ovat_v1",
+      "axis": "runtime.max_num_seqs",
+      "baseline_run": "m1.4-long-long-canonical",
+      "candidate_run": "m1.5-max-num-seqs",
+      "concurrencies": [8],
+      "metric_set": "m1_core_v1",
+      "expected_changed_paths": ["/runtime/max_num_seqs"],
+      "analysis_path": "analysis/comparisons/max-num-seqs.json"
+    },
+    {
+      "id": "m1.5-gpu-memory-utilization",
+      "label": "gpu_memory_utilization · 0.15 → 0.50",
+      "stage": "M1.5 runtime OVAT",
+      "status": "reviewed",
+      "policy": "runtime_ovat_v1",
+      "axis": "runtime.gpu_memory_utilization",
+      "baseline_run": "m1.4-long-long-canonical",
+      "candidate_run": "m1.5-gpu-memory-utilization",
+      "concurrencies": [8],
+      "metric_set": "m1_core_v1",
+      "expected_changed_paths": ["/runtime/gpu_memory_utilization"],
+      "analysis_path": "analysis/comparisons/gpu-memory-utilization.json"
+    },
+    {
+      "id": "m1.6-small-medium",
+      "label": "Small → Medium model",
+      "stage": "M1.6 model compatibility",
+      "status": "reviewed",
+      "policy": "model_compatibility_v1",
+      "axis": "model_identity",
+      "baseline_run": "m1.6-small-baseline",
+      "candidate_run": "m1.6-medium",
+      "concurrencies": [1, 8],
+      "metric_set": "m1_compatibility_v1",
+      "expected_changed_paths": [
+        "/model/id",
+        "/model/path",
+        "/model/artifact_revision",
+        "/model/served_name"
+      ],
+      "analysis_path": "analysis/medium-model.json"
+    }
+  ],
+  "templates": []
+}

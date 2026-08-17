@@ -1,0 +1,69 @@
+{
+  "schema_version": 1,
+  "kind": "run_analysis",
+  "showcase_id": "short-long",
+  "status": "reviewed",
+  "takeaway": "60→512-token decode-heavy canonical replay在1/8/16并发下各完成3次，2,304 requests全部成功，实际 output 稳定为 512 tokens/request。预声明C_eff=C8的median output TPS / TTFT p95 / E2E p95 为 1482.39 tok/s / 0.02928秒 / 2.76949秒；C16waiting仍为0，因此C_pressure 在当前tested range内为Unknown。",
+  "operating_references": {
+    "c1": {
+      "status": "observed",
+      "concurrency": 1,
+      "rationale": "C1 baseline。该点3次replay均完整。不作为跨workload通用基线。",
+      "evidence": ["/context/configuration/sweep/reference_points/c1", "/concurrency_summary", "/data_quality/complete_case_count"]
+    },
+    "c_eff": {
+      "status": "observed",
+      "concurrency": 8,
+      "rationale": "Canonical config预声明C_eff=C8，且该点3次replay均完整；它是workload-scoped reference的最佳效率，不代表其他并发没有效率。",
+      "evidence": ["/context/configuration/sweep/reference_points/c_eff", "/concurrency_summary", "/data_quality/complete_case_count"]
+    },
+    "c_pressure": {
+      "status": "unknown",
+      "concurrency": null,
+      "rationale": "预声明replay已完成至C16，三次C16 repetition均无waiting/preemption/failure；当前tested range内设置为Unknown。",
+      "evidence": ["/context/configuration/sweep/reference_points/c_pressure", "/concurrency_summary", "/context/run/stop_reason"]
+    },
+    "highest_tested": {
+      "status": "observed",
+      "concurrency": 16,
+      "rationale": "Canonical config的最高replay point，3次repetition均成功；基本明确不是hard capacity boundary。",
+      "evidence": ["/context/configuration/sweep/reference_points/highest_tested", "/concurrency_summary", "/context/run/last_supported_case"]
+    }
+  },
+  "claims": [
+    {
+      "type": "observed_fact",
+      "text": "9/9 measured cases完整且raw validation passed；2,304 requests全部成功。C1/C8/C16的median output TPS 为 150.83/1482.39/2818.10 tok/s，TTFT p95 为 0.01334/0.02928/0.04290 秒，E2E p95 为 3.40108/2.76949/2.91434 秒，max waiting 均为 0。",
+      "evidence": ["/cases", "/concurrency_summary", "/raw_validation_passed", "/data_quality/complete_case_count"]
+    },
+    {
+      "type": "interpretation",
+      "text": "C16保持固定512-token output、提高throughput且没有直接queue pressure evidence；这支持bounded C_pressure=Unknown。",
+      "evidence": ["/cases", "/concurrency_summary", "/context/configuration/sweep/reference_points", "/context/run/stop_reason"]
+    }
+  ],
+  "limitations": [
+    "Canonical replay只覆盖C1/C8/C16三个设计并发点，不是完整scaling curve。",
+    "C_eff=C8 来自 versioned config 的预声明并已重放，不是自动选点或跨 workload recommendation。"
+  ],
+  "links": [
+    {
+      "id": "canonical-config",
+      "kind": "configuration",
+      "label": "Canonical configuration",
+      "href": "../../../benchmarks/configs/vllm-single-node/m1.4/canonical/short-long.yaml"
+    },
+    {
+      "id": "selection-config",
+      "kind": "method",
+      "label": "Selection configuration",
+      "href": "../../../benchmarks/configs/vllm-single-node/m1.4/selection/short-long.yaml"
+    },
+    {
+      "id": "fixture",
+      "kind": "evidence",
+      "label": "Published evidence directory",
+      "href": "https://github.com/Tennsoku/k8s-llm-serving-public/tree/main/benchmarks/raw-results/m1-vllm-baseline/20260814-m1.4-s-l"
+    }
+  ]
+}

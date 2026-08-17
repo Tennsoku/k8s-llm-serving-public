@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
-"""Run prefill/decode workload shapes and append aggregate results to CSV."""
+"""Run cache-isolated prefill/decode shapes and append aggregates to CSV."""
 
 from __future__ import annotations
 
 import argparse
 import asyncio
 import csv
+import hashlib
 import shutil
 import sys
 import time
@@ -33,6 +34,7 @@ def arguments() -> argparse.Namespace:
     parser.add_argument("--concurrency", type=int, default=8)
     parser.add_argument("--requests", type=int, default=16)
     parser.add_argument("--warmup", type=int, default=1)
+    parser.add_argument("--request-namespace", required=True, help="Unique namespace used to derive per-request vLLM cache_salt values")
     parser.add_argument("--timeout", type=float, default=600.0)
     parser.add_argument("--gpu-index", type=int, default=0)
     parser.add_argument("--sample-interval", type=float, default=0.5)
@@ -40,12 +42,31 @@ def arguments() -> argparse.Namespace:
     return parser.parse_args()
 
 
-async def requests(url: str, payload: dict, count: int, concurrency: int, timeout: float) -> list[RequestResult]:
+def request_payloads(args: argparse.Namespace, case_name: str, phase: str, count: int) -> list[dict]:
+    prompt, max_tokens = CASES[case_name]
+    return [
+        {
+            "model": args.model,
+            "messages": [{"role": "user", "content": prompt}],
+            "cache_salt": hashlib.sha256(
+                f"{args.request_namespace}:{case_name}:{phase}:{index}".encode()
+            ).hexdigest(),
+            "max_tokens": max_tokens,
+            "temperature": 0,
+            "seed": 42,
+        }
+        for index in range(count)
+    ]
+
+
+async def requests(url: str, payloads: list[dict], concurrency: int, timeout: float) -> list[RequestResult]:
     gate = asyncio.Semaphore(concurrency)
-    async def one() -> RequestResult:
+
+    async def one(payload: dict) -> RequestResult:
         async with gate:
             return await asyncio.to_thread(post_chat, url, payload, timeout)
-    return await asyncio.gather(*(one() for _ in range(count)))
+
+    return await asyncio.gather(*(one(payload) for payload in payloads))
 
 
 async def sample_gpu(stop: asyncio.Event, gpu_index: int, interval: float) -> list[tuple[float, float]]:
@@ -72,18 +93,27 @@ async def sample_gpu(stop: asyncio.Event, gpu_index: int, interval: float) -> li
 
 
 async def run_case(args: argparse.Namespace, case_name: str) -> tuple[dict[str, object], list[RequestResult]]:
-    prompt, max_tokens = CASES[case_name]
-    payload = {"model": args.model, "messages": [{"role": "user", "content": prompt}], "max_tokens": max_tokens, "temperature": 0, "seed": 42}
     url = f"{args.base_url.rstrip('/')}/v1/chat/completions"
     if args.warmup:
-        warm = await requests(url, payload, args.warmup, min(args.concurrency, args.warmup), args.timeout)
+        warm = await requests(
+            url,
+            request_payloads(args, case_name, "warmup", args.warmup),
+            min(args.concurrency, args.warmup),
+            args.timeout,
+        )
         if not all(item.successful for item in warm):
             raise RuntimeError(f"warm-up failed for {case_name}: {warm[0].error}")
 
     stop = asyncio.Event()
     sampler = asyncio.create_task(sample_gpu(stop, args.gpu_index, args.sample_interval))
     started = time.perf_counter()
-    results = await requests(url, payload, args.requests, args.concurrency, args.timeout)
+    payloads = request_payloads(args, case_name, "measured", args.requests)
+    results = await requests(
+        url,
+        payloads,
+        args.concurrency,
+        args.timeout,
+    )
     wall = time.perf_counter() - started
     stop.set()
     gpu = await sampler
@@ -103,7 +133,7 @@ async def run_case(args: argparse.Namespace, case_name: str) -> tuple[dict[str, 
         "p99_latency_seconds": f"{percentile(latencies, .99):.6f}",
         "peak_gpu_memory_mb": max((x[0] for x in gpu), default=""),
         "avg_gpu_utilization_percent": f"{sum(x[1] for x in gpu) / len(gpu):.2f}" if gpu else "",
-        "successful_requests": len(good), "failed_requests": len(results) - len(good), "notes": "",
+        "successful_requests": len(good), "failed_requests": len(results) - len(good), "notes": f"prefix_cache_control=True; cache_salt:{','.join(payload['cache_salt'] for payload in payloads)};request_namespace={args.request_namespace}",
     }
     return row, results
 
@@ -112,6 +142,8 @@ async def main() -> int:
     args = arguments()
     if args.concurrency < 1 or args.requests < 1 or args.sample_interval <= 0:
         raise SystemExit("concurrency, requests, and sample interval must be positive")
+    if not args.request_namespace.strip():
+        raise SystemExit("request namespace must not be empty")
     selected = list(CASES) if args.case == "all" else [args.case]
     args.output.parent.mkdir(parents=True, exist_ok=True)
     exists = args.output.exists() and args.output.stat().st_size > 0

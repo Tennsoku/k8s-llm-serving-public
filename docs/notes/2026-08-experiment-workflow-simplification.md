@@ -24,6 +24,12 @@ M0 需要处理两台实体设备的 inventory、SSH/remote execution、IP、MAC
 
 后续 Milestone 不再强制 audit-style canonical packaging，也不默认要求 staging lifecycle、cryptographic sealing、global schema、Git index gate、per-Milestone adapter 或 artifact attestation。若某次实验出现新的特殊风险，再针对该风险增加局部规则。
 
+同样地，revision、ownership label、hash 和 fingerprint 在普通 benchmark
+中只作 evidence matching 与 comparison metadata。非安全 mismatch 应进入
+warning 并由研究者决定是否重跑，不得成为执行、summary 生成或 report
+展示的 eligibility gate。自动停止仅服务于请求/服务生命周期故障及真实的
+硬件、操作安全边界，不以性能指标阈值驱动。
+
 ## M0 legacy handling
 
 M0 historical documentation、raw evidence path 和 tooling 全部保留，不迁移、不删除、不按新约定重写。它们记录 M0 的 closeout 方法和深入审阅依据，但不作为 M1–M10 的标准模板。

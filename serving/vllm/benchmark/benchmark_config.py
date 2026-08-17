@@ -1,17 +1,42 @@
 #!/usr/bin/env python3
-"""Load and validate the M1 single-node benchmark workload contract."""
+"""Load and validate the M1 single-node benchmark configuration."""
 
 from __future__ import annotations
 
 import argparse
+import hashlib
+import json
 from pathlib import Path
 from typing import Any
 
 import yaml
+from jsonschema import Draft202012Validator
+
+
+CONFIG_SCHEMA = (
+    Path(__file__).resolve().parents[3]
+    / "benchmarks/configs/vllm-single-node/benchmark-config.schema.json"
+)
+
+MANAGED_VLLM_ARGUMENTS = {
+    "--dtype",
+    "--enable-request-id-headers",
+    "--generation-config",
+    "--gpu-memory-utilization",
+    "--host",
+    "--max-model-len",
+    "--max-num-seqs",
+    "--model",
+    "--port",
+    "--quantization",
+    "--revision",
+    "--served-model-name",
+    "--tokenizer-revision",
+}
 
 
 class ConfigError(ValueError):
-    """The benchmark workload contract is incomplete or inconsistent."""
+    """The benchmark configuration is incomplete or inconsistent."""
 
 
 def _mapping(value: Any, name: str) -> dict[str, Any]:
@@ -20,95 +45,147 @@ def _mapping(value: Any, name: str) -> dict[str, Any]:
     return value
 
 
-def _positive_int(value: Any, name: str) -> int:
-    if isinstance(value, bool) or not isinstance(value, int) or value < 1:
-        raise ConfigError(f"{name} must be a positive integer")
-    return value
+def render_prompt(config: dict[str, Any]) -> str:
+    """Render the exact prompt without mutating the versioned configuration."""
+    prompt = _mapping(config.get("workload"), "workload").get("prompt")
+    if isinstance(prompt, str):
+        return prompt
+    parts = _mapping(prompt, "workload.prompt")
+    return (
+        str(parts["prefix"])
+        + str(parts["repeated_text"]) * int(parts["repetitions"])
+        + str(parts["suffix"])
+    )
 
 
-def _positive_number(value: Any, name: str) -> float:
-    if isinstance(value, bool) or not isinstance(value, (int, float)) or value <= 0:
-        raise ConfigError(f"{name} must be greater than zero")
-    return float(value)
+def fingerprint(value: Any) -> str:
+    encoded = json.dumps(
+        value,
+        ensure_ascii=False,
+        allow_nan=False,
+        sort_keys=True,
+        separators=(",", ":"),
+    ).encode("utf-8")
+    return hashlib.sha256(encoded).hexdigest()
+
+
+def _validation_location(error: Any) -> str:
+    path = ".".join(str(part) for part in error.absolute_path)
+    return path or "<config>"
 
 
 def load_config(path: Path) -> dict[str, Any]:
     with path.open("r", encoding="utf-8") as handle:
         config = yaml.safe_load(handle)
     root = _mapping(config, "config")
-    if root.get("schema_version") != 1:
-        raise ConfigError("schema_version must be 1")
 
-    workload = _mapping(root.get("workload"), "workload")
-    prompt = workload.get("prompt")
-    if not isinstance(prompt, str) or not prompt.strip():
-        raise ConfigError("workload.prompt must be a non-empty string")
-    _positive_int(workload.get("input_tokens_target"), "workload.input_tokens_target")
-    _positive_int(workload.get("max_output_tokens"), "workload.max_output_tokens")
-    request_count = _positive_int(
-        workload.get("total_requests_per_repetition"),
-        "workload.total_requests_per_repetition",
+    schema = json.loads(CONFIG_SCHEMA.read_text(encoding="utf-8"))
+    errors = sorted(
+        Draft202012Validator(schema).iter_errors(root),
+        key=lambda error: list(error.absolute_path),
     )
-    _positive_number(
-        workload.get("request_timeout_seconds"),
-        "workload.request_timeout_seconds",
-    )
-
-    sampling = _mapping(root.get("sampling"), "sampling")
-    if sampling.get("stream") is not True:
-        raise ConfigError("sampling.stream must be true for TTFT measurement")
-    if sampling.get("include_usage") is not True:
-        raise ConfigError("sampling.include_usage must be true for token accounting")
-    temperature = sampling.get("temperature")
-    if isinstance(temperature, bool) or not isinstance(temperature, (int, float)):
-        raise ConfigError("sampling.temperature must be numeric")
-    if not isinstance(sampling.get("seed"), int):
-        raise ConfigError("sampling.seed must be an integer")
-
-    warmup = _mapping(root.get("warmup"), "warmup")
-    warmup_requests = _positive_int(warmup.get("requests"), "warmup.requests")
-    warmup_concurrency = _positive_int(
-        warmup.get("concurrency"), "warmup.concurrency"
-    )
-    if warmup_concurrency > warmup_requests:
-        raise ConfigError("warmup.concurrency cannot exceed warmup.requests")
-
-    sweep = _mapping(root.get("sweep"), "sweep")
-    concurrencies = sweep.get("concurrency")
-    if not isinstance(concurrencies, list) or not concurrencies:
-        raise ConfigError("sweep.concurrency must be a non-empty list")
-    parsed = [_positive_int(item, "sweep.concurrency[]") for item in concurrencies]
-    if parsed != sorted(set(parsed)):
-        raise ConfigError("sweep.concurrency must be unique and increasing")
-    if max(parsed) > request_count:
-        raise ConfigError(
-            "workload.total_requests_per_repetition must be >= maximum concurrency"
+    if errors:
+        details = "; ".join(
+            f"{_validation_location(error)}: {error.message}"
+            for error in errors[:8]
         )
-    _positive_int(
-        sweep.get("measured_repetitions"), "sweep.measured_repetitions"
-    )
+        if len(errors) > 8:
+            details += f"; ... {len(errors) - 8} more error(s)"
+        raise ConfigError(details)
 
-    metrics = _mapping(root.get("metrics"), "metrics")
-    _positive_number(
-        metrics.get("sample_interval_seconds"),
-        "metrics.sample_interval_seconds",
-    )
+    rendered_prompt = render_prompt(root)
+    if not rendered_prompt.strip():
+        raise ConfigError("workload.prompt renders to an empty string")
+
+    sweep = root["sweep"]
+    concurrencies = sweep["concurrency"]
+    if concurrencies != sorted(set(concurrencies)):
+        raise ConfigError("sweep.concurrency must be unique and increasing")
+    for argument in root["runtime"]["extra_args"]:
+        if any(character.isspace() for character in argument):
+            raise ConfigError(
+                "runtime.extra_args entries are individual argv tokens and cannot contain whitespace"
+            )
+        flag = argument.split("=", 1)[0]
+        if flag in MANAGED_VLLM_ARGUMENTS:
+            raise ConfigError(
+                f"runtime.extra_args must not override managed argument {flag}"
+            )
+
     return root
 
 
 def config_value(config: dict[str, Any], name: str) -> Any:
     paths = {
+        "config-id": ("config_id",),
+        "config-status": ("experiment", "status"),
+        "experiment-step": ("experiment", "step"),
+        "experiment-kind": ("experiment", "kind"),
+        "comparison-group": ("experiment", "comparison_group"),
+        "variant": ("experiment", "variant"),
+        "axis": ("experiment", "axis"),
+        "image": ("runtime", "image"),
+        "model-path": ("model", "path"),
+        "model-artifact-revision": ("model", "artifact_revision"),
+        "model-runtime-revision": ("model", "runtime_revision"),
+        "tokenizer-revision": ("model", "tokenizer_revision"),
+        "served-model-name": ("model", "served_name"),
+        "dtype": ("runtime", "dtype"),
+        "quantization": ("runtime", "quantization"),
+        "generation-config": ("runtime", "generation_config"),
+        "max-model-len": ("runtime", "max_model_len"),
+        "max-num-seqs": ("runtime", "max_num_seqs"),
+        "gpu-memory-utilization": ("runtime", "gpu_memory_utilization"),
+        "container-memory-limit": ("runtime", "container_memory_limit"),
         "request-count": ("workload", "total_requests_per_repetition"),
         "timeout": ("workload", "request_timeout_seconds"),
         "warmup-requests": ("warmup", "requests"),
         "warmup-concurrency": ("warmup", "concurrency"),
         "repetitions": ("sweep", "measured_repetitions"),
         "sample-interval": ("metrics", "sample_interval_seconds"),
+        "ready-timeout": ("orchestration", "ready_timeout_seconds"),
+        "idle-timeout": ("orchestration", "idle_timeout_seconds"),
+        "stop-timeout": ("orchestration", "stop_timeout_seconds"),
+        "stop-on-failure": ("orchestration", "stop_on_failure"),
     }
     current: Any = config
     for key in paths[name]:
         current = current[key]
     return current
+
+
+GET_NAMES = (
+    "config-id",
+    "config-status",
+    "experiment-step",
+    "experiment-kind",
+    "comparison-group",
+    "variant",
+    "axis",
+    "image",
+    "model-path",
+    "model-artifact-revision",
+    "model-runtime-revision",
+    "tokenizer-revision",
+    "served-model-name",
+    "dtype",
+    "quantization",
+    "generation-config",
+    "max-model-len",
+    "max-num-seqs",
+    "gpu-memory-utilization",
+    "container-memory-limit",
+    "request-count",
+    "timeout",
+    "warmup-requests",
+    "warmup-concurrency",
+    "repetitions",
+    "sample-interval",
+    "ready-timeout",
+    "idle-timeout",
+    "stop-timeout",
+    "stop-on-failure",
+)
 
 
 def arguments() -> argparse.Namespace:
@@ -117,34 +194,40 @@ def arguments() -> argparse.Namespace:
     subparsers = parser.add_subparsers(dest="command", required=True)
     subparsers.add_parser("validate")
     get_parser = subparsers.add_parser("get")
-    get_parser.add_argument(
-        "name",
-        choices=[
-            "request-count",
-            "timeout",
-            "warmup-requests",
-            "warmup-concurrency",
-            "repetitions",
-            "sample-interval",
-        ],
-    )
+    get_parser.add_argument("name", choices=GET_NAMES)
     subparsers.add_parser("concurrency")
+    subparsers.add_parser("extra-args")
+    subparsers.add_parser("fingerprint")
     return parser.parse_args()
+
+
+def _print_value(value: Any) -> None:
+    if value is None:
+        print("")
+    elif isinstance(value, bool):
+        print("true" if value else "false")
+    else:
+        print(value)
 
 
 def main() -> int:
     args = arguments()
     try:
         config = load_config(args.config)
-    except (OSError, yaml.YAMLError, ConfigError) as exc:
+    except (OSError, json.JSONDecodeError, yaml.YAMLError, ConfigError) as exc:
         raise SystemExit(f"invalid benchmark config: {exc}") from exc
     if args.command == "validate":
         print("valid=true")
     elif args.command == "get":
-        print(config_value(config, args.name))
-    else:
+        _print_value(config_value(config, args.name))
+    elif args.command == "concurrency":
         for value in config["sweep"]["concurrency"]:
             print(value)
+    elif args.command == "extra-args":
+        for value in config["runtime"]["extra_args"]:
+            print(value)
+    else:
+        print(fingerprint(config))
     return 0
 
 

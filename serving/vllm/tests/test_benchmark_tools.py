@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import copy
 import io
 import json
 import sys
@@ -8,15 +9,16 @@ import unittest
 from contextlib import redirect_stderr
 from pathlib import Path
 
+import yaml
 from jsonschema import Draft202012Validator
 
-SERVING_DIR = Path(__file__).resolve().parents[1]
-VLLM_DIR = SERVING_DIR / "vllm"
-REPO_ROOT = SERVING_DIR.parents[1]
-sys.path.insert(0, str(VLLM_DIR))
+VLLM_DIR = Path(__file__).resolve().parents[1]
+BENCHMARK_DIR = VLLM_DIR / "benchmark"
+REPO_ROOT = VLLM_DIR.parents[1]
+sys.path.insert(0, str(BENCHMARK_DIR))
 
-from benchmark_client import report_progress  # noqa: E402
-from benchmark_config import load_config  # noqa: E402
+from benchmark_client import derive_cache_salt, report_progress  # noqa: E402
+from benchmark_config import ConfigError, fingerprint, load_config, render_prompt  # noqa: E402
 import benchmark_utils as benchmark_utils_module  # noqa: E402
 from benchmark_utils import (  # noqa: E402
     measure_request,
@@ -30,6 +32,7 @@ from metrics_utils import (  # noqa: E402
     semantic_counter_delta,
     snapshot_semantics,
 )
+from summary_context import case_contract_fingerprint  # noqa: E402
 
 
 BEFORE = """# TYPE vllm:num_preemptions_total counter
@@ -71,15 +74,21 @@ class BenchmarkToolTests(unittest.TestCase):
             REPO_ROOT
             / "benchmarks/configs/vllm-single-node/benchmark-workload.yaml"
         )
+        self.assertEqual(config["schema_version"], 2)
         self.assertEqual(config["sweep"]["concurrency"][:5], [1, 2, 4, 8, 16])
+        self.assertEqual(config["runtime"]["max_model_len"], 8192)
+        self.assertEqual(config["runtime"]["max_num_seqs"], 128)
+        self.assertEqual(
+            config["workload"]["cache_identity"]["mode"], "request_unique"
+        )
         self.assertTrue(config["sampling"]["stream"])
         self.assertTrue(config["sampling"]["include_usage"])
 
         smoke = load_config(
             REPO_ROOT
-            / "benchmarks/configs/vllm-single-node/benchmark-workload-smoke.yaml"
+            / "benchmarks/configs/vllm-single-node/benchmark-smoke.yaml"
         )
-        self.assertEqual(smoke["workload"]["total_requests_per_repetition"], 32)
+        self.assertEqual(smoke["workload"]["total_requests_per_repetition"], 4)
         self.assertEqual(smoke["sweep"]["measured_repetitions"], 1)
 
     def test_progress_reports_completion_rate_and_eta(self) -> None:
@@ -239,7 +248,12 @@ vllm:time_to_first_token_seconds_count{model_name="model"} 4
 
     def test_json_schemas_are_valid(self) -> None:
         schema_dir = REPO_ROOT / "benchmarks/configs/vllm-single-node"
-        for path in schema_dir.glob("*.schema.jsonl"):
+        paths = [
+            *schema_dir.glob("*.schema.json"),
+            *schema_dir.glob("*.schema.jsonl"),
+        ]
+        self.assertTrue(paths)
+        for path in paths:
             schema = json.loads(path.read_text(encoding="utf-8"))
             Draft202012Validator.check_schema(schema)
 
@@ -354,6 +368,117 @@ vllm:time_to_first_token_seconds_count{model_name="model"} 4
                 30,
             )
 
+
+
+class BenchmarkConfigV2Tests(unittest.TestCase):
+    def setUp(self) -> None:
+        self.config_path = (
+            REPO_ROOT
+            / "benchmarks/configs/vllm-single-node/ref/smoke.yaml"
+        )
+        self.config = load_config(self.config_path)
+
+    def test_all_reference_configs_validate(self) -> None:
+        root = REPO_ROOT / "benchmarks/configs/vllm-single-node/ref"
+        paths = sorted(root.rglob("*.yaml"))
+        self.assertEqual(len(paths), 15)
+        for path in paths:
+            with self.subTest(path=path):
+                self.assertEqual(load_config(path)["schema_version"], 2)
+
+    def test_unknown_key_and_managed_extra_argument_are_rejected(self) -> None:
+        for mutation in ("unknown", "managed", "transport", "whitespace"):
+            with self.subTest(mutation=mutation), tempfile.TemporaryDirectory() as temporary:
+                candidate = copy.deepcopy(self.config)
+                if mutation == "unknown":
+                    candidate["runtime"]["max_num_seq"] = 1
+                elif mutation == "managed":
+                    candidate["runtime"]["extra_args"] = [
+                        "--max-num-seqs=1"
+                    ]
+                elif mutation == "transport":
+                    candidate["runtime"]["extra_args"] = ["--port=8001"]
+                else:
+                    candidate["runtime"]["extra_args"] = [
+                        "--max-num-seqs 1"
+                    ]
+                path = Path(temporary) / "config.yaml"
+                path.write_text(
+                    yaml.safe_dump(candidate, sort_keys=False),
+                    encoding="utf-8",
+                )
+                with self.assertRaises(ConfigError):
+                    load_config(path)
+
+    def test_structured_prompt_and_fingerprint_are_stable(self) -> None:
+        prompt = render_prompt(self.config)
+        self.assertEqual(
+            prompt,
+            "Explain PagedAttention in one sentence. " * 3,
+        )
+        reordered = dict(reversed(list(self.config.items())))
+        self.assertEqual(fingerprint(self.config), fingerprint(reordered))
+
+    def test_cache_salt_is_request_unique_and_deterministic(self) -> None:
+        derivation = "sha256-run-case-phase-index-v1"
+        first = derive_cache_salt("run", "case", "measured", 1, derivation)
+        repeated = derive_cache_salt("run", "case", "measured", 1, derivation)
+        second = derive_cache_salt("run", "case", "measured", 2, derivation)
+        warmup = derive_cache_salt("run", "case", "warmup", 1, derivation)
+        self.assertEqual(first, repeated)
+        self.assertEqual(len({first, second, warmup}), 3)
+        self.assertRegex(first, r"^[0-9a-f]{64}$")
+
+    def test_ovat_templates_change_one_runtime_axis(self) -> None:
+        root = REPO_ROOT / "benchmarks/configs/vllm-single-node/ref"
+        baseline = load_config(root / "m1.4/canonical/short-long.yaml")
+        runtime_baseline = baseline["runtime"]
+        controls = (
+            "model",
+            "workload",
+            "sampling",
+            "warmup",
+            "metrics",
+            "orchestration",
+        )
+        for path in sorted((root / "m1.5/ovat").glob("*.yaml")):
+            alternate = load_config(path)
+            with self.subTest(path=path):
+                axis = alternate["experiment"]["axis"].removeprefix("runtime.")
+                changed = {
+                    key
+                    for key in runtime_baseline
+                    if runtime_baseline[key] != alternate["runtime"][key]
+                }
+                self.assertEqual(changed, {axis})
+                for control in controls:
+                    self.assertEqual(baseline[control], alternate[control])
+                self.assertEqual(
+                    case_contract_fingerprint(baseline, 8),
+                    case_contract_fingerprint(alternate, 8),
+                )
+
+    def test_model_templates_hold_non_model_controls_fixed(self) -> None:
+        root = REPO_ROOT / "benchmarks/configs/vllm-single-node/ref/m1.6"
+        small = load_config(root / "small-common.yaml")
+        medium = load_config(root / "medium.yaml")
+        for control in (
+            "runtime",
+            "workload",
+            "sampling",
+            "warmup",
+            "sweep",
+            "metrics",
+            "orchestration",
+        ):
+            with self.subTest(control=control):
+                self.assertEqual(small[control], medium[control])
+        self.assertNotEqual(small["model"], medium["model"])
+        for concurrency in small["sweep"]["concurrency"]:
+            self.assertEqual(
+                case_contract_fingerprint(small, concurrency),
+                case_contract_fingerprint(medium, concurrency),
+            )
 
 class StreamingMeasurementTests(unittest.IsolatedAsyncioTestCase):
     async def test_measure_request_consumes_stream_and_usage(self) -> None:

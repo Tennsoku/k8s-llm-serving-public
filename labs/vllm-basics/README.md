@@ -1,278 +1,50 @@
 # vLLM Basics Labs
 
-> **Implementation status:** Labs 0–4 are implemented in the module directories below. Start with [Lab 0](lab0-environment/README.md), then proceed in numeric order. Each lab README contains exact steps, expected behavior, submission artifacts, pass/revise criteria, and a human-review prompt. Result CSV files contain headers only until a learner runs the experiments; no benchmark values are fabricated.
+Labs 0–4 **已完成**。这个模块的目的不是"跑起一个 OpenAI 兼容端点"，而是通过五个受控实验搞清 vLLM 的执行路径——模型怎么加载、请求怎么调度、KV Cache 怎么管理、不同 workload shape 为什么产生不同压力。
 
-## Quick navigation
+M1 的正式 benchmark（[结果](../../README.md#results-at-a-glance)）建立在这五个实验的结论之上。
 
-| Lab | Step guide | Primary executable | Submission notes |
-|---|---|---|---|
-| 0 — Environment | [Guide](lab0-environment/README.md) | `commands/verify-environment.sh` | [Environment evidence](lab0-environment/environment.md) |
-| 1 — Offline inference | [Guide](lab1-offline-inference/README.md) | `offline_inference.py` | [Observations](lab1-offline-inference/observations.md) |
-| 2 — Online serving | [Guide](lab2-online-serving/README.md) | `commands/start-server.sh` | [Observations](lab2-online-serving/observations.md) |
-| 3 — Concurrency | [Guide](lab3-concurrency/README.md) | `concurrent_client.py` | [Review notes](lab3-concurrency/results/observations.md) |
-| 4 — Workload analysis | [Guide](lab4-workload-analysis/README.md) | `run_workloads.py` | [Review notes](lab4-workload-analysis/results/observations.md) |
+## 各 Lab 建立了什么
 
-Run all commands from `labs/vllm-basics/` unless a guide says otherwise. The executable defaults share the served model name `Qwen/Qwen2.5-0.5B-Instruct`.
+| Lab | 建立的结论 | 产出 |
+|---|---|---|
+| **0 — 环境** | 固定 M1 的 runtime 身份：镜像 digest、vLLM/PyTorch/CUDA 版本、model revision。明确哪些环境事实继承自 M0，不重复 qualification | [环境记录](lab0-environment/environment.md) |
+| **1 — Offline inference** | 绕过 HTTP 层，直接用 Python API 区分 **model initialization 成本**与 **execution 成本**；观察多 prompt 是否一起进入 engine | [观察](lab1-offline-inference/observations.md) |
+| **2 — Online serving** | 区分 **server startup latency**（模型加载 → ready）与 **TTFT**（ready 后的排队 + prefill）。确立 failure path 的 HTTP 行为；服务生命周期与 benchmark 客户端生命周期分离 | [观察](lab2-online-serving/observations.md) |
+| **3 — 并发基线** | C1–C16 下 throughput 与 latency 同时上升的机制；确认 **client concurrency ≠ vLLM active batch**；RPS 不足以描述 LLM 容量 | [观察](lab3-concurrency/results/observations.md) |
+| **4 — Workload shape** | 固定 C8 对比四种 in/out 形态，为 M1.4 的逐 workload 选点产出四个 hypothesis；首次引入 per-request `cache_salt` 做 cache identity 隔离 | [观察](lab4-workload-analysis/results/observations.md) |
 
-This module establishes a practical and conceptual foundation for using **vLLM as an LLM inference runtime and serving engine**.
+Lab 3 之后才冻结正式的测量契约（M1.2b），Lab 4 之后才为每种 workload 单独选并发点。**先建立能力，再固定契约，最后才下结论。**
 
-The purpose is not merely to start an OpenAI-compatible endpoint. Each lab is designed to produce repeatable evidence about how vLLM loads models, schedules requests, manages KV Cache, exposes inference APIs, and behaves under different workloads.
+## 核心机制
 
-This module serves as the baseline for later work in:
+五个概念决定了后续所有测量口径：
 
-- Kubernetes-based inference deployment
-- GPU resource management
-- Observability and benchmarking
-- Autoscaling and admission control
-- KV Cache-aware scheduling
-- Multi-runtime comparisons
-- Custom AI infrastructure operators
+- **Prefill** — 一次处理全部 prompt token，为每层每个 token 写入 K/V。因此长输入的代价集中在首 token 之前，是一次性的。
+- **Decode** — 每轮只处理一个新 token，读取已有 KV 并追加。因此长输出的代价随输出长度线性累积，与长输入的压力形态不同。
+- **KV Cache** — 占用 ≈ sequence length × concurrency。这是容量问题的来源：单请求很小，但并发下会成为主要内存消耗。
+- **PagedAttention** — 解决的是 KV Cache 的**内存管理**问题（分块分配、消除外部碎片、支持共享），不是注意力计算本身的加速。
+- **Continuous Batching** — 请求随时加入和离开正在执行的 batch，不等整批完成。这是 decode-heavy 负载能接近线性扩展、而 prefill-heavy 不能的直接原因（见 [README](../../README.md#1-prefill-与-decode-的成本结构完全不同)）。
 
----
+## 运行
 
-## 1. Learning Objectives
+所有命令从 `labs/vllm-basics/` 执行，默认 served model 为 `Qwen/Qwen2.5-0.5B-Instruct`。
 
-After completing this module, the learner should be able to:
+| Lab | 入口 |
+|---|---|
+| 0 | `lab0-environment/commands/verify-environment.sh` |
+| 1 | `lab1-offline-inference/offline_inference.py` |
+| 2 | `lab2-online-serving/commands/start-server.sh` |
+| 3 | `lab3-concurrency/concurrent_client.py` |
+| 4 | `lab4-workload-analysis/run_workloads.py` |
 
-1. Explain where vLLM sits within an AI inference platform.
-2. Distinguish model execution, inference serving, orchestration, and application layers.
-3. Explain the difference between prefill and decode workloads.
-4. Describe how KV Cache affects inference memory consumption and concurrency.
-5. Explain the purpose of PagedAttention and continuous batching.
-6. Run vLLM in offline inference and online serving modes.
-7. Invoke vLLM through an OpenAI-compatible API.
-8. Generate concurrent inference traffic.
-9. Measure baseline latency, throughput, GPU utilization, and memory usage.
-10. Document reproducible benchmark conditions and observations.
-11. Identify the next bottleneck to investigate before moving into Kubernetes deployment.
+可复用的正式 pipeline 在 [`serving/vllm/`](../../serving/vllm/)——labs 是学习实现，不是生产路径。
 
 ---
 
-## 2. Scope
+# 附录 — 各 Lab 规格
 
-This module focuses on **single-node, single-runtime vLLM fundamentals**.
-
-Included:
-
-- Local environment validation
-- vLLM installation
-- Offline inference
-- OpenAI-compatible serving
-- Streaming and non-streaming requests
-- Basic concurrency testing
-- GPU and memory observation
-- Workload comparison
-- Baseline result collection
-
-Deferred to later modules:
-
-- Kubernetes deployment
-- Tensor parallelism
-- Pipeline parallelism
-- Multi-node serving
-- Distributed execution
-- Production gateways
-- Authentication and rate limiting
-- Prometheus and Grafana integration
-- Autoscaling
-- Prefix caching experiments
-- Chunked prefill tuning
-- Quantization comparisons
-- Speculative decoding
-- vLLM versus SGLang or TensorRT-LLM benchmarking
-
----
-
-## 3. vLLM in the Serving Stack
-
-vLLM is an inference runtime and serving engine.
-
-```text
-Client / Agent / Application
-            |
-            v
-API Gateway or Model Router
-            |
-            v
-OpenAI-Compatible Inference API
-            |
-            v
-          vLLM
-   ┌────────┴────────┐
-   │ Request Scheduler
-   │ KV Cache Manager
-   │ Model Executor
-   │ Sampling Engine
-   └────────┬────────┘
-            |
-            v
-       GPU / Accelerator
-```
-
-vLLM is responsible for:
-
-- Loading model weights
-- Tokenizing and scheduling inference requests
-- Executing prefill and decode operations
-- Managing KV Cache
-- Applying batching and memory-management policies
-- Sampling output tokens
-- Returning generated output
-- Exposing inference APIs and runtime metrics
-
-vLLM is not responsible for the complete production platform.
-
-A production AI inference platform usually also requires:
-
-- API gateway
-- Authentication and authorization
-- Rate limiting
-- Tenant isolation
-- Request routing
-- Model registry
-- Deployment orchestration
-- Health management
-- Autoscaling
-- Monitoring and alerting
-- Cost accounting
-- Canary deployment
-- Failure recovery
-
----
-
-## 4. Core Concepts
-
-### 4.1 Prefill
-
-During prefill, the model processes the input prompt and creates the initial KV Cache.
-
-Typical characteristics:
-
-- Processes many input tokens in parallel
-- Strongly affected by prompt length
-- Often more compute-intensive
-- Major contributor to Time to First Token
-- Long prompts can consume a large scheduling budget
-
-### 4.2 Decode
-
-During decode, the model generates output one token at a time.
-
-Typical characteristics:
-
-- Adds one or a small number of tokens per iteration
-- Repeatedly reads model weights and KV Cache
-- Often constrained by memory bandwidth
-- Major contributor to inter-token latency
-- Long outputs increase total decode workload
-
-### 4.3 KV Cache
-
-KV Cache stores previously computed attention Key and Value tensors so that earlier tokens do not need to be recomputed for every generated token.
-
-Its memory consumption grows approximately with:
-
-```text
-Concurrent Sequences
-× Sequence Length
-× Transformer Layers
-× KV Heads
-× Head Dimension
-× Data Type Size
-```
-
-KV Cache therefore directly influences:
-
-- Maximum active concurrency
-- Maximum context length
-- GPU memory pressure
-- Request admission
-- Preemption behavior
-- Throughput under load
-
-### 4.4 PagedAttention
-
-PagedAttention organizes KV Cache into fixed-size blocks rather than requiring one large contiguous allocation per sequence.
-
-This improves:
-
-- Memory utilization
-- Allocation flexibility
-- Fragmentation behavior
-- Dynamic request growth
-- Potential prefix sharing
-- Effective batch capacity
-
-PagedAttention primarily optimizes KV Cache memory organization. It does not remove the fundamental computational cost of Transformer attention.
-
-### 4.5 Continuous Batching
-
-Traditional static batching groups requests into a fixed batch and processes them together until completion.
-
-Continuous batching performs scheduling at inference-iteration granularity.
-
-At each iteration, the runtime may:
-
-- Remove completed sequences
-- Admit new requests
-- Continue active decode requests
-- Process prefill work
-- Adjust the active batch according to token and memory budgets
-
-This is important because LLM requests have variable arrival times, prompt lengths, and output lengths.
-
----
-
-## 5. Lab Structure
-
-Recommended repository layout:
-
-```text
-ai-inference-platform/
-└── labs/
-    └── vllm-basics/
-        ├── README.md
-        ├── lab0-environment/
-        │   ├── README.md
-        │   ├── environment.md
-        │   └── commands/
-        │       ├── verify-environment.sh
-        │       └── install-vllm.sh
-        ├── lab1-offline-inference/
-        │   ├── README.md
-        │   ├── offline_inference.py
-        │   └── observations.md
-        ├── lab2-online-serving/
-        │   ├── README.md
-        │   ├── commands/
-        │   │   ├── start-server.sh
-        │   │   └── curl-examples.sh
-        │   └── observations.md
-        ├── lab3-concurrency/
-        │   ├── README.md
-        │   ├── concurrent_client.py
-        │   ├── requirements.txt
-        │   └── results/
-        │       ├── baseline.csv
-        │       └── observations.md
-        ├── lab4-workload-analysis/
-        │   ├── README.md
-        │   ├── workload_cases.md
-        │   ├── run_workloads.py
-        │   └── results/
-        │       ├── workload-results.csv
-        │       └── observations.md
-        └── shared/
-            ├── prompts/
-            ├── schemas/
-            └── scripts/
-```
-
-The original compact structure is workable, but separating offline inference, online serving, concurrency testing, and workload analysis makes each experiment easier to reproduce and review.
-
-In particular, `start-server.sh` and `curl-examples.sh` belong under the online-serving lab rather than the environment lab.
-
----
+以下是执行时使用的 lab 规格（目标、步骤、验收标准、复盘问题）。作为**执行记录**保留，不是当前阅读路径。
 
 # Lab 0 — Environment Validation
 
@@ -589,11 +361,11 @@ timestamp,model,concurrency,request_count,successful_requests,failed_requests,wa
 
 ---
 
-# Lab 4 — Workload Shape Analysis
+# Lab 4 — Fixed-C8 Workload Shape Analysis
 
 ## Objective
 
-Compare prefill-heavy, decode-heavy, and mixed workloads.
+Compare four prefill/decode workload candidates once at C8 with request-level cache identity isolation. This lab does not search for saturation or capacity. Follow the executable [Lab 4 manual](lab4-workload-analysis/README.md).
 
 ## Workload Cases
 
@@ -636,7 +408,7 @@ Concurrency: 8
 Purpose:
 
 - Create a prefill-heavy workload
-- Observe TTFT sensitivity
+- Form a TTFT/prefill hypothesis for later streaming validation
 - Compare prompt-processing cost
 
 ### Case D — Long Input, Long Output
@@ -665,12 +437,8 @@ For each case, record:
 - Request throughput
 - Input-token throughput
 - Output-token throughput
-- GPU utilization
-- GPU memory usage
 - Failure count
-- OOM occurrence
-- Service stability
-- Qualitative scheduling observations
+- Optional supporting telemetry or an explicit unsupported/not-collected note
 
 ## Recommended CSV Schema
 
@@ -680,23 +448,23 @@ timestamp,case_name,model,concurrency,request_count,input_tokens_per_request,out
 
 ## Acceptance Criteria
 
-- All four workload cases are executed.
+- All four workload cases are executed once at C8.
 - Prompt and output sizes are documented.
 - Results are stored in machine-readable form.
-- GPU memory and utilization are observed.
+- The pinned API accepts the cache-isolation field; optional telemetry is not a pass gate.
 - At least one bottleneck hypothesis is written for each case.
 - The learner distinguishes prefill-heavy and decode-heavy behavior.
 
 ## Review Questions
 
-1. Which case produces the highest TTFT?
+1. Which case produces the highest client-side E2E latency?
 2. Which case produces the highest total latency?
 3. Which case places the greatest pressure on KV Cache?
 4. Which case appears most compute-bound?
 5. Which case appears most memory-bandwidth-bound?
 6. Does high GPU utilization necessarily imply good service quality?
-7. At what point does concurrency stop improving useful throughput?
-8. Which additional metric is required before making capacity decisions?
+7. Which signal should M1.4 use to bracket each workload?
+8. What cannot be concluded from one non-streaming C8 point?
 
 ---
 

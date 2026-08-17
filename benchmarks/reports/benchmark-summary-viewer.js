@@ -12,11 +12,35 @@
     runtime_samples: "Runtime samples",
     system_samples: "System samples"
   };
+  const QUERY = new URLSearchParams(window.location.search);
+  const VIEWER_MODE = QUERY.get("mode") === "embedded" ? "embedded" : "standalone";
+  const IS_EMBEDDED = VIEWER_MODE === "embedded";
+  const HOST_TOKEN = QUERY.get("host_token");
+  document.documentElement.dataset.viewerMode = VIEWER_MODE;
 
   let model = null;
   let selectedConcurrencyValue = null;
 
   const byId = id => document.getElementById(id);
+
+  function notifyHost(type, detail = {}) {
+    if (
+      !IS_EMBEDDED ||
+      window.parent === window ||
+      !["http:", "https:"].includes(window.location.protocol)
+    ) return;
+    try {
+      window.parent.postMessage({
+        source: "benchmark-summary-viewer",
+        version: 1,
+        hostToken: HOST_TOKEN,
+        type,
+        detail
+      }, window.location.origin);
+    } catch {
+      return;
+    }
+  }
 
   function setText(id, value) {
     byId(id).textContent = value == null ? "—" : String(value);
@@ -313,6 +337,39 @@
     };
   }
 
+  function normalizeSelectionAnalysis(value) {
+    if (!isObject(value) || value.interpretation !== "annotations_only") return null;
+    const pointsByConcurrency = new Map();
+    if (Array.isArray(value.points)) {
+      for (const point of value.points) {
+        if (!isObject(point)) continue;
+        const concurrency = finite(point.concurrency);
+        if (concurrency !== null) pointsByConcurrency.set(concurrency, point);
+      }
+    }
+    return {
+      criteria: isObject(value.criteria) ? value.criteria : {},
+      baselineConcurrency: finite(value.baseline_concurrency),
+      pointsByConcurrency
+    };
+  }
+
+  function selectionNotes(group) {
+    const point = group.selection;
+    if (!isObject(point)) return [];
+    const notes = [];
+    if (point.throughput_below_floor === true) notes.push("marginal below floor");
+    const latency = Array.isArray(point.latency)
+      ? point.latency.filter(item => isObject(item) && item.above_ceiling === true)
+      : [];
+    if (latency.length) notes.push(`${latency.map(item => item.metric).join("/")} above ceiling`);
+    const indicators = Array.isArray(point.pressure_indicators)
+      ? point.pressure_indicators.filter(item => isObject(item) && item.matched === true)
+      : [];
+    if (indicators.length) notes.push(`${indicators.map(item => item.metric).join("/")} observed`);
+    return notes;
+  }
+
   function validateAndNormalize(data, sourceName) {
     if (!isObject(data)) throw new Error("summary.json 顶层必须是 JSON object。");
     const schemaVersion = finite(data.schema_version);
@@ -320,8 +377,8 @@
       const observed = data.schema_version == null ? "未记录" : String(data.schema_version);
       throw new Error(`当前页面只支持 summary schema v1 / v2；收到 ${observed}。`);
     }
-    if (!Array.isArray(data.cases) || data.cases.length === 0) {
-      throw new Error("summary.json 缺少非空 cases[]，无法建立并发对比。");
+    if (!Array.isArray(data.cases)) {
+      throw new Error("summary.json 缺少 cases[]。");
     }
 
     const grouped = new Map();
@@ -339,6 +396,10 @@
     const groups = [...grouped.entries()]
       .map(([concurrency, cases]) => aggregateGroup(concurrency, cases))
       .sort((left, right) => left.concurrency - right.concurrency);
+    const selectionAnalysis = normalizeSelectionAnalysis(data.selection_analysis);
+    for (const group of groups) {
+      group.selection = selectionAnalysis?.pointsByConcurrency.get(group.concurrency) ?? null;
+    }
     const allCases = groups.flatMap(group => group.cases);
     const completeCases = allCases.filter(item => item.measurement_complete === true);
     const health = {
@@ -383,6 +444,8 @@
       health,
       actualShape,
       prefix,
+      context: isObject(data.context) ? data.context : null,
+      selectionAnalysis,
       raw: data,
       analysis: null,
       qualityState: "good"
@@ -546,9 +609,29 @@
     appendChip(container, `schema v${model.schemaVersion}`);
     appendChip(container, formatDate(model.generatedAt));
     appendChip(container, model.sourceName);
+    if (model.selectionAnalysis) {
+      const criteria = model.selectionAnalysis.criteria;
+      const floor = finite(criteria.throughput_marginal_floor_ratio);
+      const ceiling = finite(criteria.latency_multiplier_ceiling);
+      appendChip(container, "selection criteria", "chip-accent");
+      if (floor !== null) appendChip(container, `slope floor ${formatRatio(floor, 1)}`);
+      if (ceiling !== null) appendChip(container, `latency ceiling ${formatNumber(ceiling, 1)}×`);
+    }
     if (model.prefix.median !== null && model.prefix.median >= 0.9) {
       appendChip(container, `Prefix cache token hit ${formatRatio(model.prefix.median)}`, "chip-warn");
     }
+  }
+
+  function renderScopeNote() {
+    const note = byId("scopeNoteText");
+    const prefix = createElement("strong", "", "当前页面只做本 run 内对比。");
+    const configuration = model.context?.configuration;
+    const hasConfigurationContext = isObject(configuration) &&
+      Object.keys(configuration).length > 0;
+    const detail = hasConfigurationContext
+      ? " enriched summary 包含 configuration context；viewer 仍不会自动判定跨 run 可比性。"
+      : " 这是未带自包含 context 的 legacy summary；跨 run 解读仍需 companion run.yaml。";
+    note.replaceChildren(prefix, document.createTextNode(detail));
   }
 
   function renderQualityBanner() {
@@ -558,7 +641,10 @@
     const complete = `${health.completeCases}/${health.totalCases} case 采集完整`;
     const requestResult = `${formatCount(health.successful)}/${formatCount(health.requests)} 请求成功`;
 
-    if (model.qualityState === "good") {
+    if (health.totalCases === 0) {
+      setText("qualityTitle", "run 在 measured case 前结束");
+      setText("qualityBadge", "仅展示 lifecycle / context");
+    } else if (model.qualityState === "good") {
       setText("qualityTitle", "结构校验与采集状态完整");
       setText("qualityBadge", "可进入趋势阅读");
     } else if (model.qualityState === "warn") {
@@ -578,8 +664,15 @@
     const analysis = model.analysis;
     const minimum = groups[0]?.concurrency;
     const maximum = groups.at(-1)?.concurrency;
-    setText("testedRangeValue", minimum === maximum ? `C${formatNumber(minimum)}` : `C${formatNumber(minimum)} → C${formatNumber(maximum)}`);
-    setText("testedRangeSub", `${groups.length} 个档位 · ${model.health.totalCases} repetitions/cases`);
+    setText(
+      "testedRangeValue",
+      groups.length
+        ? (minimum === maximum ? `C${formatNumber(minimum)}` : `C${formatNumber(minimum)} → C${formatNumber(maximum)}`)
+        : "无 measured case"
+    );
+    setText("testedRangeSub", groups.length
+      ? `${groups.length} 个档位 · ${model.health.totalCases} repetitions/cases`
+      : "仅保留 lifecycle / context evidence");
 
     if (analysis.peak) {
       setText("peakThroughputValue", formatNumber(analysis.peak.metrics.outputTps.median, 0));
@@ -604,9 +697,12 @@
       const left = analysis.previousHealthy ? `C${analysis.previousHealthy.concurrency}` : "首个测试点之前";
       setText("capacityValue", `${left} – C${analysis.failureGroup.concurrency}`);
       setText("capacitySub", "观察到失败/OOM/timeout 的区间；不是自动容量结论");
-    } else {
+    } else if (groups.length) {
       setText("capacityValue", "未触达");
       setText("capacitySub", `测试到 C${maximum} 未见失败、timeout 或 OOM`);
+    } else {
+      setText("capacityValue", "未建立");
+      setText("capacitySub", "没有 measured case，查看 lifecycle stop_reason");
     }
 
     const input = finite(model.actualShape.input);
@@ -654,10 +750,14 @@
       const left = analysis.previousHealthy ? `最后健康点 C${analysis.previousHealthy.concurrency}` : "缺少更低的健康点";
       setText("capacityInsightTitle", `失败信号首次出现在 C${group.concurrency}`);
       setText("capacityInsightBody", `${left}；C${group.concurrency} 记录 failed ${formatCount(group.counts.failed)}、timeout ${formatCount(group.counts.timeouts)}、OOM ${formatCount(group.counts.cgroupOom)}、OOM kill ${formatCount(group.counts.cgroupOomKill)}。需要结合原始日志确认是否构成容量边界。`);
-    } else {
+    } else if (model.groups.length) {
       const maximum = model.groups.at(-1)?.concurrency;
       setText("capacityInsightTitle", `容量边界未在 C${maximum} 以内触达`);
       setText("capacityInsightBody", `未记录 request failure、timeout、cgroup OOM/OOM kill。最高成功并发只是当前测试上界，不是容量边界；需要继续施压或改变 context/model shape。${incompleteSuffix}`);
+    } else {
+      const stopReason = model.context?.run?.stop_reason ?? "未记录";
+      setText("capacityInsightTitle", "没有 measured case 可用于容量判断");
+      setText("capacityInsightBody", `run stop_reason：${stopReason}。本页只展示 lifecycle/context，不从零 case 推导 knee 或容量边界。`);
     }
   }
 
@@ -912,7 +1012,16 @@
       if (!group.trendEligible) row.classList.add("is-incomplete");
 
       const status = group.trendEligible ? "参与趋势" : "不完整，排除出趋势";
-      row.append(createCell(`C${group.concurrency}`, group.concurrency === trendConcurrency ? `${status} · 收益递减提示` : status, group.concurrency === trendConcurrency ? "cell-warn" : ""));
+      const configuredNotes = selectionNotes(group);
+      const rowNotes = [
+        group.concurrency === trendConcurrency ? "viewer 收益递减提示" : null,
+        configuredNotes.length ? `criteria annotation: ${configuredNotes.join(" · ")}` : null
+      ].filter(Boolean);
+      row.append(createCell(
+        `C${group.concurrency}`,
+        rowNotes.length ? `${status} · ${rowNotes.join(" · ")}` : status,
+        rowNotes.length ? "cell-warn" : ""
+      ));
       row.append(createCell(`${group.completeCount} / ${group.repetitionCount}`, group.trendEligible ? "complete" : "measurement gap", group.trendEligible ? "cell-good" : "cell-warn"));
       row.append(createCell(
         `${formatNumber(group.metrics.outputTps.median, 0)} tok/s`,
@@ -956,7 +1065,12 @@
     }
 
     const incomplete = model.groups.filter(group => !group.trendEligible).map(group => `C${group.concurrency}`);
-    setText("comparisonCaption", `统计值由 cases[] 在浏览器端重算，只聚合 measurement_complete=true 的 repeat。${incomplete.length ? ` ${incomplete.join("、")} 含不完整 case，整点不参与趋势。` : " 所有测试档位均采集完整。"} min–max 是 repetition 范围，不是置信区间。`);
+    setText(
+      "comparisonCaption",
+      model.groups.length
+        ? `统计值由 cases[] 在浏览器端重算，只聚合 measurement_complete=true 的 repeat。${incomplete.length ? ` ${incomplete.join("、")} 含不完整 case，整点不参与趋势。` : " 所有测试档位均采集完整。"} min–max 是 repetition 范围，不是置信区间。`
+        : "该 summary 没有 measured case；表格为空，lifecycle/context evidence 仍可查看。"
+    );
   }
 
   function quantileCell(item, prefix) {
@@ -1093,7 +1207,33 @@
     if ((model.prefix.median ?? 0) >= 0.9) {
       appendIssue(`Prefix-cache token hit 中位数为 ${formatRatio(model.prefix.median)}。当前 TTFT / input TPS 只适用于重复共享 prompt 与当前 cache 配置，不能外推 uncached prefill。`);
     }
-    appendIssue("summary.json 不含 model/revision、runtime image/args 与完整 workload；跨 run 对比需 companion run.yaml。 ");
+    if (model.selectionAnalysis) {
+      const indicatorCount = Array.isArray(model.selectionAnalysis.criteria.pressure_indicators)
+        ? model.selectionAnalysis.criteria.pressure_indicators.length
+        : 0;
+      appendIssue(`summary 记录了 selection criteria 和 ${indicatorCount} 个 pressure indicator；命中只作 post-run annotation，不会触发停止或自动选择 C_eff / C_pressure。`, "good");
+    }
+    const boundaryStopConditions = model.context?.experiment?.boundary_policy?.stop_conditions;
+    if (Array.isArray(boundaryStopConditions) && boundaryStopConditions.length) {
+      const stopOnFailure = model.context?.configuration?.orchestration?.stop_on_failure;
+      appendIssue(`declared boundary stop conditions：${boundaryStopConditions.join(" / ")}；stop_on_failure=${String(stopOnFailure)}。它们是请求/服务生命周期故障类别，不是性能指标规则。`);
+    }
+    const runWarnings = model.context?.run?.warnings;
+    if (Array.isArray(runWarnings) && runWarnings.length) {
+      appendIssue(`run warnings：${runWarnings.join(" / ")}。这些是 evidence/telemetry 缺口，不会被解释为 workload failure。`);
+    }
+    const shutdown = model.context?.observed_server?.shutdown;
+    if (isObject(shutdown)) {
+      appendIssue(`observed shutdown：OOMKilled=${shutdown.oom_killed ?? "unknown"} · restart_count=${shutdown.restart_count ?? "unknown"} · exit_code=${shutdown.container_exit_code ?? "unknown"}。`);
+    }
+    const configuration = model.context?.configuration;
+    if (isObject(configuration)) {
+      const modelConfig = isObject(configuration.model) ? configuration.model : {};
+      const runtimeConfig = isObject(configuration.runtime) ? configuration.runtime : {};
+      appendIssue(`summary context：model ${modelConfig.id ?? modelConfig.served_name ?? "—"} · revision ${modelConfig.artifact_revision ?? "—"} · image ${runtimeConfig.image ?? "—"}。fingerprint 仅用于跨 run 匹配与差异提示。`, "good");
+    } else {
+      appendIssue("summary 未记录自包含 context；跨 run 对比需要 companion run.yaml。 ");
+    }
   }
 
   function populateControls() {
@@ -1108,11 +1248,13 @@
 
     const fallback = model.analysis.trendStep?.current.concurrency
       ?? model.analysis.peak?.concurrency
-      ?? model.groups.at(-1)?.concurrency;
+      ?? model.groups.at(-1)?.concurrency
+      ?? null;
     selectedConcurrencyValue = model.groups.some(group => group.concurrency === selectedConcurrencyValue)
       ? selectedConcurrencyValue
       : fallback;
-    concurrencySelect.value = String(selectedConcurrencyValue);
+    concurrencySelect.disabled = model.groups.length === 0;
+    concurrencySelect.value = selectedConcurrencyValue === null ? "" : String(selectedConcurrencyValue);
 
     const memorySelect = byId("memoryMetric");
     const currentMemoryMetric = memorySelect.value;
@@ -1125,6 +1267,7 @@
 
   function renderAll() {
     renderMeta();
+    renderScopeNote();
     renderQualityBanner();
     renderKpis();
     renderInsights();
@@ -1135,7 +1278,7 @@
     renderSelectedGroup();
     byId("landing").hidden = true;
     byId("dashboard").hidden = false;
-    byId("changeFileButton").hidden = false;
+    byId("changeFileButton").hidden = IS_EMBEDDED;
     document.documentElement.dataset.viewerState = "loaded";
     window.__BENCHMARK_VIEWER_READY__ = true;
     window.__BENCHMARK_VIEWER_SUMMARY__ = {
@@ -1144,8 +1287,13 @@
       groups: model.groups.length,
       completeCases: model.health.completeCases,
       trendConcurrency: model.analysis.trendStep?.current.concurrency ?? null,
-      capacityFailureConcurrency: model.analysis.failureGroup?.concurrency ?? null
+      capacityFailureConcurrency: model.analysis.failureGroup?.concurrency ?? null,
+      selectionCriteria: model.selectionAnalysis !== null,
+      boundaryStopConditions: model.context?.experiment?.boundary_policy?.stop_conditions ?? []
     };
+    byId("embeddedStatus").hidden = true;
+    window.__BENCHMARK_VIEWER_MODE__ = VIEWER_MODE;
+    notifyHost("loaded", window.__BENCHMARK_VIEWER_SUMMARY__);
   }
 
   function showLoadError(error) {
@@ -1153,13 +1301,29 @@
     const box = byId("loadError");
     box.textContent = `无法读取 summary.json\n${message}`;
     box.hidden = false;
+    byId("landing").hidden = false;
+    byId("dashboard").hidden = true;
+    byId("embeddedStatus").hidden = true;
+    model = null;
+    selectedConcurrencyValue = null;
     document.documentElement.dataset.viewerState = "error";
     window.__BENCHMARK_VIEWER_READY__ = false;
+    window.__BENCHMARK_VIEWER_SUMMARY__ = null;
+    notifyHost("error", {message});
   }
 
   function hideLoadError() {
     byId("loadError").hidden = true;
     byId("loadError").textContent = "";
+    byId("landing").hidden = false;
+    byId("dashboard").hidden = true;
+    document.documentElement.dataset.viewerState = "loading";
+    window.__BENCHMARK_VIEWER_READY__ = false;
+    window.__BENCHMARK_VIEWER_SUMMARY__ = null;
+    if (IS_EMBEDDED) {
+      byId("embeddedStatus").textContent = "正在加载 summary.json…";
+      byId("embeddedStatus").hidden = false;
+    }
   }
 
   function loadJsonText(text, sourceName) {
@@ -1175,8 +1339,8 @@
   }
 
   async function loadFile(file) {
-    hideLoadError();
     if (!file) return;
+    hideLoadError();
     if (file.size > MAX_FILE_BYTES) {
       showLoadError(new Error(`文件大于 ${MAX_FILE_BYTES / 1024 / 1024} MiB；请选择 derived/summary.json，而不是 request-level raw JSONL。`));
       return;
@@ -1189,11 +1353,18 @@
   }
 
   async function loadQuerySource() {
-    const source = new URLSearchParams(window.location.search).get("src");
-    if (!source) return;
+    const source = QUERY.get("src");
+    if (!source) {
+      if (IS_EMBEDDED) {
+        showLoadError(new Error("embedded 模式需要有效的 ?src=summary.json。"));
+      }
+      return;
+    }
     try {
       if (window.location.protocol === "file:") {
-        throw new Error("?src 只用于本机 HTTP server；file:// 请使用拖放或文件选择。 ");
+        throw new Error(IS_EMBEDDED
+          ? "embedded ?src 需要同源 HTTP(S) 页面；file:// 不支持嵌入加载。"
+          : "?src 需要同源 HTTP(S)；file:// 请移除 ?src 后使用文件选择。");
       }
       const url = new URL(source, window.location.href);
       if (url.origin !== window.location.origin) {
@@ -1201,7 +1372,15 @@
       }
       const response = await fetch(url, { cache: "no-store" });
       if (!response.ok) throw new Error(`读取 ${url.pathname} 返回 HTTP ${response.status}。`);
-      loadJsonText(await response.text(), url.pathname.split("/").at(-1) || "summary.json");
+      const contentLength = Number(response.headers.get("content-length"));
+      if (Number.isFinite(contentLength) && contentLength > MAX_FILE_BYTES) {
+        throw new Error(`远程文件大于 ${MAX_FILE_BYTES / 1024 / 1024} MiB。`);
+      }
+      const text = await response.text();
+      if (new TextEncoder().encode(text).byteLength > MAX_FILE_BYTES) {
+        throw new Error(`远程文件大于 ${MAX_FILE_BYTES / 1024 / 1024} MiB。`);
+      }
+      loadJsonText(text, url.pathname.split("/").at(-1) || "summary.json");
     } catch (error) {
       showLoadError(error);
     }
@@ -1244,6 +1423,10 @@
     byId("selectedConcurrency").addEventListener("change", event => selectGroup(Number(event.target.value)));
   }
 
+  window.__BENCHMARK_VIEWER_MODE__ = VIEWER_MODE;
+  document.documentElement.dataset.viewerState = IS_EMBEDDED || QUERY.has("src") ? "loading" : "idle";
+  window.__BENCHMARK_VIEWER_READY__ = false;
+  window.__BENCHMARK_VIEWER_SUMMARY__ = null;
   setupEvents();
   loadQuerySource();
 })();

@@ -1,0 +1,76 @@
+{
+  "schema_version": 1,
+  "kind": "comparison_analysis",
+  "comparison_id": "m1.6-small-medium",
+  "status": "draft",
+  "takeaway": "在同一节点、匹配的 short-long request-unique workload 与非模型配置下，Qwen2.5-0.5B 和 Qwen2.5-7B 的 C1/C8 exploratory runs 均完成全部请求且未观测到 waiting。7B BF16 路径由此验证到 C8，但其 output throughput 在两点均更低，TTFT、TPOT 与 E2E 均更高；该结果只作为这两个固定 model artifacts 的 sizing reference，不作为 canonical tail-latency、容量或模型质量排名。",
+  "claims": [
+    {
+      "type": "observed_fact",
+      "text": "两侧 C1/C8 共 4 个 measured cases 均完整，256/256 requests 成功，无 failure 或 timeout；两个 run 均通过 raw validation、以 success 完成 sweep，shutdown lifecycle 也成功。",
+      "evidence": [
+        {"source": "baseline_summary", "pointer": "/cases"},
+        {"source": "candidate_summary", "pointer": "/cases"},
+        {"source": "baseline_summary", "pointer": "/raw_validation_passed"},
+        {"source": "candidate_summary", "pointer": "/raw_validation_passed"},
+        {"source": "baseline_summary", "pointer": "/context/run/outcome"},
+        {"source": "candidate_summary", "pointer": "/context/run/outcome"},
+        {"source": "baseline_summary", "pointer": "/context/observed_server/shutdown/lifecycle_success"},
+        {"source": "candidate_summary", "pointer": "/context/observed_server/shutdown/lifecycle_success"}
+      ]
+    },
+    {
+      "type": "observed_fact",
+      "text": "两侧实际 token shape 一致；在 C1 和 C8，7B candidate 的 output throughput 均低于 0.5B baseline，TTFT、TPOT 与 E2E 均更高，且两侧 max waiting 均为 0。",
+      "evidence": [
+        {"source": "metric", "metric": "actual_input_tokens_per_success", "concurrency": 1},
+        {"source": "metric", "metric": "actual_output_tokens_per_success", "concurrency": 1},
+        {"source": "metric", "metric": "output_token_throughput_tps", "concurrency": 1},
+        {"source": "metric", "metric": "ttft_p95_seconds", "concurrency": 1},
+        {"source": "metric", "metric": "tpot_p95_seconds", "concurrency": 1},
+        {"source": "metric", "metric": "e2e_p95_seconds", "concurrency": 1},
+        {"source": "metric", "metric": "max_waiting_requests", "concurrency": 1},
+        {"source": "metric", "metric": "actual_input_tokens_per_success", "concurrency": 8},
+        {"source": "metric", "metric": "actual_output_tokens_per_success", "concurrency": 8},
+        {"source": "metric", "metric": "output_token_throughput_tps", "concurrency": 8},
+        {"source": "metric", "metric": "ttft_p95_seconds", "concurrency": 8},
+        {"source": "metric", "metric": "tpot_p95_seconds", "concurrency": 8},
+        {"source": "metric", "metric": "e2e_p95_seconds", "concurrency": 8},
+        {"source": "metric", "metric": "max_waiting_requests", "concurrency": 8}
+      ]
+    },
+    {
+      "type": "interpretation",
+      "text": "两侧均未观测到 waiting，因而没有直接证据把性能差异归于 queue pressure；model_identity 是复合 axis，结果只能归于这两个固定 artifacts 的整体变化，不能单独归因于参数量。",
+      "evidence": [
+        {"source": "baseline_summary", "pointer": "/context/configuration/model"},
+        {"source": "candidate_summary", "pointer": "/context/configuration/model"},
+        {"source": "metric", "metric": "max_waiting_requests", "concurrency": 1},
+        {"source": "metric", "metric": "max_waiting_requests", "concurrency": 8}
+      ]
+    }
+  ],
+  "limitations": [
+    "两份 run 均为 exploratory、dirty tree，且每个 concurrency 只有一次 repetition；不得作为 canonical 或 tail-latency claim。",
+    "model_identity 同时改变 model id、path、artifact revision 与 served name；tokenizer/runtime revision 未捕获，本实验也没有评估输出质量，不能把性能差异简化为参数量的单变量效应。",
+    "只覆盖 short-long workload 的 C1/C8；兼容性结论不得解释为完整容量、scaling curve 或 small/medium model 排名。"
+  ],
+  "links": [
+    {
+      "label": "M1.6 small-model config",
+      "href": "../../../benchmarks/configs/vllm-single-node/m1.6/small-common.yaml"
+    },
+    {
+      "label": "M1.6 medium-model config",
+      "href": "../../../benchmarks/configs/vllm-single-node/m1.6/medium.yaml"
+    },
+    {
+      "label": "Published small-model evidence",
+      "href": "https://github.com/Tennsoku/k8s-llm-serving-public/tree/main/benchmarks/raw-results/m1-vllm-baseline/20260814-m1.6-small-baseline"
+    },
+    {
+      "label": "Published medium-model evidence",
+      "href": "https://github.com/Tennsoku/k8s-llm-serving-public/tree/main/benchmarks/raw-results/m1-vllm-baseline/20260814-m1.6-medium"
+    }
+  ]
+}

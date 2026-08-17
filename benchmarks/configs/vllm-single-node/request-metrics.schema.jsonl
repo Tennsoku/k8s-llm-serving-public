@@ -24,6 +24,10 @@
     "model": {"type": "string", "minLength": 1},
     "request_id": {"type": "string", "minLength": 1},
     "request_index": {"type": "integer", "minimum": 1},
+    "cache_salt": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
     "concurrency": {"type": "integer", "minimum": 1},
     "repetition": {"type": "integer", "minimum": 0},
     "start_wall_utc": {"type": "string", "format": "date-time"},

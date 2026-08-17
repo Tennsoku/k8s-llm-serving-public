@@ -42,6 +42,7 @@ done
 
 [[ $# -eq 0 ]] || { echo "error: unexpected positional arguments: $*" >&2; exit 2; }
 command -v curl >/dev/null || { echo "error: curl is required" >&2; exit 1; }
+command -v docker >/dev/null || { echo "error: docker is required" >&2; exit 1; }
 [[ "${TIMEOUT}" =~ ^[1-9][0-9]*$ ]] || {
   echo "error: timeout must be a positive integer" >&2
   exit 2
@@ -58,11 +59,17 @@ OUTPUT_DIR="$(cd "${OUTPUT_DIR}" && pwd -P)" || {
   exit 1
 }
 START_NS_FILE="${OUTPUT_DIR}/server-start-ns.txt"
+CONTAINER_ID_FILE="${OUTPUT_DIR}/container-id.txt"
 [[ -r "${START_NS_FILE}" ]] || {
   echo "error: missing ${START_NS_FILE}; run start-server.sh with the same output directory" >&2
   exit 1
 }
+[[ -r "${CONTAINER_ID_FILE}" ]] || {
+  echo "error: missing ${CONTAINER_ID_FILE}; run start-server.sh with the same output directory" >&2
+  exit 1
+}
 ready_started_ns="$(sed -n '1p' "${START_NS_FILE}")"
+container_id="$(sed -n '1p' "${CONTAINER_ID_FILE}")"
 [[ "${ready_started_ns}" =~ ^[0-9]+$ ]] || {
   echo "error: invalid nanosecond timestamp in ${START_NS_FILE}" >&2
   exit 1
@@ -85,6 +92,10 @@ ready=false
 attempt=0
 last_status="000"
 last_curl_rc=0
+failure_reason="timeout"
+container_status="unknown"
+container_running="unknown"
+container_exit_code="unknown"
 loop_started_seconds=${SECONDS}
 
 while (( SECONDS - loop_started_seconds < TIMEOUT )); do
@@ -112,6 +123,22 @@ while (( SECONDS - loop_started_seconds < TIMEOUT )); do
 
   if (( curl_rc == 0 )) && [[ "${status}" == "200" ]]; then
     ready=true
+    failure_reason="none"
+    break
+  fi
+
+  if container_state="$(docker inspect --format '{{.State.Status}} {{.State.Running}} {{.State.ExitCode}}' \
+      "${container_id}" 2>>"${OUTPUT_DIR}/readiness-container.stderr.log")"; then
+    read -r container_status container_running container_exit_code <<<"${container_state}"
+    if [[ "${container_status}" == "exited" || "${container_status}" == "dead" ]]; then
+      failure_reason="container_${container_status}"
+      break
+    fi
+  else
+    failure_reason="container_unavailable"
+    container_status="unavailable"
+    container_running="unknown"
+    container_exit_code="unknown"
     break
   fi
   sleep 1
@@ -128,11 +155,25 @@ printf '%s\n' "${last_status}" >"${OUTPUT_DIR}/health.txt"
   printf 'attempts=%d\n' "${attempt}"
   printf 'last_curl_rc=%d\n' "${last_curl_rc}"
   printf 'last_http_status=%s\n' "${last_status}"
+  printf 'failure_reason=%s\n' "${failure_reason}"
+  printf 'container_status=%s\n' "${container_status}"
+  printf 'container_running=%s\n' "${container_running}"
+  printf 'container_exit_code=%s\n' "${container_exit_code}"
   printf 'server_ready_seconds=%s\n' "${ready_seconds}"
 } >"${OUTPUT_DIR}/ready-result.env"
 
 if [[ "${ready}" != true ]]; then
-  echo "error: server did not become ready within ${TIMEOUT} seconds" >&2
+  case "${failure_reason}" in
+    container_exited|container_dead)
+      echo "error: server container became ${container_status} before readiness (exit_code=${container_exit_code})" >&2
+      ;;
+    container_unavailable)
+      echo "error: server container became unavailable before readiness" >&2
+      ;;
+    *)
+      echo "error: server did not become ready within ${TIMEOUT} seconds" >&2
+      ;;
+  esac
   exit 1
 fi
 

@@ -1,0 +1,90 @@
+# Candidate points are planning inputs, not observed operating references; stop at the declared safe cap.
+schema_version: 2
+config_id: m1.4-short-short-selection-v1
+
+experiment:
+  step: M1.4
+  kind: selection
+  status: ready
+  comparison_group: m1.4-short-short
+  variant: selection
+  axis: sweep.concurrency
+  baseline_config_id: null
+  selection_criteria:
+    safe_min_concurrency: 1
+    safe_max_concurrency: 64
+    throughput_metric: output_token_throughput_tps
+    throughput_marginal_floor_ratio: 0.10
+    latency_metrics: [ttft_p95_seconds, e2e_p95_seconds]
+    latency_multiplier_ceiling: 2.0
+    pressure_indicators:
+      - metric: max_waiting_requests
+        operator: ">"
+        threshold: 0
+      - metric: max_kv_cache_usage_ratio
+        operator: ">"
+        threshold: 0.85
+
+model:
+  id: Qwen/Qwen2.5-0.5B-Instruct
+  path: /models/Qwen2.5-0.5B-Instruct
+  artifact_revision: 7ae557604adf67be50417f59c2c2f167def9a775
+  runtime_revision: null
+  tokenizer_revision: null
+  served_name: qwen2.5-0.5b-instruct
+
+runtime:
+  image: nvcr.io/nvidia/vllm@sha256:1de8e6bfdb4c81c1f31a806cc9b13b5c6352714a7cec87f4d24964bcc91159b2
+  dtype: bfloat16
+  quantization: null
+  generation_config: vllm
+  max_model_len: 8192
+  max_num_seqs: 128
+  gpu_memory_utilization: 0.15
+  container_memory_limit: 64g
+  extra_args: []
+
+workload:
+  name: m1.4-short-short
+  shape: short-short
+  input_tokens_target: 55
+  prompt:
+    prefix: ""
+    repeated_text: "Explain PagedAttention in one sentence. "
+    repetitions: 3
+    suffix: ""
+  max_output_tokens: 32
+  total_requests_per_repetition: 256
+  request_timeout_seconds: 600
+  cache_identity:
+    mode: request_unique
+    derivation: sha256-run-case-phase-index-v1
+
+sampling:
+  temperature: 0.0
+  seed: 42
+  stream: true
+  include_usage: true
+
+warmup:
+  requests: 2
+  concurrency: 1
+
+sweep:
+  concurrency: [1, 8, 16, 32, 64]
+  measured_repetitions: 1
+  reference_points:
+    c1: 1
+    c_eff: null
+    c_pressure: null
+    highest_tested: null
+
+metrics:
+  sample_interval_seconds: 1
+
+orchestration:
+  ready_timeout_seconds: 600
+  idle_timeout_seconds: 120
+  stop_timeout_seconds: 60
+  stop_on_failure: true
+

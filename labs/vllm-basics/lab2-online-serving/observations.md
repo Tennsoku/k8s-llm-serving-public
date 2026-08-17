@@ -1,5 +1,9 @@
 # Lab 2 Observations
 
+> 完整 capture 保留在本地 gitignored
+> `artifacts/staging/evidence/20260809-lab2/`；本文保留 observed values，不把
+> legacy 小文件纳入 M1 final-reference public evidence。
+
 ## Fixed runtime
 
 | Evidence | Value/location |
@@ -10,10 +14,10 @@
 | `SERVED_MODEL_NAME` | qwen2.5-0.5b-instruct |
 | `GPU_MEMORY_UTILIZATION` | 0.15 |
 | `MAX_MODEL_LEN` / `MAX_NUM_SEQS` | unset |
-| Initial server-ready time and startup log | benchmarks/raw-results/m1-vllm-baseline/20260809-lab2/ready-time.txt |
-| Restart server-ready time and startup log | benchmarks/raw-results/m1-vllm-baseline/20260809-lab2/ready-time-restart.txt |
-| Idle system/cgroup/CUDA memory evidence | benchmarks/raw-results/m1-vllm-baseline/20260809-lab2/idle-*.txt |
-| Post-shutdown memory/time | benchmarks/raw-results/m1-vllm-baseline/20260809-lab2/post-stop-*.txt |
+| Initial server-ready time and startup log | local-only capture |
+| Restart server-ready time and startup log | local-only capture |
+| Idle system/cgroup/CUDA memory evidence | local-only capture |
+| Post-shutdown memory/time | local-only capture |
 | Initial/restart server exit codes | 120 (Ctrl-C) |
 | Shutdown signal, traceback, or leaked-process evidence | none observed |
 
@@ -21,14 +25,14 @@
 
 | Request | HTTP status | Raw evidence | Observed behavior |
 |---|---:|---|---|
-| `GET /health` before ready | 000 | benchmarks/raw-results/m1-vllm-baseline/20260809-lab2/before-ready-health.txt | endpoint no response |
-| `GET /health` ready | 200 | benchmarks/raw-results/m1-vllm-baseline/20260809-lab2/health.txt | endpoint healthy |
-| `GET /v1/models` | 200 | benchmarks/raw-results/m1-vllm-baseline/20260809-lab2/curl-examples.log | model ID: qwen2.5-0.5b-instruct |
-| Non-stream chat | 200 | benchmarks/raw-results/m1-vllm-baseline/20260809-lab2/curl-examples.log | one-time return with complete content |
-| Stream chat | 200 | benchmarks/raw-results/m1-vllm-baseline/20260809-lab2/curl-examples.log | multiple returns with content chunks |
-| Unknown model | 404 | benchmarks/raw-results/m1-vllm-baseline/20260809-lab2/curl-examples.log | expected 404, server healthy after error |
-| Malformed JSON | 400 | benchmarks/raw-results/m1-vllm-baseline/20260809-lab2/malformed-*.log | expected 400, server healthy after error |
-| Post-stop health probe | 000 | benchmarks/raw-results/m1-vllm-baseline/20260809-lab2/post-stop-health.txt | endpoint stopped: no response |
+| `GET /health` before ready | 000 | local-only | endpoint no response |
+| `GET /health` ready | 200 | local-only | endpoint healthy |
+| `GET /v1/models` | 200 | local-only | model ID: qwen2.5-0.5b-instruct |
+| Non-stream chat | 200 | local-only | one-time return with complete content |
+| Stream chat | 200 | local-only | multiple returns with content chunks |
+| Unknown model | 404 | local-only | expected 404, server healthy after error |
+| Malformed JSON | 400 | local-only | expected 400, server healthy after error |
+| Post-stop health probe | 000 | local-only | endpoint stopped: no response |
 
 ## Interpretation
 

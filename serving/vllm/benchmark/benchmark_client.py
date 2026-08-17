@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import asyncio
+import hashlib
 import json
 import re
 import sys
@@ -14,10 +15,11 @@ from typing import Any
 
 import aiohttp
 
-from benchmark_config import ConfigError, load_config
+from benchmark_config import ConfigError, load_config, render_prompt
 from benchmark_utils import append_jsonl, measure_request, utc_now
 
 SAFE_ID = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_.-]*$")
+CACHE_SALT_DERIVATION = "sha256-run-case-phase-index-v1"
 
 
 def positive(value: str) -> float:
@@ -25,6 +27,19 @@ def positive(value: str) -> float:
     if parsed <= 0:
         raise argparse.ArgumentTypeError("must be greater than zero")
     return parsed
+
+
+def derive_cache_salt(
+    run_id: str,
+    case_id: str,
+    phase: str,
+    request_index: int,
+    derivation: str,
+) -> str:
+    if derivation != CACHE_SALT_DERIVATION:
+        raise ValueError(f"unsupported cache-salt derivation: {derivation}")
+    identity = f"{run_id}:{case_id}:{phase}:{request_index}"
+    return hashlib.sha256(identity.encode("utf-8")).hexdigest()
 
 
 def arguments() -> argparse.Namespace:
@@ -115,9 +130,10 @@ def case_event(
 async def run_case(args: argparse.Namespace, config: dict[str, Any]) -> int:
     workload = config["workload"]
     sampling = config["sampling"]
+    cache_identity = workload["cache_identity"]
     payload = {
         "model": args.model,
-        "messages": [{"role": "user", "content": workload["prompt"]}],
+        "messages": [{"role": "user", "content": render_prompt(config)}],
         "max_tokens": workload["max_output_tokens"],
         "temperature": sampling["temperature"],
         "seed": sampling["seed"],
@@ -162,17 +178,24 @@ async def run_case(args: argparse.Namespace, config: dict[str, Any]) -> int:
     failed_so_far = 0
     next_progress_ns = started_ns + int(args.progress_interval * 1_000_000_000)
     connector = aiohttp.TCPConnector(limit=args.concurrency)
+    request_phase = "measured" if args.measured else "warmup"
 
     async with aiohttp.ClientSession(connector=connector) as session:
         async def one(index: int) -> dict[str, Any]:
-            request_id = (
-                f"{args.run_id}-{args.case_id}-request-{index:06d}"
+            request_id = f"{args.run_id}-{args.case_id}-request-{index:06d}"
+            request_payload = dict(payload)
+            request_payload["cache_salt"] = derive_cache_salt(
+                args.run_id,
+                args.case_id,
+                request_phase,
+                index,
+                cache_identity["derivation"],
             )
             async with gate:
                 measurement = await measure_request(
                     session,
                     url=url,
-                    payload=payload,
+                    payload=request_payload,
                     run_id=args.run_id,
                     case_id=args.case_id,
                     measured=args.measured,
@@ -183,7 +206,9 @@ async def run_case(args: argparse.Namespace, config: dict[str, Any]) -> int:
                     repetition=args.repetition,
                     timeout_seconds=float(workload["request_timeout_seconds"]),
                 )
-            return measurement.to_dict()
+            record = measurement.to_dict()
+            record["cache_salt"] = request_payload["cache_salt"]
+            return record
 
         tasks = [
             asyncio.create_task(one(index))
@@ -239,7 +264,11 @@ async def run_case(args: argparse.Namespace, config: dict[str, Any]) -> int:
     )
     append_jsonl(args.case_events, end_event)
     print(json.dumps(end_event, sort_keys=True))
-    return 0 if failed == 0 and len(records) == args.requests else 1
+    if failed == 0 and len(records) == args.requests:
+        return 0
+    if any(record.get("timeout") is True for record in records):
+        return 2
+    return 1
 
 
 def main() -> int:

@@ -22,7 +22,7 @@ shutdown, and restart independently observable before Lab 3 benchmarking.
 | File | Responsibility |
 |---|---|
 | `start-server.sh` | Validate fixed inputs, create a detached container, and retain command/container/start metadata. |
-| `wait-ready.sh` | Poll the host endpoint, retain every attempt, and measure process-start-to-observed-health time. |
+| `wait-ready.sh` | Poll health while the recorded container is running, stop early on a terminal state, and retain the result. |
 | `stop-server.sh` | Send `SIGTERM`, retain Docker/server state, classify graceful shutdown, and remove only a successful container. |
 
 The container runs `vllm serve` through an exec-form entrypoint. `--init`
@@ -80,12 +80,15 @@ used with a new output directory for the restart attempt.
 | Evidence | Meaning |
 |---|---|
 | `readiness-attempts.tsv` | Timestamp, curl exit, and HTTP status for every probe. |
-| `ready-time.txt` | Process-start-to-first-observed-HTTP-200 duration. |
-| `ready-result.env` | Machine-readable readiness result and final status. |
+| `readiness-container.stderr.log` | Docker inspect errors observed while waiting for readiness. |
+| `ready-time.txt` | Process-start-to-readiness-decision duration; on success, this ends at the first HTTP 200. |
+| `ready-result.env` | Machine-readable readiness result, failure reason, and last inspected container state. |
 
 Readiness time is not TTFT. It includes container/process startup, model load,
 engine initialization, and the polling interval. TTFT begins only after the
-ready service receives an inference request.
+ready service receives an inference request. The readiness deadline applies
+only while the recorded container can still become ready; `exited`, `dead`,
+or unavailable containers end the wait immediately.
 
 ### Shutdown
 
@@ -94,40 +97,31 @@ ready service receives an inference request.
 | `server-stop-requested-*`, `server-stop-finished-*` | Shutdown timing boundary. |
 | `server.log` | Complete Docker stdout/stderr captured after stop. |
 | `container-post-stop-inspect.json` | State captured before container removal. |
-| `container-exit-code.txt` | Exit code independently returned by `docker wait`. |
-| `post-stop-health.txt` | HTTP status after shutdown; `000` plus nonzero curl exit means no endpoint. |
-| `graceful-shutdown.env` | Classification inputs and final lifecycle result. |
+| `graceful-shutdown.env` | Stop, final-state, evidence-capture, and removal results. |
 
 Docker command stderr/stdout companions are retained rather than folded into
 the server log.
 
 ## Graceful shutdown definition
 
-For this M1.2a idle-server test, `graceful_shutdown=true` requires all of:
+`graceful_shutdown=true` is an observation that all of these held:
 
 ```text
 container was running before stop
 docker stop(SIGTERM) returned 0
 container reached exited/running=false
 container exit code was 0
-docker wait independently returned exit code 0
 OOMKilled was false
-the post-stop endpoint was unreachable
 ```
 
-An exit code of `137`, `OOMKilled=true`, a still-reachable endpoint, an
-unexpected pre-stopped container, or a nonzero application exit fails the
-classification. Shutdown log markers are recorded as supporting evidence but
-are not a hard gate because their wording is vLLM/Uvicorn-version-sensitive.
-
-`lifecycle_success=true` additionally requires complete log/inspect capture
-and successful removal of the stopped container. On failure, the script keeps
-the container so an operator can inspect it; it does not silently delete the
-failure state.
+The classification is evidence, not a cleanup gate. The script captures logs
+and inspect output, records their return codes, and then removes the container;
+`lifecycle_success=true` means that removal succeeded. If shutdown or evidence
+capture looks wrong, discard the run and rerun it from a fresh directory.
 
 If readiness fails, still invoke `stop-server.sh` with that run directory. It
-will capture the failed server's logs and state. A container that exited before
-the stop request is deliberately classified as non-graceful and is preserved.
+will capture the failed server's logs and state before cleanup. A container
+that exited before the stop request is classified as non-graceful but removed.
 
 ## Boundaries
 
@@ -163,9 +157,10 @@ The canonical host-side runner combines measurement hardening and the
 single-node concurrency sweep:
 
 ```text
-start server
+freeze config and capture planned run metadata
+  -> start server
   -> wait ready
-  -> capture run metadata
+  -> record observed server metadata
   -> capture initial exposition
   -> warm-up
   -> wait idle
@@ -214,37 +209,49 @@ Use the smoke workload to validate the complete lifecycle before a full run:
 
 ```bash
 serving/vllm/run-benchmark.sh \
-  --config benchmarks/configs/vllm-single-node/benchmark-workload-smoke.yaml \
+  --config benchmarks/configs/vllm-single-node/benchmark-smoke.yaml \
   --node-label spark-a \
   --purpose exploratory \
   --run-id "$(date -u +%Y%m%dT%H%M%SZ)-m1-smoke"
 ```
 
-The smoke workload keeps every configured concurrency but uses 32 requests and
-one repetition. It validates orchestration and evidence production; its output
-is not a substitute for the measurement workload.
+The smoke workload uses one concurrency point, four requests, and one
+repetition. It validates orchestration and evidence production; its output is
+not a substitute for the measurement workload. The copy under
+`benchmarks/configs/vllm-single-node/ref/smoke.yaml` keeps the same rapid
+pipeline/API contract beside the M1.4–M1.6 reference templates.
 
 Run into a new private directory:
 
 ```bash
 serving/vllm/run-benchmark.sh \
+  --config benchmarks/configs/vllm-single-node/ref/m1.4/selection/short-short.yaml \
   --node-label spark-a \
   --purpose canonical \
-  --model-revision <revision-or-snapshot-id> \
   --run-id "$(date -u +%Y%m%dT%H%M%SZ)-m1-baseline"
 ```
 
-Additional runtime flags are passed as array elements and retained in the
-expanded server command:
+Scientific controls are config-only: model identity and provenance, optional
+vLLM revision selectors, image digest, dtype, generation config, structured
+runtime arguments, workload, sampling, and lifecycle policy. Extra runtime
+flags are YAML array elements and are retained in the expanded server command:
 
-```bash
-serving/vllm/run-benchmark.sh \
-  --node-label spark-a \
-  --vllm-arg=--disable-prefix-caching
+`model.artifact_revision` is provenance used to group and compare summaries;
+the runner does not inspect the local model checkout or block a run when it has
+changed. `model.runtime_revision` and `model.tokenizer_revision` are optional
+vLLM selectors and are passed only when configured. The summary keeps both the
+configured provenance and observed server selectors for later comparison.
+
+```yaml
+runtime:
+  extra_args:
+    - --disable-prefix-caching
 ```
 
-Use a new run ID when changing runtime flags. Do not combine repetitions from
-different server configurations.
+Managed flags such as `--max-num-seqs`, `--max-model-len`, and
+`--gpu-memory-utilization` must use their structured config fields and cannot
+be duplicated in `extra_args`. Use a new run ID when changing runtime fields.
+Do not combine repetitions from different server configurations.
 
 ### Raw and derived contract
 
@@ -252,7 +259,7 @@ different server configurations.
 <run-dir>/
 ├── run.yaml
 ├── raw/
-│   ├── workload.yaml
+│   ├── benchmark-config.yaml
 │   ├── requests.jsonl
 │   ├── case-events.jsonl
 │   ├── runtime-samples.jsonl
@@ -274,8 +281,9 @@ different server configurations.
 ```
 
 `requests.jsonl` records client-observed TTFT, E2E, derived TPOT, final server
-usage, request IDs, and every failure. First generated content is the TTFT
-boundary; HTTP chunk intervals are not called token-level ITL. TPOT is
+usage, request IDs, the deterministic request-unique cache salt, and every
+failure. First generated content is the TTFT boundary; HTTP chunk intervals
+are not called token-level ITL. TPOT is
 `(last_content - first_content) / (output_tokens - 1)` and is null when fewer
 than two output tokens are observed.
 
@@ -284,6 +292,29 @@ Prometheus exposition. `num_preemptions` is reported as an event delta, not as
 a count of unique preempted requests. vLLM average-throughput gauges are
 supporting telemetry; canonical token throughput is derived from request token
 counts and the measured client wall time.
+
+The schema-v2 summary keeps its top-level version so the existing single-run
+viewer remains compatible, while adding a self-contained `context`, normalized
+comparison dimensions, and config/model/runtime/workload/measurement
+fingerprints. These identifiers are comparison metadata, not validity or trust
+gates: mismatches appear as `context_warnings`, and raw-schema/completeness
+problems appear under `data_quality`, without suppressing the summary or
+changing the benchmark outcome.
+
+For M1.4 selection runs, configured criteria and pressure indicators are
+evaluated after the run into `selection_analysis`. They are annotations only:
+the runner does not stop on a metric threshold or automatically assign
+`C_eff` / `C_pressure`. Lifecycle failures can still produce a valid
+zero-case summary instead of disappearing from the evidence.
+
+`boundary_policy.stop_conditions` is a reporting vocabulary, not a plug-in
+rule engine. The client distinguishes request timeout from other request
+failures; idle/readiness checks stop an unsafe or ambiguous next case; final
+Docker state records OOM and restart evidence. Per-case `/metrics` snapshot
+failures only mark telemetry incomplete and do not stop the sweep.
+`orchestration.stop_on_failure` controls whether a completed client-failure
+case ends the remaining sweep; the supplied evidence templates set it to
+`true`.
 
 The runtime and system collectors intentionally run on the host. `/metrics` is
 already exposed by the API server, and the host can resolve the container

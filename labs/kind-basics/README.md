@@ -1,5 +1,9 @@
 # kind Kubernetes Labs
 
+> **状态：`draft` — 尚未执行。** 这是为 [M3（Kubernetes 与 GPU workload）](../../docs/Roadmap.md) 预写的 lab 计划，不是已完成的工作，也不是当前阅读路径。
+>
+> 真实的 K8s 工作从 M3 开始。届时本文会按实际执行情况重写为记录，并按 [`docs/AGENTS.md`](../../docs/AGENTS.md) 的长度预算收敛——现有 1300+ 行是未经审计的初稿，属"为未建成系统写规范"，是本项目明确要避免的模式。
+
 This module establishes a practical foundation for using **kind**—Kubernetes IN Docker—as a local Kubernetes learning and manifest-validation environment.
 
 The goal is not to treat kind as a production-equivalent GPU cluster. Instead, these labs use kind to isolate and study Kubernetes control-plane behavior, workload deployment, service discovery, observability, manifest portability, and the limits of local GPU integration.

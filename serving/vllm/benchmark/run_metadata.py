@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Create and finalize the lightweight M1 run metadata document."""
+"""Create, enrich, and finalize the lightweight M1 run metadata document."""
 
 from __future__ import annotations
 
@@ -11,96 +11,158 @@ from typing import Any
 
 import yaml
 
-from benchmark_config import load_config
+from benchmark_config import fingerprint, load_config
 from benchmark_utils import utc_now
 
 
-def read_first(path: Path) -> str:
-    return path.read_text(encoding="utf-8").splitlines()[0]
-
-
-def git_value(repo_root: Path, *arguments: str) -> str:
+def git_value(repo_root: Path, *arguments: str) -> str | None:
     process = subprocess.run(
         ["git", "-C", str(repo_root), *arguments],
-        check=True,
+        check=False,
         capture_output=True,
         text=True,
     )
-    return process.stdout.strip()
+    return process.stdout.strip() if process.returncode == 0 else None
+
+
+def load_metadata(path: Path) -> dict[str, Any]:
+    with path.open("r", encoding="utf-8") as handle:
+        metadata = yaml.safe_load(handle)
+    if not isinstance(metadata, dict):
+        raise SystemExit("run metadata is not a mapping")
+    return metadata
+
+
+def write_metadata(path: Path, metadata: dict[str, Any], *, create: bool) -> None:
+    if create and path.exists():
+        raise SystemExit(f"refusing to overwrite {path}")
+    temporary = path.with_suffix(".yaml.tmp")
+    if temporary.exists():
+        temporary.unlink()
+    with temporary.open("x", encoding="utf-8") as handle:
+        yaml.safe_dump(metadata, handle, sort_keys=False)
+    temporary.replace(path)
+
+
+def read_optional_first(path: Path) -> str | None:
+    if not path.is_file():
+        return None
+    lines = path.read_text(encoding="utf-8").splitlines()
+    return lines[0] if lines else ""
+
+
+def read_key_values(path: Path) -> dict[str, str]:
+    values: dict[str, str] = {}
+    if not path.is_file():
+        return values
+    for line in path.read_text(encoding="utf-8").splitlines():
+        key, separator, value = line.partition("=")
+        if separator and key:
+            values[key] = value
+    return values
+
+
+def attach_server_observation(
+    metadata: dict[str, Any], server_dir: Path
+) -> None:
+    observed: dict[str, Any] = {}
+    for field, name in (
+        ("started_at_utc", "server-start-time.txt"),
+        ("run_label", "run-id.txt"),
+        ("container_name", "container-name.txt"),
+        ("container_id", "container-id.txt"),
+        ("base_url", "base-url.txt"),
+        ("image", "image.txt"),
+        ("runtime_revision", "revision.txt"),
+        ("tokenizer_revision", "tokenizer-revision.txt"),
+    ):
+        value = read_optional_first(server_dir / name)
+        if value is not None:
+            observed[field] = value or None
+    command_path = server_dir / "server-command.txt"
+    if command_path.is_file():
+        observed["expanded_command"] = command_path.read_text(
+            encoding="utf-8"
+        ).strip()
+    graceful_path = server_dir / "graceful-shutdown.env"
+    if graceful_path.is_file():
+        observed["graceful_shutdown_evidence"] = graceful_path.read_text(
+            encoding="utf-8"
+        ).strip()
+        observed["shutdown"] = read_key_values(graceful_path)
+    if observed:
+        metadata["observed_server"] = observed
 
 
 def capture(args: argparse.Namespace) -> int:
     output = args.run_dir / "run.yaml"
-    if output.exists():
-        raise SystemExit(f"refusing to overwrite {output}")
-    server_dir = args.server_dir
-    required = (
-        "server-start-time.txt",
-        "container-name.txt",
-        "container-id.txt",
-        "base-url.txt",
-        "image.txt",
-        "server-command.txt",
-    )
-    for name in required:
-        if not (server_dir / name).is_file():
-            raise SystemExit(f"missing server metadata: {server_dir / name}")
     config = load_config(args.config)
     git_status = git_value(args.repo_root, "status", "--porcelain")
+    git_commit = git_value(args.repo_root, "rev-parse", "HEAD")
     metadata: dict[str, Any] = {
-        "schema_version": 1,
+        "schema_version": 2,
         "run_id": args.run_id,
         "milestone": "M1",
-        "experiment": "vllm-single-node-concurrency",
         "purpose": args.purpose,
-        "timestamp_utc": read_first(server_dir / "server-start-time.txt"),
+        "timestamp_utc": utc_now(),
+        "config_id": config["config_id"],
+        "config_fingerprint": fingerprint(config),
+        "experiment": config["experiment"],
         "git": {
-            "commit": git_value(args.repo_root, "rev-parse", "HEAD"),
-            "dirty": bool(git_status),
+            "commit": git_commit,
+            "dirty": bool(git_status) if git_status is not None else None,
         },
         "environment": {
             "node": args.node_label,
             "architecture": platform.machine(),
         },
-        "runtime": {
-            "image": read_first(server_dir / "image.txt"),
-            "container_name": read_first(server_dir / "container-name.txt"),
-            "container_id": read_first(server_dir / "container-id.txt"),
-            "base_url": read_first(server_dir / "base-url.txt"),
-            "model_path": args.model_path,
-            "model_revision": args.model_revision,
-            "served_model_name": args.served_model_name,
-            "expanded_command": (server_dir / "server-command.txt")
-            .read_text(encoding="utf-8")
-            .strip(),
+        "runner": {
+            "host": args.host,
+            "port": args.port,
+            "container_name": args.container_name,
+            "gpu_index": args.gpu_index,
         },
-        "workload": config,
-        "metrics": {
-            "runtime_endpoint": "/metrics",
-            "sample_interval_seconds": args.sample_interval,
-            "client_clock": "time.monotonic_ns",
-            "correlation_clock": "UTC wall clock",
+        "configuration": config,
+        "lifecycle": {
+            "phase": "planned",
+            "outcome": "running",
+            "failure_phase": None,
+            "warnings": [],
+            "stop_reason": None,
+            "last_supported_case": None,
+            "first_unsupported_case": None,
         },
         "outcome": "running",
     }
     args.run_dir.mkdir(parents=True, exist_ok=True)
-    with output.open("x", encoding="utf-8") as handle:
-        yaml.safe_dump(metadata, handle, sort_keys=False)
+    write_metadata(output, metadata, create=True)
     print(output)
     return 0
 
 
+def observe(args: argparse.Namespace) -> int:
+    metadata = load_metadata(args.run_yaml)
+    attach_server_observation(metadata, args.server_dir)
+    metadata.setdefault("lifecycle", {})["phase"] = args.phase
+    write_metadata(args.run_yaml, metadata, create=False)
+    return 0
+
+
 def finalize(args: argparse.Namespace) -> int:
-    with args.run_yaml.open("r", encoding="utf-8") as handle:
-        metadata = yaml.safe_load(handle)
-    if not isinstance(metadata, dict):
-        raise SystemExit("run metadata is not a mapping")
+    metadata = load_metadata(args.run_yaml)
+    if args.server_dir is not None:
+        attach_server_observation(metadata, args.server_dir)
+    lifecycle = metadata.setdefault("lifecycle", {})
+    lifecycle["phase"] = "finished"
+    lifecycle["outcome"] = args.outcome
+    lifecycle["failure_phase"] = args.failure_phase
+    lifecycle["warnings"] = args.warning or []
+    lifecycle["stop_reason"] = args.stop_reason
+    lifecycle["last_supported_case"] = args.last_supported_case
+    lifecycle["first_unsupported_case"] = args.first_unsupported_case
     metadata["finished_at_utc"] = utc_now()
     metadata["outcome"] = args.outcome
-    temporary = args.run_yaml.with_suffix(".yaml.tmp")
-    with temporary.open("x", encoding="utf-8") as handle:
-        yaml.safe_dump(metadata, handle, sort_keys=False)
-    temporary.replace(args.run_yaml)
+    write_metadata(args.run_yaml, metadata, create=False)
     return 0
 
 
@@ -112,22 +174,34 @@ def arguments() -> argparse.Namespace:
     capture_parser.add_argument("--run-dir", type=Path, required=True)
     capture_parser.add_argument("--run-id", required=True)
     capture_parser.add_argument("--node-label", required=True)
-    capture_parser.add_argument("--purpose", choices=["exploratory", "canonical"], required=True)
+    capture_parser.add_argument(
+        "--purpose", choices=["exploratory", "canonical"], required=True
+    )
     capture_parser.add_argument("--config", type=Path, required=True)
-    capture_parser.add_argument("--server-dir", type=Path, required=True)
     capture_parser.add_argument("--repo-root", type=Path, required=True)
-    capture_parser.add_argument("--model-path", required=True)
-    capture_parser.add_argument("--model-revision", required=True)
-    capture_parser.add_argument("--served-model-name", required=True)
-    capture_parser.add_argument("--sample-interval", type=float, required=True)
+    capture_parser.add_argument("--host", required=True)
+    capture_parser.add_argument("--port", type=int, required=True)
+    capture_parser.add_argument("--container-name", required=True)
+    capture_parser.add_argument("--gpu-index", type=int, required=True)
+
+    observe_parser = subparsers.add_parser("observe")
+    observe_parser.add_argument("--run-yaml", type=Path, required=True)
+    observe_parser.add_argument("--server-dir", type=Path, required=True)
+    observe_parser.add_argument("--phase", required=True)
 
     finalize_parser = subparsers.add_parser("finalize")
     finalize_parser.add_argument("--run-yaml", type=Path, required=True)
+    finalize_parser.add_argument("--server-dir", type=Path)
     finalize_parser.add_argument(
         "--outcome",
         choices=["success", "failed", "aborted", "invalid"],
         required=True,
     )
+    finalize_parser.add_argument("--failure-phase")
+    finalize_parser.add_argument("--warning", action="append")
+    finalize_parser.add_argument("--stop-reason")
+    finalize_parser.add_argument("--last-supported-case")
+    finalize_parser.add_argument("--first-unsupported-case")
     return parser.parse_args()
 
 
@@ -135,6 +209,8 @@ def main() -> int:
     args = arguments()
     if args.command == "capture":
         return capture(args)
+    if args.command == "observe":
+        return observe(args)
     return finalize(args)
 
 

@@ -61,6 +61,13 @@ Canonical run 用于支撑 Benchmark Report 或 Milestone conclusion。它至少
 
 这两个词是 run 的用途标签，不是额外目录层级。Canonical 不代表 audit package；本约定不要求 sealing、manifest lifecycle、clean-tree hard gate 或 Milestone-specific adapter。
 
+这是研究型 workflow。可恢复的 run、配置、metadata 或分析错误应被保留、
+说明、修正并重跑，而不是由工具拒绝执行或隐藏 summary。Revision、
+ownership label、hash 和 fingerprint 只用于把 run 与环境、配置、workload
+及指标对齐；mismatch 是 comparison warning，不是授权、attestation 或
+eligibility gate。Request `cache_salt` 是控制 prefix-cache identity 的
+workload 参数，但它同样不承担 evidence authenticity 审查。
+
 ## Failure preservation
 
 失败也是容量和可靠性证据。Timeout、OOM、non-zero exit、HTTP error、server restart 和部分完成的请求都不应被删除或改写成成功。将失败的原始输出保存在 `raw/`，并在 `run.yaml` 的 `outcome` 或实验说明中记录恢复行为。重试使用新的 run ID，不覆盖失败 run。
@@ -94,6 +101,8 @@ private run
 benchmarks/raw-results/<experiment-family>/<run-id>/
 ```
 
+**哪些 artifact 以什么形态进入公开树，见 [证据留存与仓库卫生标准](evidence-retention.md)**——三层留存、采样契约、文件数与体积预算由该文档规定；本文只管目录结构与脱敏。
+
 通用 sanitizer 的最小用法：
 
 ```bash
@@ -105,7 +114,17 @@ scripts/experiments/sanitize-public.sh \
   --literal "$private_node_name"
 ```
 
-脚本只修改新建的 public destination，不修改 private source；它把不含 NUL byte 的 regular file 当作文本，处理当前 hostname、IP、MAC、home/user path 和重复的 `--literal` 值，并在复制前后扫描常见 credential/token pattern。目标目录必须尚不存在；含疑似 secret 或 configured literal 的内部路径会被拒绝，而不是自动重命名。含 NUL byte 的 artifact 原样复制，但仍接受基础 secret byte scan；文件名、binary 内容和未配置的私有标识仍需人工检查。任何 non-zero 都是 review gate；自动检查通过也不等于批准公开。不要把 inline credential 放入被捕获的命令。
+脚本只修改新建的 public destination，不修改 private source。成功且无 request failure
+的 run 按 [证据留存标准](evidence-retention.md) 生成 Tier A 白名单副本；run、
+request、case outcome 或已落盘 exit code 显示失败时保留 failure-bearing tree 与全部失败记录，
+并明确提示 hygiene 可能失败，避免为满足预算丢弃失败证据。
+
+进入 public copy 的非 NUL regular file 会处理当前 hostname、IP、MAC、home/user path
+和重复的 `--literal` 值，并在复制前后扫描常见 credential/token pattern。目标目录必须
+尚不存在；含疑似 secret 或 configured literal 的内部路径会被拒绝，而不是自动重命名。
+进入副本的 NUL-containing artifact 原样复制，但仍接受基础 secret byte scan；文件名、
+binary 内容和未配置的私有标识仍需人工检查。任何 non-zero 都是 review gate；自动检查
+通过也不等于批准公开。不要把 inline credential 放入被捕获的命令。
 
 ## Manual privacy checklist
 

@@ -1,0 +1,73 @@
+{
+  "schema_version": 1,
+  "kind": "run_analysis",
+  "showcase_id": "m1.3-historical",
+  "status": "reviewed",
+  "takeaway": "在固定 prompt 的历史 workload 下，C64 是 efficient reference、C96 是 pressure reference、C128 仅作 stress evidence；hard capacity boundary 在已测试范围内仍为 Unknown。99.31% prefix-cache hit 使这些数值不能外推到 M1.4 cache-isolated workloads。",
+  "operating_references": {
+    "c1": {
+      "status": "observed",
+      "concurrency": 1,
+      "rationale": "该 historical workload 的 C1 baseline 在 sibling C1–4 canonical group 实测；当前 embedded summary 只加载 C16–C128 closing group。",
+      "evidence": ["../../../docs/reviews/m1.3-review.md#experiment-scope"]
+    },
+    "c_eff": {
+      "status": "observed",
+      "concurrency": 64,
+      "rationale": "三次重复的审阅结论：吞吐仍增长，但 C64–C96 的边际收益开始下降。",
+      "evidence": ["../../../docs/reviews/m1.3-review.md#close-conclusion"]
+    },
+    "c_pressure": {
+      "status": "observed",
+      "concurrency": 96,
+      "rationale": "可复现的 pressure reference；review 明确不称其为 saturation。",
+      "evidence": ["../../../docs/reviews/m1.3-review.md#close-conclusion"]
+    },
+    "highest_tested": {
+      "status": "observed",
+      "concurrency": 128,
+      "rationale": "最高实测点，仅保留为 stress-only evidence；hard boundary 为 Unknown。",
+      "evidence": ["../../../docs/reviews/m1.3-review.md#close-conclusion"]
+    }
+  },
+  "claims": [
+    {
+      "type": "observed_fact",
+      "text": "C64 / C96 / C128 的 median output TPS 分别为 6038.27 / 7215.04 / 7867.34；TTFT p95 分别为 0.0778 / 0.0933 / 0.1135 秒。",
+      "evidence": ["../../../docs/reviews/m1.3-review.md#observed-facts"]
+    },
+    {
+      "type": "observed_fact",
+      "text": "C16–C128 group 的 15 个 measured rows 均完成，零 failed 或 timed-out requests，max waiting 始终为 0。",
+      "evidence": ["../../../docs/reviews/m1.3-review.md#observed-facts"]
+    },
+    {
+      "type": "interpretation",
+      "text": "吞吐到 C128 仍在增长，但逐步增加的 latency、零等待队列、零失败和低 KV-cache 使用率不足以证明 latency/queue knee 或 hard boundary。",
+      "evidence": ["../../../docs/reviews/m1.3-review.md#interpretation"]
+    },
+    {
+      "type": "unknown",
+      "text": "该 workload 在 C128 以上的 latency/queue knee 与 hard capacity boundary 未知。",
+      "evidence": ["../../../docs/reviews/m1.3-review.md#limitation-and-unknowns"]
+    }
+  ],
+  "limitations": [
+    "固定 prompt 令每一行的 prefix-cache token-hit ratio 都为 0.993103，显著减少 repeated prefill work。",
+    "C64/C96/C128 不得复制为其他 workload shape 或 model 的 operating references。"
+  ],
+  "links": [
+    {
+      "id": "review",
+      "kind": "review",
+      "label": "M1.3 close review",
+      "href": "../../../docs/reviews/m1.3-review.md"
+    },
+    {
+      "id": "fixture",
+      "kind": "evidence",
+      "label": "Published closing-group evidence",
+      "href": "https://github.com/Tennsoku/k8s-llm-serving-public/tree/main/benchmarks/raw-results/m1-vllm-baseline/20260812-m1.3-C16-128"
+    }
+  ]
+}

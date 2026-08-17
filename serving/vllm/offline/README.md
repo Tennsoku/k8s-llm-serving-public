@@ -43,7 +43,7 @@ inference capacity 的关键资源，内存的主要消费者。
 ## Scheduling
 
 在多prompt、多client、多engine的情况下，vLLM runtime需要合理调度prefill和decode阶段的execution，
-最大化GPU utilization和吞吐量。prefill是memory intensive，decode是compute intensive。
+最大化GPU utilization和吞吐量。prefill是compute intensive，decode是memory intensive。
 不同的prompt shape和max_tokens会影响prefill和decode的时间和内存占用。
 Scheduling策略也会影响TTFT。
 

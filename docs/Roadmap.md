@@ -1,942 +1,319 @@
-# High-Level Roadmap
+# Roadmap (v2)
 
-用两台 **DGX Spark** 作为主要 GPU 实验节点，并保留普通 x86_64 / WSL2 / VM 环境承担代码开发、CI、控制面和轻量负载生成。
+> **版本**：v2，2026-08-15 重写。v1 的十 Milestone 全量计划保存在
+> [`Roadmap-v1-archive.md`](Roadmap-v1-archive.md)，作为长期 backlog 参考，不再是执行计划。
 
-该实现不把两台设备描述为生产等价的 DGX 集群，而是定位为：
-
-> A two-node Grace Blackwell inference testbed for validating Kubernetes-native serving, scheduling, unified-memory governance, observability, failure handling, and distributed inference mechanisms.
-
-Roadmap：
-
-```text
-环境确认
-  -> 单节点推理基线
-  -> Kubernetes 承载
-  -> 指标与 SLO
-  -> 双副本服务
-  -> 控制面组件
-  -> 多运行时比较
-  -> 故障与生产模拟
-  -> 分布式高级扩展
-```
-
-每个 Milestone 都必须形成可审阅的文档、代码、原始实验数据和结论；不能仅以“成功启动组件”作为完成标准。
 
 ---
 
-## M0 — Platform Qualification & Reproducible Environment
+## 1. 预算分配
 
-### 目标
+| 阶段 | 周次 | 计划工时 |
+|---|---|---:|
+| **M1.5** Repackage & 呈现修复 | W1 | 12 h |
+| **M2** Serving 优化实验室 | W1–W2 | 30 h |
+| **M2.5** 多 adapter 准备 | W2–W3 | 12 h |
+| **M3** Kubernetes 基础与 GPU workload | W3–W5 | 50 h |
+| **M4** 可观测性、SLO 与 Tracing | W5–W6 | 35 h |
+| **M5** 路由 / 灰度 / 伸缩 / 故障 | W6–W8 | 45 h |
+| **M6** 容量成本与收尾 | W8 | 12 h |
+| **缓冲** | — | 44 h |
+| | | **240 h** |
 
-确认两台 DGX Spark 的硬件、系统、网络和容器能力，建立可重复的开发与实验环境，并识别 ARM64、Grace Blackwell、统一内存和 Kubernetes GPU 集成的兼容性边界。
-
-这一阶段的目的不是开始跑性能数字，而是建立后续所有 Benchmark 的可信基础。
-
-### High-level Knowledge
-
-- DGX OS、Ubuntu、ARM64 与 `linux/arm64`
-- NVIDIA Driver、CUDA Runtime、PyTorch CUDA Build
-- Grace Blackwell 与 Unified Memory Architecture
-- Docker / Containerd / NVIDIA Container Toolkit
-- OCI multi-architecture image
-- Kubernetes Node、RuntimeClass、Device Plugin
-- ConnectX-7、管理网络与数据网络
-- NCCL、MPI 和基础 Collective Communication
-- Benchmark reproducibility 与环境指纹
-
-### Output
+### 甘特概览
 
 ```text
-docs/environment/
-├── dgx-spark-inventory.md
-├── software-compatibility-matrix.md
-├── network-topology.md
-├── network-baseline.md
-├── nccl-baseline.md
-├── benchmark-environment-template.md
-└── qualification-notes.md
-
-deployments/bootstrap/
-├── verify-host.sh
-├── verify-container-runtime.sh
-├── verify-gpu-container.sh
-└── verify-network.sh
-
-distributed/nccl-tests/
-├── README.md
-└── scripts/
-    ├── nccl-m0-test-all-reduce.sh
-    ├── nccl-m0-test-all-gather.sh
-    └── verify-mpi.sh
-
-# private raw evidence; never publish directly
-artifacts/m0-private/<run-id>/ 
-
-# sanitized publication copy; pending closeout
-benchmarks/raw-results/m0-platform-qualification/<run-id>/
-
-docs/adr/
-└── ADR-0001-dgx-spark-primary-testbed.md
-
-docs/reviews/
-└── m0-review.md
+        W1      W2      W3      W4      W5      W6      W7      W8
+M1.5   ████
+M2     ████    ██████
+M2.5           ██      ██
+M3                     ████    ██████  ████
+M4                                     ████    ██████
+M5                                             ██      ██████  ████
+M6                                                             ████
 ```
 
-至少记录：
+每周 30 h 的稳态构成：
 
-- 两台机器的硬件与配置摘要（使用逻辑节点标签；物理标识不属于 M0 criterion）
-- Ubuntu、Kernel、Driver、CUDA、Python、PyTorch 版本
-- 容器运行时版本
-- ARM64 镜像兼容性
-- GPU 在宿主机和容器内的可见性
-- 两节点管理网络与高速链路拓扑
-- 已知不兼容组件及替代方案
+```text
+Milestone 工作   24.5 h/week   (196 h / 8 weeks)
+缓冲              5.5 h/week   (44 h / 8 weeks)
+                ───────────
+                 30 h/week
+```
 
-### 实验
+缓冲**按周消耗、不结转**：某周没用完就用来推进 stretch 或提前开下一阶段；某周超支就从下一周的 stretch 额度里借，绝不从 exit criteria 里借。
 
-- [x] 宿主机 CUDA smoke test。
-- [x] 容器内 CUDA / PyTorch smoke test。
-- [x] vLLM 最小模型加载测试。
-- [-] ARM64 自建镜像和 multi-arch CI 测试。
-- [x] 两节点 TCP 带宽与延迟基线。
-- [x] NCCL `all_reduce` / `all_gather` 基线。
-- [x] 两节点在 captured commit 且 tracked worktree clean 的状态下完成 bootstrap qualification scripts 重放。
-- [-] clean-machine provisioning / reboot recovery 测试未执行；M0 不作此声明，列为 trivial、non-blocking evidence hardening。
+---
+
+## 2. M1.5 — Repackage & 呈现修复（W1，12 h）
+
+**这不是技术 Milestone，是让前两个月的工作变得可见。** 目标是让 showcase、公开证据和项目入口在 fresh clone 中自洽；执行状态只见 [current-status](context/current-status.md)。
+
+### 任务
+
+| # | 任务 | 工时 |
+|---|---|---:|
+| 1.1 | `showcase/m1/index.json` + `comparisons.json` 的 `summary_path` 改指 `benchmarks/raw-results/m1-vllm-baseline/<run-id>/derived/summary.json`；`source_status` → `published`；开启 GitHub Pages | 3 h |
+| 1.2 | 四种 workload shape 改为通用交互场景：短多轮对话 / 长文本生成 / 带状态上下文的问答 / 长会话 | 1 h |
+| 1.3 | README 顶部 "Results at a glance" 表：模型 / 四场景 / C1 / C_eff / TTFT p95 / output TPS / 失败数 / 7B decode roofline 占比 | 2 h |
+| 1.4 | README 用 3 句话记录 M1.3 prefix-cache confound、影响与修正后的结论 | 0.5 h |
+| 1.5 | 加 LICENSE（Apache-2.0）；删 `.codex/config.toml`；repo description + topics | 0.5 h |
+| 1.6 | GitHub Actions CI：pytest `serving/vllm/tests/` + ruff + shellcheck + jsonschema 校验 `benchmarks/configs/` | 2 h |
+| 1.7 | raw-results 按 [证据留存标准](experiments/evidence-retention.md) 发布 representative evidence；完整 raw 留在 git 外，目标 clone < 10 MB | 2 h |
+| 1.8 | milestone 状态收敛到 [当前状态](context/current-status.md) 单一来源，其余三处改链接 | 1 h |
+
+### Decode roofline（1.3 用得到）
+
+M1.6 实测 Qwen2.5-7B BF16 / TP=1 / C1 输出 **12.7 tok/s**：
+
+```text
+GB10 统一内存带宽    ≈ 273 GB/s
+7B BF16 权重         ≈ 14 GB
+decode 带宽 roofline ≈ 273 / 14 ≈ 19.5 tok/s
+实测 / roofline      ≈ 65%
+```
+
+补充 roofline 对照，用于解释实测值与理论带宽上限的关系。
 
 ### Exit Criteria
 
-- [x] 两台 Spark 均能在 M0 qualification smoke scope 内运行 GPU 容器。
-- [x] 关键运行版本、PyTorch/vLLM 实际执行镜像 digest 和系统配置已记录。
-- [x] vLLM 或选定基础 Runtime 可在单台 Spark 上加载最小模型。
-- [x] 两节点网络基线已测量并区分管理链路与分布式数据链路。
-- [x] 两节点均在 captured commit 且 tracked worktree clean 的状态完成四层 verification replay；不声称 clean-machine provisioning 或 reboot recovery。
-- [x] ARM64、统一内存和 GPU Operator / Device Plugin 的已知边界已形成文档；Kubernetes 集成实测延至 M2。
-- [x] 后续 Benchmark 可以通过固定模板记录完整实验上下文。
-
-`[-]` 表示已明确记录并接受的部分完成项或后续 Milestone 延期项，不等同于已通过。
-
-### 可选扩展
-
-- Nix / Ansible 环境固化
-- 本地镜像 Registry
-- SBOM 与镜像签名
-- Firmware / Driver 升级回滚流程
-- 自动生成 environment fingerprint
+- [ ] GitHub Pages 上 showcase 的 5 个 single-run 与 4 个 comparison 全部渲染出真实数字
+- [ ] clone 体积 < 10 MB
+- [ ] CI 在 main 上绿
+- [ ] README 前 30 行内出现至少 6 个实测数字
+- [ ] 有 LICENSE，无 vendor 示例配置
 
 ---
 
-## M1 — Single-Node vLLM Serving Baseline
+## 3. M2 — Serving 优化实验室（W1–W2，30 h）
 
 ### 目标
 
-在脱离 Kubernetes 的条件下理解 vLLM 的核心执行路径，建立单节点、单运行时、可重复的推理基线，并找出第一组容量与延迟拐点。
+把 v1 里列为 optional 的三项——**量化、投机解码、前缀缓存**——转为正文。
 
-此阶段应先理解 Runtime，再进入平台编排；不能把 Kubernetes 噪声混入最初的性能结论。
+**成本极低的原因：M1 的 benchmark pipeline 已经建好。** 每个实验的边际成本是"换一组 server 参数 + 跑一遍 `run-benchmark.sh`"，不是从零搭测量。这是 M1 最大的复利。
 
-### High-level Knowledge
+### 任务
 
-- Transformer inference execution path
-- Tokenization、Prefill、Decode
-- KV Cache、KV Block 与容量估算
-- PagedAttention
-- Continuous Batching
-- Request Scheduler 与 Admission
-- TTFT、ITL/TPOT、E2E Latency
-- Request Throughput、Token Throughput、Goodput
-- Warm-up、CUDA Graph、Cold Start
-- Unified Memory 下的模型权重、KV Cache 和系统内存关系
-
-### Output
-
-```text
-labs/vllm-basics/
-serving/vllm/
-benchmarks/configs/vllm-single-node/
-benchmarks/raw-results/vllm-single-node/
-benchmarks/reports/vllm-single-node-baseline.md
-```
-
-包括：
-
-- Offline inference 示例
-- OpenAI-compatible server 启动脚本
-- Streaming / non-streaming client
-- Async concurrent load generator
-- 标准 workload 配置
-- 原始 request-level CSV / JSONL
-- GPU、内存与 Runtime 参数记录
-- 第一版瓶颈假设
-
-### 实验
-
-1. Cold start 与 warm start 对比。
-2. Concurrency sweep：`1 / 2 / 4 / 8 / 16 / saturation`。
-3. Short-input / short-output。
-4. Short-input / long-output。
-5. Long-input / short-output。
-6. Long-input / long-output。
-7. `max_model_len`、`max_num_seqs`、memory utilization 参数扫描。
-8. Small / Medium 模型容量和吞吐对比。
-9. 统一内存使用量随模型、上下文和并发变化的曲线。
+| # | 任务 | 内容 | 工时 |
+|---|---|---|---:|
+| 2.1 | **前缀缓存 hit vs miss A/B** | 使用共享 system prompt、固定上下文与多轮历史构造 prefix-heavy workload。对照组沿用 M1.4 的 request-unique `cache_salt`，实验组共享 prefix。报告 TTFT、prefill token 节省与折算成本影响，量化前缀复用对交互式服务的作用。 | 8 h |
+| 2.2 | **量化 + 精度闸门** | GB10 是 sm_121。优先 FP8 KV cache，权重 FP8（W8A8）能跑则跑。<br>**必须带精度验证**——否则无法判断吞吐或内存收益是否以不可接受的输出质量退化换取。小规模 lm-eval-harness 任务或固定 prompt 集 + 输出一致性率即可。<br>**降级路径**：固定 NGC 镜像在 sm_121 上 FP8 不可用 → INT4 AWQ/GPTQ；都不可用 → 记录为可复现的 compatibility boundary（这本身是合格结论，与 M0 边界方法论一致）。 | 12 h |
+| 2.3 | **投机解码** | Qwen2.5-0.5B 作 draft、7B 作 target；或 ngram / EAGLE。报告 acceptance rate、TTFT/TPOT 变化，以及**在何种 workload shape 下反而变慢**，用于界定适用边界。 | 8 h |
+| 2.4 | **长上下文** | 复用 M1.5 的 `max_model_len` OVAT，向上扩到镜像支持上限，记录 KV cache 占用曲线与 TTFT 拐点。 | 2 h |
 
 ### Exit Criteria
 
-- [ ] Offline 与 online serving 均可通过脚本复现。
-- [ ] Streaming client 能记录 TTFT 和 token timestamp。
-- [ ] 每组实验区分 warm-up 与 measured runs。
-- [ ] 所有失败、timeout、OOM 和 server restart 均被保留。
-- [ ] 已获得稳定的 TTFT、ITL/TPOT、E2E、吞吐和内存数据。
-- [ ] 已识别至少一个性能拐点和一个容量边界。
-- [ ] 能解释 Prefill-heavy 与 Decode-heavy workload 的差异。
-- [ ] 结论基于原始数据，而非单次观察。
-
-### 可选扩展
-
-- Prefix Cache
-- Chunked Prefill
-- Quantization：BF16 / FP8 / INT4
-- Speculative Decoding
-- CUDA Graph 开关对比
-- 70B 量化模型的容量边界测试
+- [ ] 四项实验各有 raw request-level 数据与可重算 summary
+- [ ] 量化实验带精度结果，或量化路径被记录为可复现的兼容性边界
+- [ ] 投机解码报告 acceptance rate 与至少一个无收益/负收益场景
+- [ ] 前缀缓存 A/B 给出 TTFT 与 prefill token 的量化差异，并折算为成本口径
+- [ ] 所有结论进入 showcase 的 comparison 视图（复用已有 contract，不新建 UI）
 
 ---
 
-## M2 — Kubernetes Foundation & GPU Workload Deployment
+## 4. M2.5 — 多 adapter 准备（W2–W3，12 h）
 
 ### 目标
 
-建立可重复的 Kubernetes 集群，将 DGX Spark 作为 GPU Worker 纳入集群，并把单节点 vLLM Baseline 转化为可部署、可升级、可恢复的 Kubernetes Workload。
+为 M3 的 multi-adapter serving 和 M5 的 adapter-aware 路由准备**真实的多 adapter workload**。这是一个 enabler，不是训练 Milestone。
 
-推荐拓扑：
+### 两条路径，按可行性择一
 
-```text
-x86_64 / VM Control Plane
-├── Kubernetes API / Scheduler / Controllers
-├── Prometheus / Grafana
-└── Load Generator
+| 路径 | 说明 | 工时 |
+|---|---|---:|
+| **A（推荐）单节点轻量 LoRA 微调** | Qwen2.5-7B + LoRA，4–6 个行为可区分的 persona 或 task adapter，合成语料（**必须写清是合成的**）。只求 adapter 可加载、行为可区分，**不做训练性能优化**。顺带记录吞吐 tokens/s 与统一内存下的峰值占用——为 §9 的 optional 分布式训练留一个单节点基线 | 12 h |
+| **B（降级）现成 adapter** | 若 aarch64 上 peft/训练栈不可用，直接用社区已有 LoRA，或用不同 system prompt 模拟多个 persona。**记录降级原因**，作为兼容性证据 | 4 h |
 
-DGX Spark A
-└── GPU Worker A
-
-DGX Spark B
-└── GPU Worker B
-```
-
-若必须在 Spark 上承载控制面，需要在 Benchmark 中明确记录 control-plane noise。
-
-### High-level Knowledge
-
-- Kubernetes Control Plane 与 Worker Node
-- Pod、Deployment、Service、ConfigMap、Secret
-- Requests、Limits、QoS、Eviction
-- RuntimeClass 与 NVIDIA Container Runtime
-- Device Plugin、Extended Resource
-- Node Label、Taint、Toleration、Affinity
-- Liveness、Readiness、Startup Probe
-- Graceful Shutdown 与 Pod Termination
-- Persistent model cache
-- Helm / Kustomize
-- ARM64 容器构建和调度约束
-
-### Output
-
-```text
-deployments/kubernetes/
-├── base/
-├── overlays/dgx-spark/
-└── bootstrap/
-
-serving/vllm/chart/
-docs/deployment/kubernetes-cluster.md
-docs/deployment/vllm-on-dgx-spark.md
-docs/adr/ADR-0002-gpu-integration-strategy.md
-```
-
-### 实验
-
-1. 普通 CPU workload 调度和资源限制验证。
-2. GPU Pod 资源申请与设备可见性验证。
-3. vLLM Deployment 单副本部署。
-4. Model cache cold / warm start 对比。
-5. Readiness 与 Startup Probe 行为。
-6. Pod 删除、重建和 graceful shutdown。
-7. 节点 taint、affinity 和指定节点部署。
-8. Spark A / B 间的同配置可重放测试。
+> **纪律**：这一步的验收标准是"M3 能加载 4–6 个不同 adapter 并服务"，**不是**"训练效率如何"。任何超出这个目标的训练调优都算超范围，立即停手。
 
 ### Exit Criteria
 
-- [ ] 集群可通过文档和脚本重建。
-- [ ] 两台 Spark 均以 GPU Worker 身份稳定加入集群。
-- [ ] GPU workload 使用明确的 resource request 调度。
-- [ ] vLLM Deployment 和 Service 可重复部署。
-- [ ] Probe 能正确区分加载中、可服务和异常状态。
-- [ ] Pod 重启不会造成不可解释的模型缓存或数据状态。
-- [ ] ARM64、GPU Runtime 和镜像依赖均被版本固定。
-- [ ] 单节点 Kubernetes 结果与 M1 裸机基线差异得到记录。
-
-### 可选扩展
-
-- Helm Chart 发布
-- GitOps：Argo CD / Flux
-- Local Registry 与 image pre-pull
-- Model artifact init container
-- PodDisruptionBudget
-- Canary / Blue-Green deployment
+- [ ] 4–6 个可加载、行为可区分的 adapter
+- [ ] 生成路径可复现（脚本或明确的下载/构造说明）
+- [ ] 若走路径 B，降级原因已记录
 
 ---
 
-## M3 — Observability Foundation, Workload Contract & Initial SLO
+## 5. M3 — Kubernetes 基础与 GPU workload（W3–W5，50 h）
 
 ### 目标
 
-使平台从“能运行”升级为“可测量、可解释、可告警”，并建立所有后续控制器共同依赖的指标契约、负载分类和第一版 SLO。
+**这是全计划的第一重心。** 目标是验证 LLM workload 的可复现 Kubernetes 生命周期，而不是只完成一次 Deployment。
 
-### High-level Knowledge
+验收重点是 LLM workload 特有的运行约束：慢加载模型的探针设计、流式连接的优雅终止、GPU 扩展资源，以及模型缓存的存储策略。
 
-- RED / USE Method
-- Prometheus metric types
-- Counter、Gauge、Histogram、Summary
-- Histogram bucket 与 percentile
-- PromQL、Recording Rule、Alert Rule
-- kube-state-metrics、Node Exporter
-- GPU / Unified Memory telemetry
-- vLLM runtime metrics
-- SLI、SLO、Error Budget、Burn Rate
-- Workload Class 与 Eligible Request
-- Goodput 与 raw throughput 的区别
-- Trace / log / metric correlation
+拓扑：控制面在 x86 / VM，两台 Spark 作 GPU Worker。若控制面必须落在 Spark 上，在 benchmark 中记录 control-plane noise。
 
-### Output
+### 任务
 
-```text
-observability/prometheus/
-observability/grafana/
-observability/alertmanager/
-observability/recording-rules/
-
-docs/slo/inference-service-slo.md
-docs/observability/metric-contract.md
-docs/observability/dashboard-guide.md
-workloads/contracts/workload-classes.yaml
-```
-
-至少建立：
-
-- Cluster Dashboard
-- Node / Unified Memory Dashboard
-- GPU Dashboard
-- vLLM Runtime Dashboard
-- SLO / Goodput Dashboard
-- 初始 Recording Rules
-- 可执行 Alert Rules
-
-### 实验
-
-1. 客户端测量与服务端指标一致性校验。
-2. TTFT、ITL/TPOT、E2E Histogram 精度验证。
-3. 不同 workload class 的延迟分布对比。
-4. 队列增长与 TTFT 上升的关联分析。
-5. KV Cache / memory pressure 与失败率关联。
-6. 人为触发 timeout、Pod restart 和 OOM 风险告警。
-7. 根据 M1/M2 Baseline 校准第一版 SLO。
+| # | 任务 | 内容 | 工时 |
+|---|---|---|---:|
+| 3.1 | **集群可复现搭建** | kubeadm 或 k3s，两节点，脚本 + 文档可重建。含 CNI 选择理由、节点标签与 taint 策略。<br>**"可从零重建"是本阶段的复现性要求。** | 10 h |
+| 3.2 | **GPU 接入** | device plugin / RuntimeClass / NVIDIA container runtime，GPU 作为 extended resource 被正确 request。<br>**ARM64 + GB10 上这一步的成熟度明显低于 x86**——过程中的坑与解法本身是最有价值的产出，全部记录。M0 已把此项列为未验证边界。 | 12 h |
+| 3.3 | **Workload 建模与探针** | Deployment vs StatefulSet 的选择理由；requests/limits 与 QoS class；**`startupProbe` 针对 900 s 级模型加载的设计**（这是 LLM serving 的经典陷阱——用 liveness 兜加载会导致无限重启）；readiness 与 liveness 的职责分离 | 10 h |
+| 3.4 | **优雅终止** | `terminationGracePeriodSeconds` + `preStop` hook，保证 Pod 删除时**进行中的流式请求不被截断**。用 M1 的 benchmark client 量化：删 Pod 时的请求失败数与截断数，以验证 K8s 生命周期与 LLM 流式响应的交互。 | 8 h |
+| 3.5 | **模型缓存存储** | PVC 承载模型权重，冷启动 vs 热启动对比测量；init container 或 sidecar 的预热方案取舍 | 6 h |
+| 3.6 | **打包与多 adapter 服务** | Kustomize overlay 或 Helm chart；加载 M2.5 的 4–6 个 adapter 做 multi-LoRA 共池，单次请求可指定 adapter | 4 h |
 
 ### Exit Criteria
 
-- [ ] Kubernetes、节点、GPU/内存、Runtime 和 SLO 指标可以在统一时间轴关联。
-- [ ] 能回答延迟来自排队、Prefill 还是 Decode。
-- [ ] 能判断系统处于空闲、有效饱和还是无效拥塞。
-- [ ] Workload class 明确规定 input/output token 边界。
-- [ ] SLO 包含 SLI、阈值、统计窗口、适用范围和排除项。
-- [ ] Goodput 可由请求级数据或 Recording Rule 计算。
-- [ ] 至少一个告警通过受控实验触发并完成定位。
-- [ ] Dashboard 可支持诊断，而非仅展示图表。
-
-### 可选扩展
-
-- OpenTelemetry trace
-- Loki / structured log aggregation
-- Exemplars
-- Multi-window burn-rate alerts
-- Automated benchmark-to-Grafana annotations
-- SLO report generator
+- [ ] 集群可由脚本 + 文档从零重建，两台 Spark 以 GPU Worker 稳定加入
+- [ ] GPU 通过 extended resource 被调度，容器内可见；ARM64 上的坑与解法已记录
+- [ ] Probe 能正确区分「加载中 / 可服务 / 异常」；模型加载期不触发重启
+- [ ] Pod 删除时进行中的流式请求不被截断，有量化数据
+- [ ] 模型缓存冷/热启动差异已测量
+- [ ] 多 adapter 共池可服务，单请求可指定 adapter
+- [ ] K8s 单副本结果与 M1 裸机基线的差异已记录（隔离 K8s 引入的开销）
 
 ---
 
-## M4 — Two-Replica Serving, Routing & Failure Domain Baseline
+## 6. M4 — 可观测性、SLO 与 Tracing（W5–W6，35 h）
+
+### 任务
+
+| # | 任务 | 内容 | 工时 |
+|---|---|---|---:|
+| 4.1 | **Metrics 栈** | kube-prometheus-stack；vLLM `/metrics` 经 **ServiceMonitor** 接入，与 Operator 管理的监控栈保持一致；kube-state-metrics、node exporter、GPU / 统一内存 telemetry（DCGM 或 tegrastats，按 GB10 实际可用性选） | 10 h |
+| 4.2 | **四张诊断向 Dashboard** | Serving（TTFT / TPOT / E2E / queue / KV cache）、Node & 统一内存、Runtime（running / waiting / preemption / prefix hit）、SLO & Goodput。<br>验收标准是"能回答延迟来自排队、prefill 还是 decode"，不是"图好看"。 | 8 h |
+| 4.3 | **日志聚合** | Loki 或 ELK 收 vLLM server log + K8s event；能按 request id 或时间窗关联到 metrics | 5 h |
+| 4.4 | **Tracing** | OpenTelemetry，能定位单请求的排队 / prefill / decode 分段 | 6 h |
+| 4.5 | **SLO + 告警演练** | 用 M1/M2 实测数据校准精简后的 SLO；recording rules + alert rules；**人为制造 KV cache 压力或 timeout，真实触发一次告警 → 按 dashboard 定位 → 记录 timeline**。不接受"规则已写好" | 6 h |
+
+### Exit Criteria
+
+- [ ] K8s / 节点 / GPU 统一内存 / Runtime / SLO 指标在统一时间轴可关联
+- [ ] 能回答"延迟来自排队、prefill 还是 decode"
+- [ ] 日志可按 request 或时间窗与 metrics 关联
+- [ ] 至少一条 trace 展示单请求的三段分解
+- [ ] SLO objective 由 M1/M2 实测校准，含窗口、eligibility、排除项
+- [ ] 至少一个告警经受控实验触发并完成定位，有 timeline 记录
+
+---
+
+## 7. M5 — 路由 / 灰度 / 伸缩 / 故障（W6–W8，45 h）
 
 ### 目标
 
-让两台 DGX Spark 分别承载独立模型副本，形成第一个真实的双节点在线服务，并研究扩容收益、请求路由、模型局部性和节点故障。
+本阶段验证在线服务的流量调度、灰度发布、伸缩与故障恢复，并量化这些操作对请求成功率和尾延迟的影响。
 
-这是比跨节点 Tensor Parallel 更优先的生产型 Milestone。
+### 任务
 
-### High-level Knowledge
-
-- Replica Parallelism
-- L4 / L7 Load Balancing
-- Round Robin、Least Connections、Least Queue
-- Queue-aware routing
-- Session affinity 与 cache locality
-- Health checking 与 endpoint removal
-- Retry、timeout、circuit breaking
-- Failure domain
-- Rolling update 与 graceful drain
-- Capacity scaling 与 Goodput scaling
-
-### Output
-
-```text
-gateway/
-├── config/
-├── routing-policy/
-└── metrics/
-
-deployments/kubernetes/vllm-replicas/
-benchmarks/reports/two-replica-scaling.md
-docs/adr/ADR-0003-routing-policy.md
-docs/runbooks/replica-failure.md
-```
-
-### 实验
-
-1. 单副本与双副本吞吐 / Goodput 对比。
-2. Round Robin 与 Least Queue 对比。
-3. 不对称负载下的 routing fairness。
-4. 模型 warm cache / cold cache 节点路由。
-5. Kill 一个 vLLM Pod。
-6. Drain 一个 Spark Node。
-7. Rolling update 期间的请求成功率和尾延迟。
-8. 节点恢复后的重新纳入和流量爬坡。
-9. Shared-prefix workload 下的 locality-aware routing。
+| # | 任务 | 内容 | 工时 |
+|---|---|---|---:|
+| 5.1 | **网关与路由策略对比** | 两副本 + 统一入口。至少两种策略可重复对比：round-robin 基线 vs **adapter / prefix-aware 路由**（同 adapter 或同 prefix 的请求粘到同一副本，提高缓存命中）。用 Goodput 而非 RPS 评价收益 | 12 h |
+| 5.2 | **健康检查与 endpoint 摘除** | 副本异常时 endpoint 自动摘除的时延测量；readiness 抖动导致的流量震荡及其抑制 | 5 h |
+| 5.3 | **滚动更新与灰度** | 零中断 rolling update（配合 M3.4 的优雅终止 + PDB）；一次 canary：10% 流量切新 adapter / 新镜像版本，观测后全量或回滚。**记录整个过程的请求成功率与尾延迟** | 10 h |
+| 5.4 | **弹性伸缩** | HPA 经 Prometheus Adapter 或 KEDA 消费 vLLM 的 waiting-request / KV cache 指标（**不是 CPU**——这是 LLM serving 的关键判断）。跑一次 burst：0 → 饱和 → 恢复。记录冷启动代价与是否振荡 | 10 h |
+| 5.5 | **三次故障演练** | ① kill 一个 vLLM Pod → endpoint 摘除与请求成功率；② drain 一台 Spark → 容量下降与降级行为；③ KV cache 压力下的 load shedding / timeout 行为。每次留 timeline + runbook | 8 h |
 
 ### Exit Criteria
 
-- [ ] 两个副本可独立服务并由统一入口路由。
-- [ ] Gateway 能根据健康状态移除异常 endpoint。
-- [ ] 单节点故障不会造成整个平台不可用。
-- [ ] 双副本扩展收益通过 Goodput 而非仅 RPS 评价。
-- [ ] 至少两种 routing policy 完成可重复对比。
-- [ ] Failover、恢复时间和 SLO 影响已量化。
-- [ ] Rolling update 期间的请求行为得到记录。
-- [ ] 已形成 Replica Failure Runbook。
+- [ ] 两种路由策略完成可重复对比，收益以 Goodput 评价
+- [ ] endpoint 摘除时延已测量
+- [ ] Rolling update 期间请求成功率有记录；完成一次 canary 与一次回滚
+- [ ] 伸缩信号是 serving 指标而非 CPU；burst 场景含冷启动代价，振荡边界已记录
+- [ ] 三次故障演练各有 timeline 与 runbook
 
-### 可选扩展
+### 明确不做
 
-- Envoy / NGINX / custom Go gateway 对比
-- Hedged requests
-- Prefix-aware router
-- Per-tenant rate limiting
-- Priority queue
-- Multi-model routing
+自定义 CRD / Controller（v1 M5）、自写 Scheduler Framework Plugin（v1 M6）。理由写进 `ADR-0002-platform-scope.md`：两节点同构环境无法形成有效的异构调度对照，现成方案（HPA/KEDA、PDB、Kueue）已覆盖需求，8 周窗口内投入产出比不成立。
+
+> 若缓冲有大量余量，见 §9 的 S1——一个小而完整的 controller 可单独验证声明式控制循环，但风险高，只在前 6 周顺利时才开。
 
 ---
 
-## M5 — Unified Memory & KV Cache Supervisor
+## 8. M6 — 容量成本与收尾（W8，12 h）
 
-### 目标
-
-实现项目的第一个自定义 Kubernetes Control Loop，面向 DGX Spark 的统一内存、容器内存、Runtime KV Cache 和请求队列建立风险检测与保护动作。
-
-Memory Supervisor 不应把 Host RAM 和传统离散 GPU VRAM 简单视为互不相关的资源，而应建立统一内存节点的组合压力模型。
-
-### High-level Knowledge
-
-- Kubernetes CRD、Controller、Reconciliation
-- Informer、Work Queue、Finalizer、Status Condition
-- cgroup v2：`memory.current`、`memory.high`、`memory.max`
-- PSI：`memory.pressure`
-- Kubernetes QoS、OOM score、Eviction
-- Unified Memory accounting
-- Model weights、KV Cache reservation 与实际占用
-- Queue depth、active sequence、preemption
-- Admission control、load shedding、priority
-- Control-loop stability、hysteresis、cooldown
-
-### Output
-
-```text
-control-plane/memory-supervisor/
-├── api/
-├── controller/
-├── policy/
-├── metrics/
-└── tests/
-
-config/crd/
-docs/adr/ADR-0004-unified-memory-pressure-model.md
-docs/design/memory-supervisor.md
-docs/runbooks/memory-pressure.md
-benchmarks/reports/memory-protection-experiments.md
-```
-
-### 实验
-
-1. CPU / system memory noisy neighbor。
-2. 长上下文请求造成 KV Cache pressure。
-3. 高并发造成 queue + cache saturation。
-4. 低优先级 workload 与在线服务竞争。
-5. 无保护 baseline：timeout / OOM / restart。
-6. Warning-only policy。
-7. Admission control / rate limit policy。
-8. Low-priority rejection / eviction policy。
-9. 控制动作前后 Availability、TTFT、Goodput 对比。
-10. 错误信号和阈值抖动下的控制稳定性。
+| # | 任务 | 内容 | 工时 |
+|---|---|---|---:|
+| 6.1 | **容量与成本报告** | `benchmarks/reports/capacity-and-cost.md`：每卡并发会话数、每百万 token 的 GPU-秒、按声明的需求模型推算可支持的活跃会话量，以及前缀命中率与量化对成本的影响 | 5 h |
+| 6.2 | **最终 showcase** | 扩展 `showcase/` 覆盖 serving → K8s → 可观测 → 故障全链路；一页 mermaid 架构图 | 5 h |
+| 6.3 | **证据导航** | `docs/evidence-map.md`：把 §10 的系统级验收问题映射到具体证据文件 | 2 h |
 
 ### Exit Criteria
 
-- [ ] CRD 具有清晰的 Spec、Status 和 Condition。
-- [ ] Controller 遵循幂等 Reconciliation。
-- [ ] 压力模型至少组合系统内存、PSI、KV Cache 和队列信号。
-- [ ] 所有决策、原因和动作暴露为 metric / event / status。
-- [ ] Controller 不依赖单一瞬时阈值做破坏性动作。
-- [ ] 在 supported workload 下实现零 OOM-caused failure，或明确记录无法满足的边界。
-- [ ] 相比无保护 baseline，Goodput 或 Availability 有可量化改善。
-- [ ] Controller 自身故障时不会阻断 Serving Data Plane。
-- [ ] 保护策略和失败模型已形成 ADR 与 Runbook。
-
-### 可选扩展
-
-- Predictive pressure model
-- PSI-based early warning
-- KV Cache-aware request admission
-- MemoryQoS integration
-- Node-level eBPF observer
-- Multi-tenant quota
+- [ ] 容量成本报告给出每卡会话数、每百万 token 成本、活跃会话量推算
+- [ ] Showcase 覆盖全链路
+- [ ] 每项 §10 验收问题都能在 30 秒内定位到证据
 
 ---
 
-## M6 — GPU / Model Locality-Aware Scheduler
+## 9. Stretch / Optional（缓冲有余量时才做，按此顺序）
 
-### 目标
+| # | 项目 | 工时 | 说明 |
+|---|---|---:|---|
+| **S1** | **小型 K8s Controller** | 25 h | CRD + reconcile loop + status conditions，做一件小事（例如按 KV cache 压力调整副本的 annotation，或 adapter 版本的声明式管理）。用于验证声明式控制循环；风险高，只在前 6 周全部按期完成时才开 |
+| **S2** | **分布式训练（optional）** | 30 h | 2 节点 DDP / FSDP，跑 0.5B / 1.5B 全参数，产出扩展效率表 + NCCL 通信开销分解（复用 M0 的 RoCE 基线与 NIC counter collector）。只验证小规模多节点执行与通信成本；明确不做 Megatron / DeepSpeed / TP / PP / 大规模 MoE 训练，两节点 128 GB 的结果不外推到大规模训练 |
+| **S3** | **跨节点张量并行推理** | 10 h | `TP=2` over 2 nodes 对比 replica parallel，产出 ADR：什么时候该 TP、什么时候该加副本。M0 的 NCCL 基线已完成，增量成本低 |
+| **S4** | **MoE 推理** | 8 h | Qwen3-30B-A3B 或 Qwen1.5-MoE-A2.7B 单节点跑通，记录 expert 激活与内存占用 |
+| **S5** | **结构化输出可靠性** | 6 h | guided decoding 的 TTFT/TPOT 开销 + schema violation rate；面向需要状态机或工具调用的下游应用 |
+| **S6** | **SGLang 单点对比** | 10 h | 在同一 workload contract 下选择一个 workload shape，与 vLLM 做受控对比 |
+| **S7** | **上游 vLLM 贡献** | 不定 | 遇到可复现的 upstream 问题时贡献文档、测试或小修复；**不设时间预算，机会型推进** |
 
-通过 Kubernetes Scheduler Framework 实现面向推理工作负载的节点选择逻辑，并与默认 Scheduler 对比调度质量、冷启动成本和 SLO 表现。
-
-两台 Spark 硬件同构，因此本阶段重点不是 GPU 型号选择，而是验证模型局部性、可用统一内存、节点压力、队列和副本分布信号。
-
-### High-level Knowledge
-
-- Scheduler Framework 生命周期
-- PreFilter、Filter、PreScore、Score、Reserve
-- Extended Resource 与 Node Allocatable
-- Node Label、Affinity、Taint
-- Device Plugin data model
-- Resource fragmentation
-- Model locality 与 image/model cache locality
-- Cold-start cost
-- Queue-aware placement
-- Topology-aware scheduling
-- Scheduler extender 与 framework plugin 的取舍
-
-### Output
-
-```text
-control-plane/scheduler-plugin/
-├── plugin/
-├── scoring/
-├── config/
-└── tests/
-
-docs/design/scheduler-plugin.md
-docs/adr/ADR-0005-scheduling-signals.md
-benchmarks/reports/scheduler-comparison.md
-```
-
-### 实验
-
-1. Default Scheduler baseline。
-2. Model cache locality scoring。
-3. Free unified-memory scoring。
-4. Runtime queue / pressure scoring。
-5. 单节点已有高负载时的新副本 placement。
-6. 节点不可用或信号陈旧时的 fallback。
-7. 调度后 cold-start time 与 SLO 的关联。
-8. Scheduler restart / plugin failure 行为。
-
-### Exit Criteria
-
-- [ ] Plugin 使用 Scheduler Framework，而非绕过 Kubernetes 调度语义。
-- [ ] Filter 与 Score 逻辑具有单元测试。
-- [ ] 调度信号来源、更新频率和 stale-data 行为明确。
-- [ ] Default Scheduler 作为受控 baseline。
-- [ ] 自定义调度至少在一个实验中降低冷启动成本、压力失衡或 SLO violation。
-- [ ] 调度失败时给出可诊断的 event / status。
-- [ ] Plugin 故障具有安全 fallback，不导致集群整体不可调度。
-- [ ] 设计限制明确说明两节点同构环境不能证明大规模异构 GPU 调度能力。
-
-### 可选扩展
-
-- Tensor Parallel gang scheduling
-- Volcano / Kueue
-- NCCL topology-aware placement
-- Heterogeneous GPU simulation
-- Model-aware descheduler
-- Preemption and priority
+> **S1 与 S2 互斥选一。** 若优先研究 Kubernetes 控制循环，选 S1；若优先研究多节点训练的执行与通信边界，选 S2。
 
 ---
 
-## M7 — LLM-Aware Autoscaling & Capacity Control
+## 10. 项目级验收：8 周后系统应能回答什么
 
-### 目标
+这是本 roadmap 的 Definition of Done：不仅让组件运行，还要让关键系统问题都有可定位、可复查的证据。
 
-从 CPU-based scaling 逐步演进到基于请求队列、TTFT、KV Cache、Goodput 和 SLO burn rate 的 Serving-aware Scaling，并分析扩容收益与冷启动代价。
+**Kubernetes（重心）**
 
-### High-level Knowledge
+- [ ] 集群怎么从零重建？CNI 和节点标签为什么这么选？（M3.1）
+- [ ] GPU 怎么被调度？ARM64 上遇到了什么，怎么解的？（M3.2）
+- [ ] 模型要加载 15 分钟，探针怎么配才不会被无限重启？（M3.3）
+- [ ] 删 Pod 的时候，正在流式返回的请求会不会被截断？（M3.4）
+- [ ] 滚动更新期间请求成功率是多少？怎么做到零中断？（M5.3）
+- [ ] 为什么用 waiting-request 而不是 CPU 做伸缩信号？（M5.4）
+- [ ] 一台节点挂掉，服务如何降级、多久恢复？（M5.5）
 
-- HPA control loop
-- Prometheus Adapter
-- KEDA ScaledObject
-- Custom Metrics / External Metrics API
-- Queueing and saturation
-- Waiting / running request
-- TTFT、Goodput 与 SLO burn rate
-- Cold-start and scale-out delay
-- Stabilization window、cooldown、hysteresis
-- Scale-to-zero trade-off
-- Oscillation、over-scaling、under-scaling
-- Capacity envelope
+**推理服务优化**
 
-### Output
+- [ ] 量化带来多少吞吐收益，付出多少精度代价？（M2.2）
+- [ ] 投机解码在什么 workload 下有效、什么 workload 下反而更慢？（M2.3）
+- [ ] 前缀缓存命中率对 prefix-heavy 交互服务成本的影响有多大？（M2.1）
+- [ ] 多个 adapter 共池时，请求怎么调度才不互相拖累？（M3.6 + M5.1）
 
-```text
-control-plane/llm-autoscaler/
-deployments/autoscaling/hpa/
-deployments/autoscaling/keda/
-observability/dashboards/autoscaling.json
-benchmarks/reports/autoscaling-comparison.md
-docs/adr/ADR-0006-autoscaling-signal.md
-```
+**可观测性与容量**
 
-### 实验
+- [ ] 一个请求从进网关到返回第一个 token，时间花在哪三段？（M4.4）
+- [ ] 怎么判断系统是空闲、有效饱和还是无效拥塞？（M4.2）
+- [ ] 在声明的需求模型下，需要多少 GPU、可支持多少活跃会话？（M6.1）
 
-1. CPU HPA baseline。
-2. GPU utilization baseline。
-3. Waiting request / queue latency scaling。
-4. TTFT violation scaling。
-5. KV Cache pressure scaling。
-6. Composite signal scaling。
-7. Burst traffic：0 -> saturation -> recovery。
-8. 不同 cooldown / stabilization 配置。
-9. 冷节点模型加载期间的 temporary overload。
-10. 一台节点不可用时的 capacity reduction。
+**方法论**
 
-### Exit Criteria
-
-- [ ] HPA、KEDA 或自定义 Autoscaler 至少完成两类 baseline。
-- [ ] 扩缩容信号具有清晰的 metric contract。
-- [ ] Scale-out 和 scale-in 决策可在 Dashboard 中追踪。
-- [ ] Burst 场景下 TTFT / Goodput 改善得到量化。
-- [ ] 不发生持续性 oscillation 或已明确其触发边界。
-- [ ] 冷启动时间被纳入策略，而非仅看稳态吞吐。
-- [ ] 节点容量不足时能够拒绝或降级，而非无限扩容。
-- [ ] Autoscaler 故障不影响现有副本继续服务。
-
-### 可选扩展
-
-- Predictive autoscaling
-- Scheduled pre-warming
-- Multi-model scaling
-- Cost-aware scaling
-- Error-budget-driven scaling
-- Scale-to-zero
+- [ ] 是否记录了至少一次已识别并修正的实验偏差？（M1.3 prefix-cache confound，M1.5 写入 README）
 
 ---
 
-## M8 — Multi-Runtime Benchmark & Runtime Selection
+## 附录 A — 相对 v1 的变更总结
 
-### 目标
-
-在统一硬件、模型、请求分布和测量方法下比较至少两个推理 Runtime，并形成可解释的技术选型，而不是简单排名。
-
-建议优先级：
-
-```text
-vLLM baseline
-  -> SGLang
-  -> TensorRT-LLM（确认 Spark / ARM64 兼容后）
-  -> llama.cpp（作为 CPU / quantized / portability 对照）
-```
-
-### High-level Knowledge
-
-- Runtime architecture
-- Request scheduler 与 batching policy
-- Memory allocator 与 KV Cache implementation
-- Prefix cache
-- Quantization
-- CUDA Graph
-- Kernel fusion / Triton kernel
-- Continuous batching 差异
-- Runtime API 与 metric surface
-- Portability、operability、ecosystem trade-off
-
-### Output
-
-```text
-serving/sglang/
-serving/llama-cpp/
-serving/tensorrt-llm/
-benchmarks/configs/runtime-comparison/
-benchmarks/raw-results/runtime-comparison/
-benchmarks/reports/runtime-selection.md
-docs/adr/ADR-0007-runtime-selection.md
-```
-
-### 实验
-
-1. 相同模型、precision 和 workload 下的单并发 latency。
-2. Concurrency sweep 与 saturation point。
-3. Prefill-heavy / Decode-heavy workload。
-4. Long-context 与 KV Cache pressure。
-5. Prefix-sharing workload。
-6. Cold-start / warm-start。
-7. Failure behavior 和 recovery。
-8. Runtime metric completeness 和运维复杂度。
-9. ARM64 镜像、构建和升级成本。
-
-### Exit Criteria
-
-- [ ] 至少两个 Runtime 在相同 experiment contract 下完成测试。
-- [ ] 模型、revision、precision、token 分布和运行参数受控。
-- [ ] 原始数据和失败案例完整保留。
-- [ ] 比较同时覆盖 latency、throughput、Goodput、memory、stability 和 operability。
-- [ ] 能解释差异可能来自 scheduler、kernel、memory 或 cache，而非只报告数字。
-- [ ] Runtime Selection ADR 绑定明确 workload 和 SLO。
-- [ ] 不支持或兼容性不足的 Runtime 被如实记录，不用替代数据伪装完成。
-
-### 可选扩展
-
-- Ray Serve integration
-- NVIDIA Triton Inference Server
-- Runtime-specific speculative decoding
-- Disaggregated serving runtime comparison
-- Mixed-runtime routing
-
----
-
-## M9 — Production Simulation, Incident Response & Final Showcase
-
-### 目标
-
-将 Serving、Control、Observability 和 Experiment 四个 Plane 联动，通过受控生产场景验证系统在压力、故障和变更期间的服务质量与恢复行为。
-
-### High-level Knowledge
-
-- Failure domain analysis
-- Fault injection
-- Load shedding 与 graceful degradation
-- Rolling update / rollback
-- Incident command and timeline
-- MTTR、RTO、recovery signal
-- Error budget burn
-- Capacity planning
-- Runbook、Postmortem、ADR
-- Production readiness review
-
-### Output
-
-```text
-workloads/scenarios/production-simulation/
-docs/runbooks/
-docs/postmortems/
-docs/architecture/final-architecture.md
-docs/architecture/failure-domain-analysis.md
-benchmarks/reports/capacity-planning.md
-benchmarks/reports/final-evaluation.md
-showcase/
-├── demo-script.md
-├── architecture-diagrams/
-└── evidence-index.md
-```
-
-### 实验
-
-1. Burst traffic 与 Autoscaler delay。
-2. Pod kill 与 endpoint removal。
-3. Spark Node unavailable。
-4. Memory / KV Cache pressure。
-5. Noisy Neighbor。
-6. Rolling update 与 rollback。
-7. Gateway / metric pipeline partial degradation。
-8. Scheduler / Controller unavailable。
-9. 双故障或故障叠加场景。
-10. 从告警到定位、缓解和恢复的完整演练。
-
-### Exit Criteria
-
-- [ ] 至少完成一次跨 Plane 的完整故障演练。
-- [ ] 告警能指向可执行 Runbook。
-- [ ] Incident timeline、影响范围、根因和改进项得到记录。
-- [ ] 系统在单节点故障时保持定义范围内的可用性或完成可控降级。
-- [ ] 关键控制器失效不会直接中断现有 Serving。
-- [ ] Capacity Report 明确 supported workload、saturation point 和安全余量。
-- [ ] Final Architecture 说明数据流、指标流、控制回路和 failure domain。
-- [ ] Showcase 可在有限时间内复现关键实验并链接原始证据。
-- [ ] 已知限制明确说明双节点 Spark 结果不可直接外推到 H100/H200/B200 大规模集群。
-
-### 可选扩展
-
-- Chaos Mesh / LitmusChaos
-- Automated game day
-- Security boundary review
-- Multi-tenant isolation
-- Authentication / authorization
-- Cost and energy efficiency reporting
-
----
-
-## M10 — Optional Distributed Inference Extensions
-
-本 Milestone 不阻塞核心项目完成。其目的在于利用两台 Spark 的高速链路学习多节点推理和 Collective Communication，而不是替代双副本生产型路线。
-
-### 目标
-
-验证跨节点模型并行的容量收益、通信开销和故障边界，并比较 Replica Parallel 与 Distributed Tensor Parallel 的适用场景。
-
-### High-level Knowledge
-
-- Tensor Parallel
-- Pipeline Parallel
-- Expert Parallel
-- NCCL Collective
-- All-Reduce、All-Gather、Reduce-Scatter
-- Communication / computation overlap
-- Rendezvous、rank、world size
-- Gang scheduling
-- Multi-node model loading
-- Prefill / Decode disaggregation
-- KV transfer
-
-### Output
-
-```text
-distributed/nccl-tests/
-distributed/tensor-parallel/
-benchmarks/reports/distributed-inference.md
-docs/adr/ADR-0008-replica-vs-model-parallel.md
-```
-
-### 实验
-
-1. NCCL bandwidth / latency baseline。
-2. 单节点与跨节点 Tensor Parallel。
-3. 可装入单节点的模型：TP 是否反而降低性能。
-4. 只能跨节点装载的模型：容量收益。
-5. Collective traffic 与 management traffic 隔离。
-6. 链路降级、rank failure 和 collective hang。
-7. Replica Parallel 与 TP 的 Goodput / Availability 对比。
-8. 可行时尝试 Prefill / Decode 分离。
-
-### Exit Criteria
-
-- [ ] NCCL baseline 可重放并记录拓扑和链路配置。
-- [ ] 至少一个跨节点模型并行 workload 成功运行，或兼容性阻塞被完整记录。
-- [ ] 通信开销通过 metric / profiler 得到量化。
-- [ ] 明确区分“容量扩展”和“吞吐扩展”。
-- [ ] 能解释两台机器不会自动形成透明的 256GB GPU。
-- [ ] Rank / link failure 行为得到记录。
-- [ ] ADR 给出 Replica Parallel 与 Tensor Parallel 的场景选择依据。
-
-### 可选扩展
-
-- Pipeline Parallel
-- Expert Parallel / MoE
-- Disaggregated Prefill / Decode
-- RDMA-capable external cluster comparison
-- Nsight Systems profiling
-
----
-
-# Milestone Dependency Map
-
-```text
-M0 Platform Qualification
- |
- v
-M1 Single-Node vLLM Baseline
- |
- v
-M2 Kubernetes GPU Deployment
- |
- v
-M3 Observability + SLO
- |
- +----------------------+
- |                      |
- v                      v
-M4 Two Replicas       M8 Multi-Runtime
- |
- +----------+-----------+
- |          |           |
- v          v           v
-M5 Memory  M6 Scheduler M7 Autoscaler
-  \         |          /
-   +--------+---------+
-            |
-            v
-M9 Production Simulation
-            |
-            v
-M10 Distributed Extensions (Optional)
-```
-
-M5、M6、M7 可以在 M4 完成后部分并行，但每个控制组件都必须依赖 M3 已建立的 metric contract 和 workload contract。
-
----
-
-# Milestone Evidence Standard
-
-每个 Milestone 结束时，至少应提交以下证据：
-
-1. **Design**：目标、范围、架构和关键决策。
-2. **Code**：可执行实现、配置与测试。
-3. **Experiment**：假设、变量、控制条件与运行命令。
-4. **Raw Evidence**：CSV、JSONL、日志、Prometheus snapshot 或 profiler 输出。
-5. **Analysis**：结果解释、瓶颈、限制和后续动作。
-6. **Operations**：必要时提供 Runbook、Alert 或 Postmortem。
-
-以下情况不视为完成：
-
-- 仅截图证明服务启动；
-- 只记录平均延迟而没有 workload 定义；
-- 只保留整理后的表格而删除原始数据；
-- 同时改变多个变量后直接下结论；
-- 把模拟信号描述为真实 GPU / 节点实验；
-- 把 DGX Spark 结果直接外推到数据中心 GPU 集群。
-
----
-
-# Current Status
-
-| Milestone | Status | Current Focus |
+| v1 | v2 处置 | 理由 |
 |---|---|---|
-| M0 Platform Qualification | Publish Complete / Closed | Canonical evidence 已完成；推进 fail-closed sanitized publication |
-| M1 Single-Node vLLM Baseline | In progress | Existing vLLM Basics labs and benchmark client |
-| M2 Kubernetes GPU Deployment | Not Started | Cluster topology and GPU runtime integration |
-| M3 Observability & SLO | Design Available | Initial SLO and dashboard input contract |
-| M4 Two-Replica Serving | Not Started | Gateway and routing baseline |
-| M5 Memory Supervisor | Planned | Unified-memory pressure model |
-| M6 Scheduler Plugin | Planned | Model locality and pressure-aware scoring |
-| M7 LLM Autoscaler | Planned | Queue / TTFT / Goodput-driven scaling |
-| M8 Multi-Runtime Benchmark | Planned | vLLM versus second runtime |
-| M9 Production Simulation | Planned | Cross-plane failure scenarios |
-| M10 Distributed Extensions | Optional | NCCL and multi-node Tensor Parallel |
-| Documentation | In Progress | Parent architecture, SLO, lab design |
+| M2 Kubernetes | → **M3，扩到 50 h 并成为第一重心** | Kubernetes 是本项目的核心研究对象；重点验证 LLM 特有约束（慢加载探针、流式优雅终止、GPU 扩展资源） |
+| M3 Observability & SLO | → M4，35 h；SLO 文档 1336 → ~200 行 | 指标语义已由 `metrics_utils.py` 覆盖，接栈成本低；SLO 规范先于系统存在是过度工程 |
+| M4 双副本路由 | → **M5，与灰度/伸缩/故障合并为 45 h 的第二重心** | 将线上服务生命周期放在同一阶段做端到端验证 |
+| **M5 Memory Supervisor（CRD + Controller）** | **删除**，降为 S1 optional | 3–4 周投入风险过高；保留为在主线按期完成后验证声明式控制循环的 stretch |
+| **M6 Scheduler Plugin** | **删除** | 两节点同构无法形成有效的异构调度对照 |
+| M7 LLM Autoscaler | → M5.4，改用 HPA / KEDA + Prometheus Adapter | 自建 autoscaler 收益不足；现成方案已经支持消费 serving 指标 |
+| M8 Multi-Runtime | → S6 stretch | 锦上添花 |
+| M9 Production Simulation | → M5.5，收缩为三次演练 | 保留核心，去掉九场景矩阵 |
+| M10 Distributed Inference TP | → S3 stretch | M0 NCCL 已完成，增量成本低但优先级不高 |
+| **（v1 无）** | **新增 M1.5 呈现修复，12 h** | showcase 在公开 repo 上打不开 |
+| **（v1 无）** | **新增 M2 量化 / 投机解码 / 前缀缓存，30 h** | v1 列为 optional；现有 benchmark pipeline 可低边际成本复用 |
+| **（v1 无）** | **新增 M2.5 多 adapter 准备，12 h** | multi-LoRA 服务的前置；顺带给 optional 分布式训练留单节点基线 |
+| **（v1 无）** | **分布式训练列为 S2 optional，30 h** | 硬件规模只支持有界的小规模实验，优先级低于推理主线 |
 
 ---
 
-# Core Definition of Done
+## 附录 B — 历史 Milestone（已完成，保持不变）
 
-核心项目在不依赖 M10 的情况下满足以下条件即视为完成：
+| Milestone | 状态 | 结论入口 |
+|---|---|---|
+| **M0** Platform Qualification | ✅ Complete | [`reviews/m0-review.md`](reviews/m0-review.md) — host CUDA、GPU container、200 Gb RoCE、NCCL 基线、兼容性边界 |
+| **M1** Single-Node vLLM Baseline | ✅ Complete | [`reviews/m1.3-review.md`](reviews/m1.3-review.md) + [`showcase/m1/`](../showcase/m1/) — 四场景 operating references、最小 OVAT、bounded boundary、7B 兼容性 |
 
-- [x] 两台 DGX Spark 已完成 M0 技术资格检查；公开证据是发布 gate，不是技术结论 blocker。
-- [ ] 单节点 vLLM serving baseline 已建立并保留原始请求级数据。
-- [ ] Kubernetes 上的 GPU Serving Deployment 具备健康检查、优雅终止和恢复能力。
-- [ ] Kubernetes、节点、统一内存、Runtime 与 SLO 指标接入统一可观测性体系。
-- [ ] 两个独立推理副本通过统一入口提供服务，并完成节点故障实验。
-- [ ] 至少实现一个解决推理特定资源问题的 Kubernetes Controller。
-- [ ] Scheduler 或 Autoscaler 至少有一个完成与 Kubernetes 默认机制的受控对比。
-- [ ] 至少两个推理 Runtime 完成统一方法下的 Benchmark，或兼容性阻塞被充分证明。
-- [ ] Burst、Noisy Neighbor、Pod/Node Failure、Rolling Update 中至少四类场景完成复现。
-- [ ] SLO、Goodput、Capacity Boundary 与 Error Budget 被用于评价系统，而非只使用平均吞吐。
-- [ ] ADR、Benchmark Report、Runbook、Postmortem 和 Known Limitations 得到完整维护。
-- [ ] 整个系统可以被清晰解释为一个连贯的 Kubernetes-native LLM inference platform。
+M0/M1 的范围与 Exit Criteria 原文见 [`Roadmap-v1-archive.md`](Roadmap-v1-archive.md) 的对应章节。

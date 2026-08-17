@@ -1,0 +1,75 @@
+schema_version: 2
+config_id: m1.4-long-long-canonical-v1
+
+experiment:
+  step: M1.4
+  kind: canonical
+  status: ready
+  comparison_group: m1.4-long-long
+  variant: canonical
+  axis: sweep.concurrency
+  baseline_config_id: m1.4-long-long-selection-v1
+
+model:
+  id: Qwen/Qwen2.5-0.5B-Instruct
+  path: /models/Qwen2.5-0.5B-Instruct
+  artifact_revision: 7ae557604adf67be50417f59c2c2f167def9a775
+  runtime_revision: null
+  tokenizer_revision: null
+  served_name: qwen2.5-0.5b-instruct
+
+runtime:
+  image: nvcr.io/nvidia/vllm@sha256:1de8e6bfdb4c81c1f31a806cc9b13b5c6352714a7cec87f4d24964bcc91159b2
+  dtype: bfloat16
+  quantization: null
+  generation_config: vllm
+  max_model_len: 8192
+  max_num_seqs: 128
+  gpu_memory_utilization: 0.15
+  container_memory_limit: 64g
+  extra_args: []
+
+workload:
+  name: m1.4-long-long
+  shape: long-long
+  input_tokens_target: 5888
+  prompt:
+    prefix: "Write an analysis of this inference context: "
+    repeated_text: "Models process input tokens during prefill and output tokens during decode. "
+    repetitions: 450
+    suffix: ""
+  max_output_tokens: 512
+  total_requests_per_repetition: 128
+  request_timeout_seconds: 600
+  cache_identity:
+    mode: request_unique
+    derivation: sha256-run-case-phase-index-v1
+
+sampling:
+  temperature: 0.0
+  seed: 42
+  stream: true
+  include_usage: true
+
+warmup:
+  requests: 2
+  concurrency: 1
+
+sweep:
+  concurrency: [1, 8, 16]
+  measured_repetitions: 3
+  reference_points:
+    c1: 1
+    c_eff: 8
+    c_pressure: null
+    highest_tested: 16
+
+metrics:
+  sample_interval_seconds: 0.5
+
+orchestration:
+  ready_timeout_seconds: 600
+  idle_timeout_seconds: 120
+  stop_timeout_seconds: 60
+  stop_on_failure: true
+

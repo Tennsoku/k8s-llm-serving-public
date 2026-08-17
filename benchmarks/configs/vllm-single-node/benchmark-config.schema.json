@@ -1,0 +1,323 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "benchmark-config.schema.json",
+  "title": "M1 single-node vLLM benchmark configuration",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "config_id",
+    "experiment",
+    "model",
+    "runtime",
+    "workload",
+    "sampling",
+    "warmup",
+    "sweep",
+    "metrics",
+    "orchestration"
+  ],
+  "properties": {
+    "schema_version": {"const": 2},
+    "config_id": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]*$"
+    },
+    "experiment": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "step",
+        "kind",
+        "status",
+        "comparison_group",
+        "variant",
+        "axis",
+        "baseline_config_id"
+      ],
+      "properties": {
+        "step": {"type": "string", "minLength": 1},
+        "kind": {
+          "enum": [
+            "smoke",
+            "selection",
+            "canonical",
+            "ovat",
+            "boundary",
+            "compatibility"
+          ]
+        },
+        "status": {"enum": ["draft", "ready"]},
+        "comparison_group": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]*$"
+        },
+        "variant": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]*$"
+        },
+        "axis": {"type": ["string", "null"], "minLength": 1},
+        "baseline_config_id": {
+          "description": "The config_id of the baseline run for this experiment. If null, this config is not a controlled comparison. For a controlled comparison, the baseline_config_id must point to a config that has the same workload, runtime, and model settings, except for the axis being tested. I.e., the candidate config should point to the baseline config.",
+          "type": ["string", "null"],
+          "minLength": 1
+        },
+        "selection_criteria": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "safe_min_concurrency",
+            "safe_max_concurrency",
+            "throughput_metric",
+            "throughput_marginal_floor_ratio",
+            "latency_metrics",
+            "latency_multiplier_ceiling",
+            "pressure_indicators"
+          ],
+          "properties": {
+            "safe_min_concurrency": {"type": "integer", "minimum": 1},
+            "safe_max_concurrency": {"type": "integer", "minimum": 1},
+            "throughput_metric": {"const": "output_token_throughput_tps"},
+            "throughput_marginal_floor_ratio": {
+              "description": "Minimum current delta-TPS-per-delta-concurrency divided by the first positive delta-TPS-per-delta-concurrency.",
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            },
+            "latency_metrics": {
+              "type": "array",
+              "minItems": 1,
+              "uniqueItems": true,
+              "items": {
+                "enum": ["ttft_p95_seconds", "e2e_p95_seconds"]
+              }
+            },
+            "latency_multiplier_ceiling": {
+              "type": "number",
+              "exclusiveMinimum": 1
+            },
+            "pressure_indicators": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["metric", "operator", "threshold"],
+                "properties": {
+                  "metric": {
+                    "enum": [
+                      "max_waiting_requests",
+                      "max_kv_cache_usage_ratio"
+                    ]
+                  },
+                  "operator": {"const": ">"},
+                  "threshold": {"type": "number", "minimum": 0}
+                }
+              }
+            }
+          }
+        },
+        "boundary_policy": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "start_concurrency",
+            "step",
+            "maximum_concurrency",
+            "minimum_health_check",
+            "stop_conditions"
+          ],
+          "properties": {
+            "start_concurrency": {"type": "integer", "minimum": 1},
+            "step": {"type": "integer", "minimum": 1},
+            "maximum_concurrency": {"type": "integer", "minimum": 1},
+            "minimum_health_check": {"const": "measured_streaming_case"},
+            "stop_conditions": {
+              "type": "array",
+              "minItems": 1,
+              "uniqueItems": true,
+              "items": {
+                "enum": [
+                  "client_failure",
+                  "request_timeout",
+                  "idle_failure",
+                  "readiness_loss",
+                  "oom",
+                  "restart"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "model": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "path",
+        "artifact_revision",
+        "runtime_revision",
+        "tokenizer_revision",
+        "served_name"
+      ],
+      "properties": {
+        "id": {"type": "string", "minLength": 1},
+        "path": {"type": "string", "minLength": 1},
+        "artifact_revision": {"type": ["string", "null"], "minLength": 1},
+        "runtime_revision": {"type": ["string", "null"], "minLength": 1},
+        "tokenizer_revision": {"type": ["string", "null"], "minLength": 1},
+        "served_name": {"type": "string", "minLength": 1}
+      }
+    },
+    "runtime": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "image",
+        "dtype",
+        "quantization",
+        "generation_config",
+        "max_model_len",
+        "max_num_seqs",
+        "gpu_memory_utilization",
+        "container_memory_limit",
+        "extra_args"
+      ],
+      "properties": {
+        "image": {"type": "string", "minLength": 1},
+        "dtype": {"type": "string", "minLength": 1},
+        "quantization": {"type": ["string", "null"], "minLength": 1},
+        "generation_config": {"type": "string", "minLength": 1},
+        "max_model_len": {"type": "integer", "minimum": 1},
+        "max_num_seqs": {"type": "integer", "minimum": 1},
+        "gpu_memory_utilization": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "maximum": 1
+        },
+        "container_memory_limit": {"type": "string", "minLength": 1},
+        "extra_args": {
+          "type": "array",
+          "items": {"type": "string", "minLength": 1}
+        }
+      }
+    },
+    "workload": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "name",
+        "shape",
+        "input_tokens_target",
+        "prompt",
+        "max_output_tokens",
+        "total_requests_per_repetition",
+        "request_timeout_seconds",
+        "cache_identity"
+      ],
+      "properties": {
+        "name": {"type": "string", "minLength": 1},
+        "shape": {"type": "string", "minLength": 1},
+        "input_tokens_target": {"type": "integer", "minimum": 1},
+        "prompt": {
+          "oneOf": [
+            {"type": "string", "minLength": 1},
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["prefix", "repeated_text", "repetitions", "suffix"],
+              "properties": {
+                "prefix": {"type": "string"},
+                "repeated_text": {"type": "string", "minLength": 1},
+                "repetitions": {"type": "integer", "minimum": 1},
+                "suffix": {"type": "string"}
+              }
+            }
+          ]
+        },
+        "max_output_tokens": {"type": "integer", "minimum": 1},
+        "total_requests_per_repetition": {"type": "integer", "minimum": 1},
+        "request_timeout_seconds": {"type": "number", "exclusiveMinimum": 0},
+        "cache_identity": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["mode", "derivation"],
+          "properties": {
+            "mode": {"const": "request_unique"},
+            "derivation": {"const": "sha256-run-case-phase-index-v1"}
+          }
+        }
+      }
+    },
+    "sampling": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["temperature", "seed", "stream", "include_usage"],
+      "properties": {
+        "temperature": {"type": "number"},
+        "seed": {"type": "integer"},
+        "stream": {"const": true},
+        "include_usage": {"const": true}
+      }
+    },
+    "warmup": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["requests", "concurrency"],
+      "properties": {
+        "requests": {"type": "integer", "minimum": 1},
+        "concurrency": {"type": "integer", "minimum": 1}
+      }
+    },
+    "sweep": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["concurrency", "measured_repetitions", "reference_points"],
+      "properties": {
+        "concurrency": {
+          "type": "array",
+          "minItems": 1,
+          "items": {"type": "integer", "minimum": 1}
+        },
+        "measured_repetitions": {"type": "integer", "minimum": 1},
+        "reference_points": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["c1", "c_eff", "c_pressure", "highest_tested"],
+          "properties": {
+            "c1": {"type": ["integer", "null"], "minimum": 1},
+            "c_eff": {"type": ["integer", "null"], "minimum": 1},
+            "c_pressure": {"type": ["integer", "null"], "minimum": 1},
+            "highest_tested": {"type": ["integer", "null"], "minimum": 1}
+          }
+        }
+      }
+    },
+    "metrics": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["sample_interval_seconds"],
+      "properties": {
+        "sample_interval_seconds": {"type": "number", "exclusiveMinimum": 0}
+      }
+    },
+    "orchestration": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "ready_timeout_seconds",
+        "idle_timeout_seconds",
+        "stop_timeout_seconds",
+        "stop_on_failure"
+      ],
+      "properties": {
+        "ready_timeout_seconds": {"type": "integer", "minimum": 1},
+        "idle_timeout_seconds": {"type": "integer", "minimum": 1},
+        "stop_timeout_seconds": {"type": "integer", "minimum": 1},
+        "stop_on_failure": {"type": "boolean"}
+      }
+    }
+  }
+}

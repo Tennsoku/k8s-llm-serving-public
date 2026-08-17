@@ -1,0 +1,79 @@
+schema_version: 2
+config_id: m1-concurrency-c8-32-v2
+
+experiment:
+  step: M1.4-pipeline-migration
+  kind: selection
+  status: ready
+  comparison_group: m1-new-contract-legacy-workload
+  variant: c8-32
+  axis: sweep.concurrency
+  baseline_config_id: null
+
+model:
+  id: Qwen/Qwen2.5-0.5B-Instruct
+  path: /models/Qwen2.5-0.5B-Instruct
+  artifact_revision: 7ae557604adf67be50417f59c2c2f167def9a775
+  runtime_revision: null
+  tokenizer_revision: null
+  served_name: qwen2.5-0.5b-instruct
+
+runtime:
+  image: nvcr.io/nvidia/vllm@sha256:1de8e6bfdb4c81c1f31a806cc9b13b5c6352714a7cec87f4d24964bcc91159b2
+  dtype: bfloat16
+  quantization: null
+  generation_config: vllm
+  max_model_len: 8192
+  max_num_seqs: 128
+  gpu_memory_utilization: 0.15
+  container_memory_limit: 64g
+  extra_args: []
+
+workload:
+  name: m1-concurrency-baseline
+  shape: legacy-medium-short
+  input_tokens_target: 128
+  prompt: >-
+    Explain how continuous batching, PagedAttention, the request scheduler, and
+    the KV cache interact in an online LLM inference server. Describe the
+    prefill and decode phases, why multiple active requests can improve token
+    throughput, and why queueing and memory pressure can increase time to first
+    token. Distinguish client concurrency from the active batch, explain how
+    queue depth signals saturation, and describe how preemption or recomputation
+    can increase latency without necessarily failing the HTTP request. End by
+    identifying the measurements needed to locate a performance knee. Keep the
+    answer technically precise and do not use a table.
+  max_output_tokens: 64
+  total_requests_per_repetition: 1000
+  request_timeout_seconds: 120
+  cache_identity:
+    mode: request_unique
+    derivation: sha256-run-case-phase-index-v1
+
+sampling:
+  temperature: 0.0
+  seed: 42
+  stream: true
+  include_usage: true
+
+warmup:
+  requests: 3
+  concurrency: 1
+
+sweep:
+  concurrency: [8, 16, 24, 28, 30, 32]
+  measured_repetitions: 3
+  reference_points:
+    c1: null
+    c_eff: null
+    c_pressure: null
+    highest_tested: null
+
+metrics:
+  sample_interval_seconds: 1.0
+
+orchestration:
+  ready_timeout_seconds: 600
+  idle_timeout_seconds: 120
+  stop_timeout_seconds: 60
+  stop_on_failure: true

@@ -35,11 +35,37 @@ python3 -m http.server 8000 \
 http://127.0.0.1:8000/benchmarks/reports/benchmark-summary-viewer.html?src=/artifacts/private/m1/<run-id>/derived/summary.json
 ```
 
+作为其他静态页面的子组件时，使用精确的 `mode=embedded`：
+
+```text
+benchmark-summary-viewer.html?mode=embedded&src=<same-origin-summary-url>
+```
+
+Embedded 模式隐藏 standalone topbar、上传入口、footer 和通用 knee heuristic，
+保留 context、数据质量、KPI、曲线、case/repetition 和 evidence 区域。缺少或无法
+读取 `src` 时会在 iframe 内显示错误，不会伪装成已加载结果。Showcase 必须先把
+summary path 相对自己的 manifest URL 解析为完整同源 URL，再写入 viewer query；
+不能把未经解析的 `../../...` 直接传给 iframe。
+
+Host 可附加 opaque `host_token` 防止快速切换时旧 iframe 响应覆盖新状态。Viewer
+会向同源 parent 发送：
+
+```text
+{ source: "benchmark-summary-viewer", version: 1, hostToken,
+  type: "loaded" | "error", detail }
+```
+
+通知是可选旁路；viewer 自身的 loaded/error 状态不依赖 parent。完整的实际集成见
+[`showcase/m1/`](../../showcase/m1/)。
+
 不要把包含 `artifacts/private/` 的 repository root 绑定到 `0.0.0.0` 或对外暴露。
 
 ## 解读边界
 
-- 页面只支持同一个 run 内的 concurrency 对比。`summary.json` 不包含 model revision、runtime image/args 与完整 workload；跨 run 对比需要 companion `run.yaml`。
+- 页面当前仍只展示同一个 run 内的 concurrency 对比。viewer 已读取
+  schema v2 的 `context`、selection criteria 和 post-run indicator
+  annotations；model/runtime/workload/experiment 字段和 fingerprint 为后续
+  跨 run 匹配与差异提示提供输入，但当前页面不自动判定两个 run 是否“可比”。
 - 自动 knee 分析只是趋势提示。最高成功 concurrency 不是 performance knee 或 capacity boundary。
 - TPOT 是请求级平均 decode 间隔的分位，不是 token-level ITL。
 - 图中的 min–max 是 repetition range，不是置信区间。

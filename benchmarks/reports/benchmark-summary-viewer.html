@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="dark">
-  <meta name="description" content="本地读取 vLLM benchmark summary.json，快速检查延迟、吞吐、内存与容量压力。">
+  <meta name="description" content="读取本地或同源 vLLM benchmark summary.json。检查延迟、吞吐、内存与容量压力。">
   <title>Benchmark 透视 · M1 vLLM</title>
   <style>
     :root {
@@ -37,7 +37,7 @@
 
     * { box-sizing: border-box; }
 
-    html { scroll-behavior: smooth; }
+    html { scroll-behavior: smooth; scrollbar-color: var(--line-strong) var(--bg-deep); }
 
     body {
       min-width: 320px;
@@ -454,8 +454,42 @@
 
     .footer { margin-top: 34px; padding-top: 22px; border-top: 1px solid var(--line); color: var(--subtle); font-size: 11px; text-align: center; }
 
+    .embedded-status {
+      display: none;
+      padding: 18px 20px;
+      border: 1px solid var(--line-strong);
+      border-radius: var(--radius-md);
+      color: var(--muted);
+      background: var(--surface);
+      text-align: left;
+    }
+
+    html[data-viewer-mode="embedded"] body { background: var(--bg-deep); }
+    html[data-viewer-mode="embedded"] .topbar,
+    html[data-viewer-mode="embedded"] .landing-copy,
+    html[data-viewer-mode="embedded"] .dropzone,
+    html[data-viewer-mode="embedded"] .landing-footnote,
+    html[data-viewer-mode="embedded"] .viewer-heuristic-only,
+    html[data-viewer-mode="embedded"] .kpi-heuristic,
+    html[data-viewer-mode="embedded"] .footer { display: none !important; }
+    html[data-viewer-mode="embedded"] .page-shell { width: min(1540px, calc(100% - 28px)); }
+    html[data-viewer-mode="embedded"] .landing {
+      min-height: 180px;
+      padding: 28px 0;
+    }
+    html[data-viewer-mode="embedded"] .embedded-status { display: block; }
+    html[data-viewer-mode="embedded"] .dashboard { padding: 22px 0 38px; }
+    html[data-viewer-mode="embedded"] .hero { padding: 0 0 14px; }
+    html[data-viewer-mode="embedded"] .hero > .eyebrow,
+    html[data-viewer-mode="embedded"] .hero > h1,
+    html[data-viewer-mode="embedded"] .hero > .hero-lede { display: none; }
+    html[data-viewer-mode="embedded"] .hero-meta { margin-top: 0; }
+    html[data-viewer-mode="embedded"] .kpi-grid { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+    html[data-viewer-mode="embedded"] .insight-grid { grid-template-columns: 1fr; }
+
     @media (max-width: 1220px) {
       .kpi-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+      html[data-viewer-mode="embedded"] .kpi-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
       .pressure-layout { grid-template-columns: 1fr; }
     }
 
@@ -465,6 +499,7 @@
       .semantics-content { grid-template-columns: 1fr; }
       .status-banner { grid-template-columns: auto 1fr; }
       .status-side { grid-column: 2; text-align: left; }
+      html[data-viewer-mode="embedded"] .kpi-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     }
 
     @media (max-width: 640px) {
@@ -488,6 +523,7 @@
       .pressure-grid { grid-template-columns: 1fr 1fr; }
       .status-banner { padding: 17px; }
       .status-banner h2 { font-size: 15px; }
+      html[data-viewer-mode="embedded"] .kpi-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     }
 
     @media (prefers-reduced-motion: reduce) {
@@ -524,9 +560,11 @@
   <main class="page-shell">
     <section id="landing" class="landing" aria-labelledby="landingTitle">
       <div class="landing-inner">
-        <p class="eyebrow">M1 Benchmark Lens</p>
-        <h1 id="landingTitle">Benchmark<br><span>Summary Visualizer</span></h1>
-        <p class="landing-lede">快速检查 TTFT、TPOT、E2E、Token 吞吐、KV Cache 与 Unified Memory 压力，辅助定位性能 knee 和容量边界。</p>
+        <div class="landing-copy">
+          <p class="eyebrow">M1 Benchmark Lens</p>
+          <h1 id="landingTitle">Benchmark<br><span>Summary Visualizer</span></h1>
+          <p class="landing-lede">快速检查 TTFT、TPOT、E2E、Token 吞吐、KV Cache 与 Unified Memory 压力，辅助定位性能 knee 和容量边界。</p>
+        </div>
 
         <div id="dropzone" class="dropzone" role="button" tabindex="0" aria-describedby="dropHelp">
           <div class="drop-content">
@@ -536,11 +574,12 @@
               </svg>
             </span>
             <strong>拖入一次运行的 summary.json</strong>
-            <p id="dropHelp">或从本机选择文件；不会上传数据</p>
+            <p id="dropHelp">或从本机选择文件</p>
             <span class="button button-primary">选择 summary.json</span>
           </div>
         </div>
         <input id="fileInput" type="file" accept=".json,application/json" hidden>
+        <div id="embeddedStatus" class="embedded-status" role="status" aria-live="polite">正在加载 summary.json…</div>
         <div id="loadError" class="error-box" role="alert" aria-live="assertive" hidden></div>
         <p class="landing-footnote">兼容当前 summary schema v1 / v2 · 无 CDN · 无构建步骤 · 建议使用 Firefox / Chrome</p>
       </div>
@@ -550,7 +589,7 @@
       <header class="hero">
         <p class="eyebrow">Single-run concurrency analysis</p>
         <h1>曲线　<span>压力边界</span></h1>
-        <p class="hero-lede">把延迟、吞吐与资源信号放回同一组 concurrency sweep 中阅读。所有自动分析都只是观察提示，最终结论仍需结合 workload、runtime 配置与原始证据。</p>
+        <p class="hero-lede">对比同一组 concurrency sweep 中的E2E、RPS等资源信号。该页面所有分析均为自动化观察提示，最终结论仍需结合 workload、runtime 配置与原始证据后得出。</p>
         <div id="heroMeta" class="hero-meta"></div>
       </header>
 
@@ -558,7 +597,7 @@
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
           <circle cx="12" cy="12" r="9"/><path d="M12 10.5V17m0-10h.01"/>
         </svg>
-        <div><strong>当前页面只做本 run 内对比。</strong> summary.json 不含 model revision、runtime image/args 与完整 workload 条件，不能据此安全地跨 run 排名。</div>
+        <div id="scopeNoteText"><strong>当前页面只做本 run 内对比。</strong> 正在检查 summary 是否带有自包含的 runtime、model 与 workload context。</div>
       </aside>
 
       <section id="qualityBanner" class="status-banner" data-state="good" aria-live="polite">
@@ -584,8 +623,8 @@
           <div id="peakThroughputValue" class="kpi-value mint">—</div>
           <div id="peakThroughputSub" class="kpi-sub">—</div>
         </article>
-        <article class="kpi-card">
-          <div class="kpi-label"><span>Performance knee</span><span>提示</span></div>
+        <article class="kpi-card kpi-heuristic">
+          <div class="kpi-label"><span>Viewer knee hint</span><span>heuristic</span></div>
           <div id="kneeValue" class="kpi-value amber">—</div>
           <div id="kneeSub" class="kpi-sub">—</div>
         </article>
@@ -606,12 +645,12 @@
         </article>
       </section>
 
-      <section class="section-block" aria-labelledby="insightHeading">
+      <section class="section-block viewer-insights" aria-labelledby="insightHeading">
         <div class="section-heading">
-          <div><h2 id="insightHeading">分析提示，而非自动结论</h2><p>区分观测事实、趋势解释与仍待验证的假设</p></div>
+          <div><h2 id="insightHeading">分析signal</h2><p>请合理区分观测事实、趋势解释与仍待验证的假设</p></div>
         </div>
         <div class="insight-grid">
-          <article class="panel insight-card warning">
+          <article class="panel insight-card warning viewer-heuristic-only">
             <span class="insight-label">Marginal gain</span>
             <h3 id="kneeInsightTitle">—</h3>
             <p id="kneeInsightBody">—</p>
@@ -627,7 +666,7 @@
       <section class="section-block chart-grid" aria-label="核心曲线">
         <article class="panel">
           <header class="panel-header">
-            <div><h3>吞吐扩展曲线</h3><p>中位数与 repetition min–max；range 不是置信区间</p></div>
+            <div><h3>吞吐扩展曲线</h3><p>中位数与 repetition min–max；注意该range 不是置信区间</p></div>
             <select id="throughputMetric" class="select-control chart-controls" aria-label="选择吞吐指标">
               <option value="outputTps">输出 Token TPS</option>
               <option value="inputTps">输入 Token TPS</option>
@@ -643,7 +682,7 @@
 
         <article class="panel">
           <header class="panel-header">
-            <div><h3>尾延迟曲线</h3><p>客户端成功请求分位数；统一换算为 ms</p></div>
+            <div><h3>尾延迟曲线</h3><p>客户端成功请求分位数。统一换算为 ms</p></div>
             <select id="latencyMetric" class="select-control chart-controls" aria-label="选择延迟指标">
               <option value="ttftP95Ms">P95 TTFT</option>
               <option value="tpotP95Ms">P95 TPOT</option>
@@ -659,7 +698,7 @@
 
         <article class="panel">
           <header class="panel-header">
-            <div><h3>Unified Memory 信号</h3><p>不同作用域不可相加；缺失值不按 0 处理</p></div>
+            <div><h3>Unified Memory 信号</h3><p>不同作用域不可相加。缺失值未按 0 处理</p></div>
             <select id="memoryMetric" class="select-control chart-controls" aria-label="选择内存指标">
               <option value="nvmlGiB">容器 NVML allocation</option>
               <option value="cgroupCurrentGiB">cgroup sampled current</option>
@@ -678,7 +717,7 @@
 
         <article class="panel">
           <header class="panel-header">
-            <div><h3>选中并发的压力快照</h3><p id="selectedConcurrencyMeta">点击曲线或对比表选择并发</p></div>
+            <div><h3>该并发的压力快照</h3><p id="selectedConcurrencyMeta">请点击曲线或对比表选择并发</p></div>
             <select id="selectedConcurrency" class="select-control chart-controls" aria-label="选择并发"></select>
           </header>
           <div class="pressure-layout">
@@ -693,7 +732,7 @@
 
       <section class="section-block" aria-labelledby="comparisonHeading">
         <div class="section-heading">
-          <div><h2 id="comparisonHeading">Concurrency 对比</h2><p>边际收益按真实 ΔConcurrency 归一化；点击一行查看 repetition</p></div>
+          <div><h2 id="comparisonHeading">Concurrency 对比</h2><p>边际收益按真实 ΔConcurrency 归一化。点击其中一行可查看 repetition</p></div>
         </div>
         <article class="panel">
           <div class="table-wrap">
@@ -722,7 +761,7 @@
 
       <section class="section-block" aria-labelledby="evidenceHeading">
         <div class="section-heading">
-          <div><h2 id="evidenceHeading">证据健康</h2><p>结构校验通过不等于实验结论有效</p></div>
+          <div><h2 id="evidenceHeading">证据健康</h2><p>注意：仅为结构校验通过，不等于实验结论有效</p></div>
         </div>
         <div class="evidence-layout">
           <article class="panel">
@@ -775,7 +814,7 @@
         </div>
       </details>
 
-      <footer class="footer">M1 Benchmark 透视 · 只读取本地 summary.json · Raw evidence 仍是最终解释依据</footer>
+      <footer class="footer">M1 Benchmark 透视 · 本地文件或同源 summary.json · Raw evidence 仍是最终解释依据</footer>
     </section>
   </main>
 

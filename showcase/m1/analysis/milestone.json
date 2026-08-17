@@ -1,0 +1,80 @@
+{
+  "schema_version": 1,
+  "kind": "milestone_analysis",
+  "milestone_id": "m1",
+  "status": "reviewed",
+  "takeaway": "M1主要展示四种设计好的workload，以及它们的canonical replay：每种预声明C1/C_eff/highest_tested的并发实验点，并完成3次 repetition。其中，Short-input workloads在C16并发以下没有直接queue pressure；Long-input workloads在C16会出现明显pressure signals，但距离测试平台的边界上限仍有冗余，C_pressure label目前全空。三个OVAT对比只是proof of concept,未严格执行变量全控制对比（重跑次数，采样频率等），所以只作descriptive-only展示。",
+  "scope": [
+    "单台DGX Spark上的vLLM OpenAI-compatible serving baseline；该里程碑不适用双节点DGX集群或生产容量的外推结论。",
+    "M1.4以后均使用request-unique cache identity控制prefix cache hit率，模拟不同input的情况。4种workload各选用3个canonical replay points，并重跑3次记录均值。",
+    "展示层只读取public selected summary与人工analysis；完整raw体量较大，暂时不纳入该git repo。"
+  ],
+  "claims": [
+    {
+      "type": "observed_fact",
+      "text": "M1.3 fixed-prompt concurrency sweep已完成审阅，保留C64/C96/C128 作为该特定workload下的 efficient/pressure/stress-only参考。",
+      "evidence": ["../../../docs/reviews/m1.3-review.md"]
+    },
+    {
+      "type": "observed_fact",
+      "text": "四份M1.4 canonical summary共记录10,368/10,368个成功请求，36个完整measured cases，4/4 raw validation passed。",
+      "evidence": ["Four M1.4 canonical summaries: /cases/*/client", "Four M1.4 canonical summaries: /data_quality/complete_case_count", "Four M1.4 canonical summaries: /raw_validation_passed"]
+    },
+    {
+      "type": "interpretation",
+      "text": "四个C_eff来自 versioned canonical config且已完成 replay。所有workload pattern的C_pressure在当前测试域内为均为bounded <b>Unknown</b>；long-short与long-long已有pressure evidence，但离C_pressure label仍有距离。",
+      "evidence": ["Four M1.4 canonical summaries: /context/configuration/sweep/reference_points", "Four M1.4 canonical summaries: /concurrency_summary"]
+    },
+    {
+      "type": "interpretation",
+      "text": "当前三个M1.5 OVAT pair只能作descriptive comparison：参照组为3 repetitions、0.5秒采样率，而对照组为单次运行、1秒采样率，case contract fingerprint不同。",
+      "evidence": ["../comparisons.json", "Four published comparison summaries: /context/configuration/metrics", "Four published comparison summaries: /cases/*/case_contract_fingerprint"]
+    }
+  ],
+  "limitations": [
+    "Long-long的实际output length会随concurrency 漂移，跨点throughput/E2E不是固定output-shape comparison。",
+    "M1.3 使用的固定prompt没有独立cache salt，prefix-cache token-hit ratio高达99.31%，不能外推到request-unique workload。"
+  ],
+  "handoff": {
+    "m2": [
+      "复用 M1 固定的 workload、measurement 与 operating-reference 语义，比较 Kubernetes 单 Pod 路径的额外开销。",
+      "保持模型、容器、采样参数和cache identity可追溯，避免把调度变化混入serving baseline。"
+    ],
+    "m3": [
+      "复用 request-level TTFT/E2E/TPOT、request/token throughput、success/failure 与 server waiting/KV signals 作为 dashboard 和 alert 输入。",
+      "SLO/Goodput thresholds 必须由 reviewed operating references 与 tested bounds 校准，不能从单次 OVAT 或 viewer heuristic 直接产生。"
+    ]
+  },
+  "links": [
+    {
+      "id": "comparisons",
+      "kind": "component",
+      "label": "M1 selected comparisons",
+      "href": "../compare.html"
+    },
+    {
+      "id": "m1-plan",
+      "kind": "plan",
+      "label": "M1 implementation plan",
+      "href": "../../../docs/milestone-plan/m1-plan.md"
+    },
+    {
+      "id": "m1.3-review",
+      "kind": "review",
+      "label": "M1.3 review",
+      "href": "../../../docs/reviews/m1.3-review.md"
+    },
+    {
+      "id": "experiment-contract",
+      "kind": "method",
+      "label": "Experiment evidence contract",
+      "href": "../../../docs/experiments/README.md"
+    },
+    {
+      "id": "viewer",
+      "kind": "component",
+      "label": "Reusable summary viewer",
+      "href": "../../../benchmarks/reports/benchmark-summary-viewer.html"
+    }
+  ]
+}

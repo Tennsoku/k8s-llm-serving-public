@@ -502,7 +502,10 @@ def _concurrency_summary(
         grouped.setdefault(int(case["concurrency"]), []).append(case)
     output: list[dict[str, Any]] = []
     for concurrency in sorted(grouped):
-        rows = grouped[concurrency]
+        all_rows = grouped[concurrency]
+        rows = [
+            row for row in all_rows if row.get("measurement_complete") is True
+        ]
 
         def observed(path: tuple[str, ...]) -> list[float]:
             values: list[float] = []
@@ -519,8 +522,8 @@ def _concurrency_summary(
 
         summary: dict[str, Any] = {
             "concurrency": concurrency,
-            "repetition_count": len(rows),
-            "case_ids": [row["case_id"] for row in rows],
+            "repetition_count": len(all_rows),
+            "case_ids": [row["case_id"] for row in all_rows],
         }
         for name, path in (
             ("request_throughput_rps", ("client", "request_throughput_rps")),

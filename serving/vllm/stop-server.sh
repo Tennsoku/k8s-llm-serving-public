@@ -11,8 +11,9 @@ Options:
   -n, --name NAME        Expected container name; defaults to container-name.txt
       --help             Show this help
 
-The script removes the container only after a successful graceful-shutdown
-classification and complete log/state capture. Failed containers are preserved.
+The script stops the recorded container when it is running, captures its logs
+and final state, then removes it. Shutdown observations are evidence, not a
+cleanup gate; rerun the benchmark if the evidence shows a failed lifecycle.
 HELP
 }
 
@@ -42,7 +43,6 @@ done
 
 [[ $# -eq 0 ]] || { echo "error: unexpected positional arguments: $*" >&2; exit 2; }
 command -v docker >/dev/null || { echo "error: docker is required" >&2; exit 1; }
-command -v curl >/dev/null || { echo "error: curl is required" >&2; exit 1; }
 [[ "${TIMEOUT}" =~ ^[1-9][0-9]*$ ]] || {
   echo "error: timeout must be a positive integer" >&2
   exit 2
@@ -52,22 +52,14 @@ OUTPUT_DIR="$(cd "${OUTPUT_DIR}" && pwd -P)" || {
   echo "error: output directory does not exist: ${OUTPUT_DIR}" >&2
   exit 1
 }
-for metadata_file in container-name.txt container-id.txt base-url.txt; do
+for metadata_file in container-name.txt container-id.txt; do
   [[ -r "${OUTPUT_DIR}/${metadata_file}" ]] || {
     echo "error: missing ${OUTPUT_DIR}/${metadata_file}; use the start-server.sh run directory" >&2
     exit 1
   }
 done
-for evidence_file in server-stop-requested-ns.txt graceful-shutdown.env; do
-  [[ ! -e "${OUTPUT_DIR}/${evidence_file}" ]] || {
-    echo "error: shutdown evidence already exists; refusing to overwrite ${evidence_file}" >&2
-    exit 1
-  }
-done
-
 recorded_name="$(sed -n '1p' "${OUTPUT_DIR}/container-name.txt")"
 recorded_id="$(sed -n '1p' "${OUTPUT_DIR}/container-id.txt")"
-base_url="$(sed -n '1p' "${OUTPUT_DIR}/base-url.txt")"
 CONTAINER_NAME="${CONTAINER_NAME:-${recorded_name}}"
 
 [[ "${CONTAINER_NAME}" == "${recorded_name}" ]] || {
@@ -82,6 +74,8 @@ fi
   echo "error: container ID mismatch; refusing to stop a different container" >&2
   exit 1
 }
+
+: >"${OUTPUT_DIR}/container-inspect.stderr.log"
 
 inspect_field() {
   local format="$1"
@@ -110,9 +104,9 @@ if [[ "${pre_stop_running}" == "true" ]]; then
   docker_stop_rc=$?
   set -e
 else
+  : >"${OUTPUT_DIR}/docker-stop.stdout.log"
   printf 'container was not running when stop was requested\n' \
     >"${OUTPUT_DIR}/docker-stop.stderr.log"
-  : >"${OUTPUT_DIR}/docker-stop.stdout.log"
 fi
 
 date +%s%N >"${OUTPUT_DIR}/server-stop-finished-ns.txt"
@@ -135,106 +129,44 @@ post_stop_running="$(inspect_field '{{.State.Running}}')"
 container_status="$(inspect_field '{{.State.Status}}')"
 container_exit_code="$(inspect_field '{{.State.ExitCode}}')"
 oom_killed="$(inspect_field '{{.State.OOMKilled}}')"
-
-docker_wait_rc="not_run"
-docker_wait_exit_code="unknown"
-if [[ "${post_stop_running}" == "false" ]]; then
-  set +e
-  docker_wait_exit_code="$(docker wait "${CONTAINER_NAME}" \
-    2>"${OUTPUT_DIR}/docker-wait.stderr.log")"
-  docker_wait_rc=$?
-  set -e
-  docker_wait_exit_code="${docker_wait_exit_code//$'\n'/}"
-else
-  printf 'container was still running; docker wait was not called\n' \
-    >"${OUTPUT_DIR}/docker-wait.stderr.log"
-fi
-printf '%s\n' "${docker_wait_exit_code}" >"${OUTPUT_DIR}/container-exit-code.txt"
-
-set +e
-post_stop_http_status="$(curl --silent --show-error \
-  --connect-timeout 1 \
-  --max-time 2 \
-  --output /dev/null \
-  --write-out '%{http_code}' \
-  "${base_url}/health" \
-  2>"${OUTPUT_DIR}/post-stop-curl.stderr.log")"
-post_stop_curl_rc=$?
-set -e
-[[ "${post_stop_http_status}" =~ ^[0-9]{3}$ ]] || post_stop_http_status="000"
-printf '%s\n' "${post_stop_http_status}" >"${OUTPUT_DIR}/post-stop-health.txt"
-
-post_stop_endpoint_stopped=false
-if (( post_stop_curl_rc != 0 )) && [[ "${post_stop_http_status}" == "000" ]]; then
-  post_stop_endpoint_stopped=true
-fi
-
-shutdown_log_marker_present=false
-if grep -Eq 'Shutting down|Application shutdown complete|Finished server process' \
-    "${OUTPUT_DIR}/server.log"; then
-  shutdown_log_marker_present=true
-fi
+restart_count="$(inspect_field '{{.RestartCount}}')"
 
 graceful_shutdown=false
 if [[ "${docker_stop_attempted}" == true ]] \
   && [[ "${docker_stop_rc}" == "0" ]] \
   && [[ "${post_stop_running}" == "false" ]] \
-  && [[ "${container_status}" == "exited" ]] \
   && [[ "${container_exit_code}" == "0" ]] \
-  && [[ "${oom_killed}" == "false" ]] \
-  && [[ "${docker_wait_rc}" == "0" ]] \
-  && [[ "${docker_wait_exit_code}" == "0" ]] \
-  && [[ "${post_stop_endpoint_stopped}" == true ]]; then
+  && [[ "${oom_killed}" == "false" ]]; then
   graceful_shutdown=true
 fi
 
-container_remove_rc="not_run"
+set +e
+docker rm --force "${CONTAINER_NAME}" \
+  >"${OUTPUT_DIR}/docker-rm.stdout.log" \
+  2>"${OUTPUT_DIR}/docker-rm.stderr.log"
+container_remove_rc=$?
+set -e
 container_removed=false
-if [[ "${graceful_shutdown}" == true ]] \
-  && (( server_log_capture_rc == 0 )) \
-  && (( post_stop_inspect_rc == 0 )); then
-  set +e
-  docker rm "${CONTAINER_NAME}" \
-    >"${OUTPUT_DIR}/docker-rm.stdout.log" \
-    2>"${OUTPUT_DIR}/docker-rm.stderr.log"
-  container_remove_rc=$?
-  set -e
-  if [[ "${container_remove_rc}" == "0" ]]; then
-    container_removed=true
-  fi
-else
-  printf 'container preserved because shutdown or evidence capture was not successful\n' \
-    >"${OUTPUT_DIR}/docker-rm.stderr.log"
-  : >"${OUTPUT_DIR}/docker-rm.stdout.log"
+if [[ "${container_remove_rc}" == "0" ]]; then
+  container_removed=true
 fi
 
 logging_complete=false
 if (( server_log_capture_rc == 0 )) && (( post_stop_inspect_rc == 0 )); then
   logging_complete=true
 fi
-
-lifecycle_success=false
-if [[ "${graceful_shutdown}" == true ]] \
-  && [[ "${logging_complete}" == true ]] \
-  && [[ "${container_removed}" == true ]]; then
-  lifecycle_success=true
-fi
+lifecycle_success="${container_removed}"
 
 {
   printf 'graceful_shutdown=%s\n' "${graceful_shutdown}"
   printf 'lifecycle_success=%s\n' "${lifecycle_success}"
   printf 'docker_stop_attempted=%s\n' "${docker_stop_attempted}"
   printf 'docker_stop_rc=%s\n' "${docker_stop_rc}"
-  printf 'docker_wait_rc=%s\n' "${docker_wait_rc}"
-  printf 'docker_wait_exit_code=%s\n' "${docker_wait_exit_code}"
   printf 'container_status=%s\n' "${container_status}"
   printf 'container_running=%s\n' "${post_stop_running}"
   printf 'container_exit_code=%s\n' "${container_exit_code}"
   printf 'oom_killed=%s\n' "${oom_killed}"
-  printf 'post_stop_curl_rc=%d\n' "${post_stop_curl_rc}"
-  printf 'post_stop_http_status=%s\n' "${post_stop_http_status}"
-  printf 'post_stop_endpoint_stopped=%s\n' "${post_stop_endpoint_stopped}"
-  printf 'shutdown_log_marker_present=%s\n' "${shutdown_log_marker_present}"
+  printf 'restart_count=%s\n' "${restart_count}"
   printf 'server_log_capture_rc=%d\n' "${server_log_capture_rc}"
   printf 'post_stop_inspect_rc=%d\n' "${post_stop_inspect_rc}"
   printf 'logging_complete=%s\n' "${logging_complete}"
@@ -247,6 +179,6 @@ printf 'graceful_shutdown=%s\nlifecycle_success=%s\nstop_seconds=%s\n' \
   "${graceful_shutdown}" "${lifecycle_success}" "${stop_seconds}"
 
 if [[ "${lifecycle_success}" != true ]]; then
-  echo "error: lifecycle did not pass; see ${OUTPUT_DIR}/graceful-shutdown.env" >&2
+  echo "error: container cleanup failed; see ${OUTPUT_DIR}/graceful-shutdown.env" >&2
   exit 1
 fi

@@ -12,6 +12,9 @@ docs/environment/*.private.md
 helper/
 .codex/
 
+# Local-only working notes (drafts, job search) — must never reach the public repo
+*.private.md
+
 # Interrupted publisher scratch/backup directories (staging may be unsanitized)
 benchmarks/raw-results/m0-platform-qualification/.*.staging.*/
 benchmarks/raw-results/m0-platform-qualification/.*.previous.*/

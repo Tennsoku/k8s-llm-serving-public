@@ -1,0 +1,158 @@
+schema_version: 2
+run_id: 20260814-m1.6-medium
+milestone: M1
+purpose: exploratory
+timestamp_utc: '2026-08-15T21:44:59.008678+00:00'
+config_id: m1.6-medium-v2
+config_fingerprint: a7e9187bc995d5dec7b53f2b0686455583f2c32529127adac77ae9aa65ecf116
+experiment: &id001
+  step: M1.6
+  kind: compatibility
+  status: ready
+  comparison_group: m1.6-small-medium-short-long
+  variant: medium
+  axis: model_identity
+  baseline_config_id: m1.6-small-common-v1
+git:
+  commit: 19d4591de8630c57e5831a843e7346f518f65122
+  dirty: true
+environment:
+  node: spark-a
+  architecture: aarch64
+runner:
+  host: 127.0.0.1
+  port: 8042
+  container_name: vllm-m1
+  gpu_index: 0
+configuration:
+  schema_version: 2
+  config_id: m1.6-medium-v2
+  experiment: *id001
+  model:
+    id: Qwen/Qwen2.5-7B-Instruct
+    path: /models/Qwen2.5-7B-Instruct
+    artifact_revision: a09a35458c702b33eeacc393d103063234e8bc28
+    runtime_revision: null
+    tokenizer_revision: null
+    served_name: qwen2.5-7b-instruct-medium
+  runtime:
+    image: nvcr.io/nvidia/vllm@sha256:1de8e6bfdb4c81c1f31a806cc9b13b5c6352714a7cec87f4d24964bcc91159b2
+    dtype: bfloat16
+    quantization: null
+    generation_config: vllm
+    max_model_len: 8192
+    max_num_seqs: 128
+    gpu_memory_utilization: 0.25
+    container_memory_limit: 64g
+    extra_args: []
+  workload:
+    name: m1.4-short-long
+    shape: short-long
+    input_tokens_target: 60
+    prompt:
+      prefix: ''
+      repeated_text: 'Write a detailed primer on LLM inference scheduling. '
+      repetitions: 3
+      suffix: ''
+    max_output_tokens: 512
+    total_requests_per_repetition: 64
+    request_timeout_seconds: 600
+    cache_identity:
+      mode: request_unique
+      derivation: sha256-run-case-phase-index-v1
+  sampling:
+    temperature: 0.0
+    seed: 42
+    stream: true
+    include_usage: true
+  warmup:
+    requests: 2
+    concurrency: 1
+  sweep:
+    concurrency:
+    - 1
+    - 8
+    measured_repetitions: 1
+    reference_points:
+      c1: 1
+      c_eff: 8
+      c_pressure: null
+      highest_tested: null
+  metrics:
+    sample_interval_seconds: 1
+  orchestration:
+    ready_timeout_seconds: 900
+    idle_timeout_seconds: 120
+    stop_timeout_seconds: 60
+    stop_on_failure: true
+lifecycle:
+  phase: finished
+  outcome: success
+  failure_phase: null
+  warnings: []
+  stop_reason: sweep_completed
+  last_supported_case: c008-r01
+  first_unsupported_case: null
+outcome: success
+observed_server:
+  started_at_utc: '2026-08-15T17:44:59-04:00'
+  run_label: 20260814-m1.6-medium
+  container_name: vllm-m1
+  container_id: d0a3cf3c0d8cf56caae822cd062f9b6a4957b67ed38c098ede90279ecbe63fc0
+  base_url: http://127.0.0.1:8042
+  image: nvcr.io/nvidia/vllm@sha256:1de8e6bfdb4c81c1f31a806cc9b13b5c6352714a7cec87f4d24964bcc91159b2
+  runtime_revision: null
+  tokenizer_revision: null
+  expanded_command: command=docker run --detach --name vllm-m1 --init --stop-signal
+    SIGTERM --stop-timeout 60 --gpus all --ipc=host --memory 64g --label io.tensoku.benchmark.run_id=20260814-m1.6-medium
+    --label owner=tensoku -p 127.0.0.1:8042:8000 -v <HOME>/models:/models:ro
+    --entrypoint vllm nvcr.io/nvidia/vllm@sha256:1de8e6bfdb4c81c1f31a806cc9b13b5c6352714a7cec87f4d24964bcc91159b2
+    serve /models/Qwen2.5-7B-Instruct --host 0.0.0.0 --port 8000 --dtype bfloat16
+    --served-model-name qwen2.5-7b-instruct-medium --gpu-memory-utilization 0.25 --generation-config
+    vllm --max-model-len 8192 --max-num-seqs 128 --enable-request-id-headers
+  graceful_shutdown_evidence: 'graceful_shutdown=true
+
+    lifecycle_success=true
+
+    docker_stop_attempted=true
+
+    docker_stop_rc=0
+
+    container_status=exited
+
+    container_running=false
+
+    container_exit_code=0
+
+    oom_killed=false
+
+    restart_count=0
+
+    server_log_capture_rc=0
+
+    post_stop_inspect_rc=0
+
+    logging_complete=true
+
+    stop_seconds=1.238
+
+    container_remove_rc=0
+
+    container_removed=true'
+  shutdown:
+    graceful_shutdown: 'true'
+    lifecycle_success: 'true'
+    docker_stop_attempted: 'true'
+    docker_stop_rc: '0'
+    container_status: exited
+    container_running: 'false'
+    container_exit_code: '0'
+    oom_killed: 'false'
+    restart_count: '0'
+    server_log_capture_rc: '0'
+    post_stop_inspect_rc: '0'
+    logging_complete: 'true'
+    stop_seconds: '1.238'
+    container_remove_rc: '0'
+    container_removed: 'true'
+finished_at_utc: '2026-08-15T22:36:07.570849+00:00'
