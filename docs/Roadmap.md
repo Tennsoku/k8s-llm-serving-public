@@ -63,26 +63,14 @@ Milestone 工作   24.5 h/week   (196 h / 8 weeks)
 | 1.7 | raw-results 按 [证据留存标准](experiments/evidence-retention.md) 发布 representative evidence；完整 raw 留在 git 外，目标 clone < 10 MB | 2 h |
 | 1.8 | milestone 状态收敛到 [当前状态](context/current-status.md) 单一来源，其余三处改链接 | 1 h |
 
-### Decode roofline（1.3 用得到）
-
-M1.6 实测 Qwen2.5-7B BF16 / TP=1 / C1 输出 **12.7 tok/s**：
-
-```text
-GB10 统一内存带宽    ≈ 273 GB/s
-7B BF16 权重         ≈ 14 GB
-decode 带宽 roofline ≈ 273 / 14 ≈ 19.5 tok/s
-实测 / roofline      ≈ 65%
-```
-
-补充 roofline 对照，用于解释实测值与理论带宽上限的关系。
-
 ### Exit Criteria
 
-- [ ] GitHub Pages 上 showcase 的 5 个 single-run 与 4 个 comparison 全部渲染出真实数字
+- [ ] GitHub Pages 上 showcase 的 6 个 single-run 与 4 个 comparison 全部渲染出真实数字
 - [ ] clone 体积 < 10 MB
 - [ ] CI 在 main 上绿
 - [ ] README 前 30 行内出现至少 6 个实测数字
 - [ ] 有 LICENSE，无 vendor 示例配置
+- [ ] M1 的单一 Tier B Release asset 已发布，并从 milestone showcase 链接
 
 ---
 
@@ -92,7 +80,7 @@ decode 带宽 roofline ≈ 273 / 14 ≈ 19.5 tok/s
 
 把 v1 里列为 optional 的三项——**量化、投机解码、前缀缓存**——转为正文。
 
-**成本极低的原因：M1 的 benchmark pipeline 已经建好。** 每个实验的边际成本是"换一组 server 参数 + 跑一遍 `run-benchmark.sh`"，不是从零搭测量。这是 M1 最大的复利。
+M1 的 benchmark pipeline 可直接复用；M2 的主要新增成本转为 feature compatibility smoke、模型资产和各实验 axis，而不是重建测量路径。
 
 ### 任务
 

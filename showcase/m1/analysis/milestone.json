@@ -48,6 +48,7 @@
     {"id": "comparisons", "kind": "component", "label": "M1 OVAT and model comparisons", "href": "../compare.html"},
     {"id": "boundary", "kind": "analysis", "label": "M1.5 long-long boundary analysis", "href": "bounded-boundary.json"},
     {"id": "medium-model", "kind": "analysis", "label": "M1.6 small/medium analysis", "href": "medium-model.json"},
+    {"id": "tier-b-archive", "kind": "evidence", "label": "M1 full request-level evidence archive (Tier B)", "href": "https://github.com/Tennsoku/k8s-llm-serving-public/releases/download/v0.1.0-m1-freeze/m1-vllm-baseline-full-evidence-20260818.tar.gz"},
     {"id": "roadmap", "kind": "plan", "label": "Current project roadmap", "href": "../../../docs/Roadmap.md"},
     {"id": "m1-plan", "kind": "method", "label": "M1 operating-reference method", "href": "../../../docs/milestone-plan/m1-plan.md"},
     {"id": "experiment-contract", "kind": "method", "label": "Experiment evidence contract", "href": "../../../docs/experiments/README.md"}

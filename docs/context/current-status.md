@@ -8,7 +8,7 @@
 
 ---
 
-**最后更新**：2026-08-16
+**最后更新**：2026-08-18
 
 ---
 
@@ -18,28 +18,21 @@
 |---|---|
 | M0 — Platform Qualification | ✅ [review](../reviews/m0-review.md) |
 | M1 — Single-Node vLLM Baseline | ✅ [review](../reviews/m1.3-review.md) · [showcase](../../showcase/m1/) |
-| M1.5 — Public Closeout / Repackage | 🚧 |
+| M1.5 — Public Closeout / Repackage | ✅ [showcase](../../showcase/m1/) |
 | M2 — Serving 优化（量化 / 投机解码 / 前缀缓存） | 🚧 |
 | M3 — Kubernetes 与 GPU workload | ○ |
 | M4 — 可观测性、SLO 与 Tracing | ○ |
 | M5 — 路由 / 灰度 / 伸缩 / 故障 | ○ |
+| M6 — 容量成本与收尾 | ○ |
 
 范围与 exit criteria 见 [Roadmap](../Roadmap.md)。
 
 ## Next Steps
 
-收尾 [`Roadmap.md`](../Roadmap.md) 的 **M1.5 — Repackage & 呈现修复**：人工复审 
-启动 M2 的准备工作，包括详细落地计划、workload contract 等。
+M1 / M1.5 已在 `m1-freeze-20260818` 冻结，项目进入 M2。
 
 ## Blockers
 
 | 项 | 说明 |
 |---|---|
-| showcase 修复待部署 | GitHub Pages 已启用；published-only 与 evidence 链接修复已在工作区验证，尚待推送后在 Pages origin 复验；`medium-model.json` 与 boundary analysis 仍为 `draft`，boundary representative summary 尚未发布或注册到 `index.json` |
-| 三个 OVAT pair 仅 descriptive | baseline 与 candidate 的 sampler interval 和 repetition 数不同，case contract fingerprint 不匹配，不能包装成 controlled causal conclusion |
-| K8s GPU 集成未验证 | M0 明确将其列为边界，M3 实测；ARM64 + GB10 上 device plugin 成熟度低于 x86 |
-
-## 待优化项 - 非阻塞
-| 项 | 说明 |
-|---|---|
-| Tier B 链接未完成 | 完整 raw 目前只在 gitignored staging；Release attachment 与 `run.yaml` 五字段链接尚未建立 |
+| 无 | — |

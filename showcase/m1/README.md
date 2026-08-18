@@ -6,8 +6,8 @@
 - `index.html`：M1.4 workload conclusions与单run summary；
 - `compare.html`：M1.5/M1.6中设计的 baseline/candidate comparison。
 
-Single-run selector 使用四份 M1.4 canonical-config replay 与一份 M1.3 historical
-summary；comparison selector 包含三个 M1.5 OVAT pair 与一个 M1.6 small/medium pair。
+Single-run selector 使用四份 M1.4 canonical-config replay、一份 M1.3 historical
+summary 与一份 M1.5 bounded-boundary summary；comparison selector 包含三个 M1.5 OVAT pair 与一个 M1.6 small/medium pair。
 所有 selector 都从 `benchmarks/raw-results/m1-vllm-baseline/` 读取 published summary。
 分析与 Pages 的执行状态只见 [current-status](../../docs/context/current-status.md)。
 
