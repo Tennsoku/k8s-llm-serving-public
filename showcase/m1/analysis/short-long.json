@@ -2,7 +2,7 @@
   "schema_version": 1,
   "kind": "run_analysis",
   "showcase_id": "short-long",
-  "status": "reviewed",
+  "status": "final",
   "takeaway": "60→512-token decode-heavy canonical replay在1/8/16并发下各完成3次，2,304 requests全部成功，实际 output 稳定为 512 tokens/request。预声明C_eff=C8的median output TPS / TTFT p95 / E2E p95 为 1482.39 tok/s / 0.02928秒 / 2.76949秒；C16waiting仍为0，因此C_pressure 在当前tested range内为Unknown。",
   "operating_references": {
     "c1": {

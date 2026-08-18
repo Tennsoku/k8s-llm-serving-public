@@ -49,3 +49,11 @@ derive summary
 
 M1.3之前的scope最大问题是一直使用同一个prompt, Prefix Cache Hit高达99.31%。prefill几乎没有压力，KV cache也很难扩展。 E2E在C24的时候接近初版SLO的边界了(500ms)，不过曲线一直很平滑，一直到C128为止还是没有达到Saturation，没有出现明显的knee。后续的scope会使用不同的prompt，增加prefill和KV cache的压力。（Spark果然还是太强了
 
+M1.4-1.6在benchmark管线搭完以后跑得倒是挺快的，但是结论写得有点力竭。。。
+
+写到一半review整个repo的时候发现已经有各种漂移和超限了，以目前的进度来看roadmap的预估也非常不靠谱。需要大刀阔斧改一下现在的scope和roadmap。
+而且要好好写一版AGENTS的约束和规范了。模糊的语句描述的约束毫无力度，随便超随便漂，必须有一个hard gate。
+
+AI有一句说的对，规范写了不用CI作为hard gate，那就还是白写。必须要有tests和CI来保证执行力。
+
+总算close了。最后审计的时候还和AI拉扯了很久，各退一步取中点吧。我多写点caveat，你少卡我点脖子，不要不想说车轱辘话也要卡我一下。

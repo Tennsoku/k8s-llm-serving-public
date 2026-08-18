@@ -2,7 +2,7 @@
   "schema_version": 1,
   "kind": "comparison_analysis",
   "comparison_id": "m1.5-max-model-len",
-  "status": "reviewed",
+  "status": "final",
   "takeaway": "在long-long shape的C8单点测试中，将max_model_len从 8192 提高到 16384 后，candidate完整成功，吞吐与延迟仍处与baseline相近的范围。由于采样间隔、case contract和repetition数量略有区别，该结果只作为参考，不发布强因果结论。",
   "claims": [
     {

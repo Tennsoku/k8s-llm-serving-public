@@ -538,9 +538,9 @@ Output Token Throughput = Total Generated Tokens / Total Wall Time
 
 ### Goodput
 
-Goodput measures only requests that satisfy a defined service-level objective.
+In this project, unqualified Goodput means output-token throughput contributed only by requests that satisfy the defined service-level objective. A compliant-request rate is a separate request/s metric; see the [SLO semantics](../../docs/SLO/inference-service-slo.md#7-goodput-与-raw-throughput-的区别).
 
-Example:
+Illustrative eligibility example (not a project objective):
 
 ```text
 A request is considered good when:

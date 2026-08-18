@@ -12,10 +12,7 @@
 
 ## 1. 为什么 SLO 必须绑定 workload class
 
-LLM 推理的延迟由输入长度、输出长度和并发共同决定，三者的影响机制还不一样。M1 的实测（见 [README](../../README.md#三个值得看的结论)）显示：
-
-- 输入 55 → 5,890 tokens，C1 TTFT 从 12.8 ms 涨到 133 ms（prefill 一次性代价）；
-- decode-heavy 负载从 C1 到 C8 吞吐涨 9.8×，prefill-heavy 只涨 2.2×（扩展行为不同）。
+LLM 推理的延迟由输入长度、输出长度和并发共同决定，三者的影响机制还不一样。M1 的实测显示 input shape 会改变 TTFT，decode-heavy 与 prefill-heavy workload 的扩展行为也不同；结果数字与限制只见 [README](../../README.md#results-at-a-glance) 和 [M1 review](../reviews/m1.3-review.md)。
 
 **一个跨 workload 的统一 TTFT 目标必然是错的**：对 short-input 太松，对 long-input 太紧。这是本文档存在的根本原因。
 
@@ -136,7 +133,7 @@ long-context:           # 长上下文 / 非即时任务
 
 raw throughput 会把**已经违反 SLO 的请求**也算进去。系统进入排队饱和后，raw throughput 往往还在涨，而用户体验已经崩了。
 
-M1 的 boundary test 是直接证据：并发 16 → 64，输出吞吐 920 → 1,005 tok/s（+9%），但 TTFT p95 从 1.56 s 涨到 16.78 s。**如果只看吞吐，会得出"还能再加压"的错误结论。**
+M1 的 boundary test 直接展示了 raw throughput 小幅变化时 TTFT 与排队压力仍可持续上升；具体结果与限制只见 [README](../../README.md#results-at-a-glance)。因此不能只用吞吐判断是否还能加压。
 
 Goodput 只统计满足延迟目标的请求所贡献的 token，因此它在饱和点之后会下降。这是它比 raw throughput 更适合做容量判据的原因。
 
@@ -148,8 +145,8 @@ Goodput 只统计满足延迟目标的请求所贡献的 token，因此它在饱
 
 | 信号 | 不采用的原因 |
 |---|---|
-| GPU utilization | M1.3 实测中 C64/C96/C128 都稳定在 96%，不随服务状态变化 |
-| KV cache 占用 | boundary test 中队列已达 56、TTFT 16.78 s 时，KV cache 峰值仅 28.9% |
+| GPU utilization | M1 中它在不同服务状态下可能保持高位；具体结果只见 README/review |
+| KV cache 占用 | M1 boundary test 中排队与 TTFT 压力先于高 KV-cache 水位出现；具体结果只见 README/review |
 | 显存 / 功耗 telemetry | 统一内存架构下 scope 不清晰，不同 scope 不可相加 |
 
 判据必须是**服务侧信号**：延迟分布、等待队列深度、失败率、goodput。

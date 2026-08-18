@@ -256,7 +256,6 @@
     assert(isObject(data.milestone), "milestone metadata 缺失。");
     assert(isNonEmptyString(data.milestone.id), "milestone.id 缺失。");
     assert(isNonEmptyString(data.milestone.title), "milestone.title 缺失。");
-    assert(isNonEmptyString(data.milestone.status), "milestone.status 缺失。");
     assert(isNonEmptyString(data.milestone.analysis_path), "milestone.analysis_path 缺失。");
     assert(Array.isArray(data.entries) && data.entries.length > 0, "entries 必须包含至少一个条目。");
 
@@ -292,7 +291,6 @@
       milestone: {
         id: data.milestone.id,
         title: data.milestone.title,
-        status: data.milestone.status,
         analysisUrl: resolveInternal(data.milestone.analysis_path, manifestUrl, "milestone.analysis_path")
       },
       default_entry: data.default_entry,
@@ -403,7 +401,7 @@
 
   function renderMilestoneMeta() {
     const status = byId("milestoneStatus");
-    setStatus(status, state.manifest.milestone.status);
+    setStatus(status, "loading");
     const chips = [
       state.manifest.entries.length + " selected entries",
       "schema v" + state.manifest.schema_version,
@@ -415,6 +413,7 @@
 
   function renderMilestoneAnalysis(analysis) {
     setStatus(byId("overviewStatus"), analysis.status);
+    setStatus(byId("milestoneStatus"), analysis.status);
     byId("milestoneTakeaway").textContent = analysis.takeaway;
     renderStringList(byId("milestoneScope"), analysis.scope);
     renderClaims(byId("milestoneClaims"), analysis.claims);
@@ -431,6 +430,7 @@
     } catch (error) {
       setStatus(byId("overviewStatus"), "error");
       byId("milestoneTakeaway").textContent = "Milestone analysis 暂时不可用；精选 run 与 summary viewer 仍可独立使用。";
+      setStatus(byId("milestoneStatus"), "error");
       addPageError("Milestone analysis 加载失败：" + error.message);
     }
   }

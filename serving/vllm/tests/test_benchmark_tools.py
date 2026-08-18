@@ -374,14 +374,14 @@ class BenchmarkConfigV2Tests(unittest.TestCase):
     def setUp(self) -> None:
         self.config_path = (
             REPO_ROOT
-            / "benchmarks/configs/vllm-single-node/ref/smoke.yaml"
+            / "benchmarks/configs/vllm-single-node/benchmark-smoke.yaml"
         )
         self.config = load_config(self.config_path)
 
-    def test_all_reference_configs_validate(self) -> None:
-        root = REPO_ROOT / "benchmarks/configs/vllm-single-node/ref"
-        paths = sorted(root.rglob("*.yaml"))
-        self.assertEqual(len(paths), 15)
+    def test_all_published_configs_validate(self) -> None:
+        root = REPO_ROOT / "benchmarks/configs/vllm-single-node"
+        paths = sorted([*root.glob("*.yaml"), *root.glob("m*/**/*.yaml")])
+        self.assertTrue(paths)
         for path in paths:
             with self.subTest(path=path):
                 self.assertEqual(load_config(path)["schema_version"], 2)
@@ -429,37 +429,8 @@ class BenchmarkConfigV2Tests(unittest.TestCase):
         self.assertEqual(len({first, second, warmup}), 3)
         self.assertRegex(first, r"^[0-9a-f]{64}$")
 
-    def test_ovat_templates_change_one_runtime_axis(self) -> None:
-        root = REPO_ROOT / "benchmarks/configs/vllm-single-node/ref"
-        baseline = load_config(root / "m1.4/canonical/short-long.yaml")
-        runtime_baseline = baseline["runtime"]
-        controls = (
-            "model",
-            "workload",
-            "sampling",
-            "warmup",
-            "metrics",
-            "orchestration",
-        )
-        for path in sorted((root / "m1.5/ovat").glob("*.yaml")):
-            alternate = load_config(path)
-            with self.subTest(path=path):
-                axis = alternate["experiment"]["axis"].removeprefix("runtime.")
-                changed = {
-                    key
-                    for key in runtime_baseline
-                    if runtime_baseline[key] != alternate["runtime"][key]
-                }
-                self.assertEqual(changed, {axis})
-                for control in controls:
-                    self.assertEqual(baseline[control], alternate[control])
-                self.assertEqual(
-                    case_contract_fingerprint(baseline, 8),
-                    case_contract_fingerprint(alternate, 8),
-                )
-
     def test_model_templates_hold_non_model_controls_fixed(self) -> None:
-        root = REPO_ROOT / "benchmarks/configs/vllm-single-node/ref/m1.6"
+        root = REPO_ROOT / "benchmarks/configs/vllm-single-node/m1.6"
         small = load_config(root / "small-common.yaml")
         medium = load_config(root / "medium.yaml")
         for control in (

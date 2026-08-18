@@ -4,7 +4,6 @@
   "milestone": {
     "id": "m1",
     "title": "M1 — Single-Node vLLM Serving Baseline",
-    "status": "in_progress",
     "analysis_path": "analysis/milestone.json"
   },
   "default_entry": "short-short",
@@ -44,6 +43,15 @@
       "expected_run_id": "20260814-m1.4-l-l",
       "summary_path": "../../benchmarks/raw-results/m1-vllm-baseline/20260814-m1.4-l-l/derived/summary.json",
       "analysis_path": "analysis/long-long.json"
+    },
+    {
+      "id": "bounded-boundary",
+      "label": "Long input · long output boundary sweep",
+      "stage": "M1.5 exploratory bounded-boundary",
+      "source_status": "published",
+      "expected_run_id": "20260814-m1.5-boundary",
+      "summary_path": "../../benchmarks/raw-results/m1-vllm-baseline/20260814-m1.5-boundary/derived/summary.json",
+      "analysis_path": "analysis/bounded-boundary.json"
     },
     {
       "id": "m1.3-historical",

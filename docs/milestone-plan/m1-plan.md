@@ -1,6 +1,6 @@
 # M1 — Single-Node vLLM Baseline（执行记录）
 
-> M1 已完成。本文记录**执行序列与方法学决策**。
+> 本文记录 M1 的**执行序列与方法学决策**；当前进度只见 [current-status](../context/current-status.md)。
 > 结果数据在 [README](../../README.md#results-at-a-glance) 与 [showcase](../../showcase/m1/)，结论在 [reviews](../reviews/)，本文不复制。
 > 预算 ≤ 150 行。
 
@@ -48,7 +48,7 @@ Lab 0 环境交接 → Lab 1 offline → M1.1 runtime 基础
 | `highest_tested` | 安全范围内未观测到压力时的最高测试点 |
 | `Unknown` | 已在声明范围内测试但无直接证据 |
 
-`Unknown` 是**合格结论**。M1.4 的四种 workload 中有三种在安全范围内未观测到 `C_pressure`，如实记为 `Unknown + highest_tested`，而不是把 `highest_tested` 改写成容量上限。
+`Unknown` 是**合格结论**。在声明范围内完成测试但未观测到 `C_pressure` 时，如实记为 `Unknown + highest_tested`，而不是把 `highest_tested` 改写成容量上限。
 
 ### 2. 选点标准不自动执行
 

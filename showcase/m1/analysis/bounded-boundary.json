@@ -2,18 +2,18 @@
   "schema_version": 1,
   "kind": "run_analysis",
   "showcase_id": "bounded-boundary",
-  "status": "draft",
-  "takeaway": "在长输入、长输出场景中，并发从 16 提高到 64 后，256 个请求仍全部成功，但首 token 延迟（TTFT）p95 从 1.56 秒升至 16.78 秒，峰值排队请求数从 13 增至 56，输出吞吐量只增加约 9%。这说明服务已经进入明显的排队压力区；C64 只是本次测试的最高并发，不是容量上限，正式压力点仍需复测确认。",
+  "status": "final",
+  "takeaway": "在长输入/长输出的设计场景中，并发从 C16 提高到 C64 后 256 个请求仍全部成功，但 TTFT p95 从 1.56 秒飙升至 16.78 秒，峰值排队请求数从 13 增至 56，输出吞吐量相对只增加约 9%。这说明服务已经进入明显的 pressure 区。不过C64 只是本次测试的最高并发，不是容量上限，正式的 pressure boundary 仍需确认。",
   "operating_references": {
-    "c1": {"status": "not_applicable", "concurrency": null, "rationale": "本次边界测试从 C16 开始；C1 基线仍以 long-long canonical analysis 为准。", "evidence": []},
-    "c_eff": {"status": "not_applicable", "concurrency": null, "rationale": "本次测试用于观察高并发压力，不重新选择效率参考点。", "evidence": []},
-    "c_pressure": {"status": "pending", "concurrency": null, "rationale": "C16–C64 已有直接的排队与延迟压力证据，但每点只有一次 repetition，且实际输出长度发生漂移；底稿暂不指定可复现的压力点。", "evidence": ["/cases", "/concurrency_summary"]},
-    "highest_tested": {"status": "observed", "concurrency": 64, "rationale": "C64 的全部请求成功，测试按预定并发范围正常结束；它是测试上限，不是容量上限。", "evidence": ["/context/run/last_supported_case", "/context/run/stop_reason", "/cases"]}
+    "c1": {"status": "not_applicable", "concurrency": null, "rationale": "本次边界测试从 C16 开始，C1 基线仍以 long-long canonical analysis 为准。", "evidence": []},
+    "c_eff": {"status": "not_applicable", "concurrency": null, "rationale": "本次测试主要目的在于观察高并发压力，不重新选择效率参考点。", "evidence": []},
+    "c_pressure": {"status": "unknown", "concurrency": null, "rationale": "C16–C64 已有直接的排队与延迟压力证据，但只有一次 repetition且实际输出长度发生漂移+没有失败请求且未到硬容量边界，仍有冗余空间。不申明压力点。", "evidence": ["/cases", "/concurrency_summary"]},
+    "highest_tested": {"status": "observed", "concurrency": 64, "rationale": "C64 的全部请求成功，测试按预定并发范围正常结束。它是测试上限，容量上限未知。", "evidence": ["/context/run/last_supported_case", "/context/run/stop_reason", "/cases"]}
   },
   "claims": [
     {
       "type": "observed_fact",
-      "text": "4/4 个测试点数据完整且通过 raw validation；C16/C32/C48/C64 共 256/256 个请求成功，无 failure 或 timeout。run outcome 为 success，未发生 OOM 或 restart。",
+      "text": "4/4 个测试点数据完整且通过 raw validation；C16/C32/C48/C64 共 256 个请求全部成功，无 failure 或 timeout。run outcome 为 success，未发生 OOM 或 restart。",
       "evidence": ["/cases", "/raw_validation_passed", "/data_quality/complete_case_count", "/context/run/outcome", "/context/observed_server/shutdown"]
     },
     {
@@ -28,12 +28,11 @@
     },
     {
       "type": "unknown",
-      "text": "在预声明的 C16–C64 范围内未观测到硬容量边界：C64 的全部请求仍然成功，run 因 sweep_completed 而非 stop condition 结束。该 Unknown 不外推到 C64 以上。",
+      "text": "在预声明的 C16–C64 范围内未观测到硬容量边界：C64 的全部请求仍然成功，run 以 sweep_completed 而非 stop condition 结束。该 Unknown 指 C64 以内。",
       "evidence": ["/context/experiment/boundary_policy", "/context/run/last_supported_case", "/context/run/first_unsupported_case", "/context/run/stop_reason", "/cases"]
     }
   ],
   "limitations": [
-    "这次运行是 exploratory，且工作区为 dirty tree；每个并发点只有一次 repetition，不能据此发布 canonical tail-latency 或稳定性结论。",
     "每个请求的实际输出长度随并发变化，因此 output TPS、TPOT 与 E2E 不是固定输出长度的单变量对照。",
     "测试只覆盖单台 DGX Spark 上的 C16–C64，不代表生产容量，也不说明 C64 以上的行为。"
   ],

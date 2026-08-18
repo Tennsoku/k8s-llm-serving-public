@@ -79,8 +79,8 @@ Telemetry 的公开 owner 是 summary；不再生成一份重复的 `runtime-del
 - 同一 source 重复运行产生相同 public requests、lifecycle 与 summary。
 - 五文件输出通过 JSON/YAML 解析、自动隐私扫描和 repository hygiene；之后仍需人工审计。
 - Showcase manifest 只引用实际发布的 final-reference summaries。
-- 完整 raw 保留在 gitignored staging/private；如发布 Tier B，另行在 `run.yaml`
-  记录 release tag、filename、sha256、record count 和 bytes。
+- 完整 raw 保留在 gitignored staging/private；发布 Tier B 时，每 milestone 一个 Release
+  archive；Release notes 记录 source commit、filename、SHA256 与 run count，不回填各 `run.yaml`。
 
 本次不改 benchmark 测量路径、不建设 manifest/attestation 工具链、不重写 Git
 history，也不把 sanitizer 的成功退出当成公开许可。

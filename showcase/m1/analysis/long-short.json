@@ -2,8 +2,8 @@
   "schema_version": 1,
   "kind": "run_analysis",
   "showcase_id": "long-short",
-  "status": "reviewed",
-  "takeaway": "5890→32-token canonical replay在1/4/16并发下各完成3次，2,304 requests全部成功。预声明 C_eff=C4, median output TPS / TTFT p95 / E2E p95 为 205.19 tok/s / 0.30736s / 0.65980 s。C16 output TPS只增加了18.75%，而TTFT/E2E/waiting明显上升，是确定的pressure evidence。但还有较大冗余空间，所以目前决定还是标为highest_tested，C_pressure保持pending",
+  "status": "final",
+  "takeaway": "5890→32-token canonical replay在1/4/16并发下各完成3次，2,304 requests全部成功。预声明C_eff=C4，median output TPS / TTFT p95 / E2E p95为205.19 tok/s / 0.30736s / 0.65980s。C16的吞吐边际收益减弱且TTFT/E2E/waiting明显上升，三次repetition均形成直接pressure evidence，因此C_pressure=C16。请求仍全部成功且output throughput继续增长，说明仍有未量化的并发承载余量；C16不是saturation或hard capacity boundary。",
   "operating_references": {
     "c1": {
       "status": "observed",
@@ -18,33 +18,33 @@
       "evidence": ["/context/configuration/sweep/reference_points/c_eff", "/concurrency_summary", "/data_quality/complete_case_count"]
     },
     "c_pressure": {
-      "status": "pending",
-      "concurrency": null,
-      "rationale": "Canonical repetitions已给出C16 pressure signals，但未出现失败，仍有冗余空间，现不取C_pressure。",
+      "status": "observed",
+      "concurrency": 16,
+      "rationale": "三次C16 repetition均出现waiting/latency pressure且吞吐边际收益减弱，符合可复现C_pressure定义；仍有承载余量不改变pressure onset判断。",
       "evidence": ["/concurrency_summary", "/cases"]
     },
     "highest_tested": {
       "status": "observed",
       "concurrency": 16,
-      "rationale": "Canonical config的最高 replay point，3次repetition均成功。它只是pressure candidate，不是saturation或hard capacity boundary。",
+      "rationale": "Canonical config的最高replay point，3次repetition均成功。它同时是C_pressure reference，但不是saturation或hard capacity boundary。",
       "evidence": ["/context/configuration/sweep/reference_points/highest_tested", "/concurrency_summary", "/context/run/last_supported_case"]
     }
   },
   "claims": [
     {
       "type": "observed_fact",
-      "text": "9/9 measured cases完整且raw validation passed；2,304 requests全部成功。C1/C4/C16 的 median output TPS 为 92.38/205.19/243.68 tok/s，TTFT p95 为 0.13342/0.30736/0.73018 秒，E2E p95 为 0.35317/0.65980/2.14100 秒，max waiting median 为 0/2/13。",
+      "text": "9/9 measured cases完整且raw validation passed，2,304 requests全部成功。C1/C4/C16 的 median output TPS 为 92.38/205.19/243.68 tok/s，TTFT p95 为 0.13342/0.30736/0.73018 秒，E2E p95 为 0.35317/0.65980/2.14100 秒，max waiting median 为 0/2/13。",
       "evidence": ["/cases", "/concurrency_summary", "/raw_validation_passed", "/data_quality/complete_case_count"]
     },
     {
       "type": "interpretation",
-      "text": "从 C4到C16，output TPS只增加 18.75%，TTFT增加 137.56%、E2E增加 224.49%，且C16下waiting几乎全程存在；这构成明确 pressure candidate，但目前不作为C_pressure。",
+      "text": "从C4到C16，output TPS只增加18.75%，TTFT增加137.56%、E2E增加224.49%，且C16下waiting几乎全程存在，因此C16是可复现的pressure reference。",
       "evidence": ["/cases/*/runtime_samples/waiting_nonzero_sample_ratio", "/concurrency_summary", "/context/configuration/sweep/reference_points"]
     }
   ],
   "limitations": [
     "C4 本身已经出现低水平 waiting；C_eff 是预声明并重放的 reference，不应被描述成无压力最优点。",
-    "C16 是pressure candidate，但所有请求仍成功；它不是saturation或hard capacity boundary。",
+    "C16是pressure reference，但所有请求仍成功；它不是saturation或hard capacity boundary。",
     "Canonical replay只覆盖 C1/C4/C16 三个设计并发点。"
   ],
   "links": [

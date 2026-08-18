@@ -2,8 +2,8 @@
   "schema_version": 1,
   "kind": "comparison_analysis",
   "comparison_id": "m1.5-gpu-memory-utilization",
-  "status": "reviewed",
-  "takeaway": "在long-long shape的C8单点测试中，将 gpu_memory_utilization从0.15提高到 0.50。具体reserved KV Cache room 大约从 121GiB * 0.15 = 18.15GiB 提高到 121GiB * 0.50 = 60.5GiB，而throughput与latency仍接近baseline的量级。该单点不支持“更多预留内存带来性能提升”的结论。",
+  "status": "final",
+  "takeaway": "在long-long shape的C8单点测试中，将 gpu_memory_utilization从0.15提高到0.50；server logs记录的available KV cache memory从15.85 GiB提高到58.41 GiB，而throughput与latency仍接近baseline的量级。该单点不支持“更多预留内存带来性能提升”的结论。",
   "claims": [
     {
       "type": "observed_fact",

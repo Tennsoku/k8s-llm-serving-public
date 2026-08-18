@@ -2,8 +2,8 @@
   "schema_version": 1,
   "kind": "run_analysis",
   "showcase_id": "long-long",
-  "status": "reviewed",
-  "takeaway": "5888→max-512-token canonical replay在1/8/16并发下各完成3次，1,152 requests全部成功。预声明 C_eff=C8，medians = 749.39 output TPS / 0.27378s TTFT p95 / 5.08672s E2E p95。C16的waiting与latency显著增加，可以确定的pressure evidence。但实际output length有漂移，而且还有较大冗余空间，所以目前决定还是标为highest_tested，C_pressure保持pending。",
+  "status": "final",
+  "takeaway": "5888→max-512-token canonical replay在1/8/16并发下各完成3次，1,152 requests全部成功。预声明 C_eff=C8，medians = 749.39 output TPS / 0.27378s TTFT p95 / 5.08672s E2E p95。C16的waiting与latency显著增加，可以确定的pressure evidence。但实际output length有漂移，而且同 workload 下 boundary sweep 在 C64 依然全部成功。因此 C16 以上存在已观测的并发承载余量，当前test决定标为highest_tested，C_pressure保持unknown。",
   "operating_references": {
     "c1": {
       "status": "observed",
@@ -14,11 +14,11 @@
     "c_eff": {
       "status": "observed",
       "concurrency": 8,
-      "rationale": "从测试run确定C_eff=C8。该点 3 次 replay 均完整。它是workload-scoped reference。目前手动选出的全局最优点。",
+      "rationale": "从测试run确定C_eff=C8。该点 3 次 replay 均完整。它是workload-scoped reference。目前手动选出的测试范围内全局最优点。",
       "evidence": ["/context/configuration/sweep/reference_points/c_eff", "/concurrency_summary", "/data_quality/complete_case_count"]
     },
     "c_pressure": {
-      "status": "pending",
+      "status": "unknown",
       "concurrency": null,
       "rationale": "测试数据已给出C16 pressure signals，但仍有冗余空间，且 realized output shape 漂移。当前不认为saturation/hard capacity boundary出现。",
       "evidence": ["/concurrency_summary", "/cases"]

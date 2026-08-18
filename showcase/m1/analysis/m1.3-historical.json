@@ -2,7 +2,7 @@
   "schema_version": 1,
   "kind": "run_analysis",
   "showcase_id": "m1.3-historical",
-  "status": "reviewed",
+  "status": "final",
   "takeaway": "在固定 prompt 的历史 workload 下，C64 是 efficient reference、C96 是 pressure reference、C128 仅作 stress evidence；hard capacity boundary 在已测试范围内仍为 Unknown。99.31% prefix-cache hit 使这些数值不能外推到 M1.4 cache-isolated workloads。",
   "operating_references": {
     "c1": {
@@ -45,11 +45,6 @@
       "type": "interpretation",
       "text": "吞吐到 C128 仍在增长，但逐步增加的 latency、零等待队列、零失败和低 KV-cache 使用率不足以证明 latency/queue knee 或 hard boundary。",
       "evidence": ["../../../docs/reviews/m1.3-review.md#interpretation"]
-    },
-    {
-      "type": "unknown",
-      "text": "该 workload 在 C128 以上的 latency/queue knee 与 hard capacity boundary 未知。",
-      "evidence": ["../../../docs/reviews/m1.3-review.md#limitation-and-unknowns"]
     }
   ],
   "limitations": [

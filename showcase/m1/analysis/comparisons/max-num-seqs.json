@@ -2,7 +2,7 @@
   "schema_version": 1,
   "kind": "comparison_analysis",
   "comparison_id": "m1.5-max-num-seqs",
-  "status": "reviewed",
+  "status": "final",
   "takeaway": "在long-long shape的C8单点测试中，将max_num_seqs从 128 限制到 4。TTFT超绝增加，E2E显著增加，overall throughput显著。但candidate的实际output更长，且measurement contract不一致，因此当前解释为 pressure diagnostic。是否是axis effect需要进一步验证。",
   "claims": [
     {

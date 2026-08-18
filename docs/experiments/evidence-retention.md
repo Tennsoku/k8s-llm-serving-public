@@ -59,7 +59,7 @@ timeout、OOM、non-zero exit、restart、部分完成的请求——**全部逐
 | **B** | GitHub Release attachment（每 milestone 一个 tarball） | 完整 raw，含全部 request 记录与时间序列采样 | 不采样 |
 | **C** | `artifacts/private/`（gitignored） | 探索性 run、未脱敏捕获、被 Tier B 取代的中间产物 | 不发布 |
 
-Tier B 的引用方式：`run.yaml` 记录 release tag 与文件名。**不建 index、不建下载器、不建校验工具链**——一个 tag 加一个文件名就够（见 §7 红线）。
+Tier B 的引用方式：每个 milestone 只在 showcase 放一个 Release 下载链接；Release notes 记录 source commit、asset filename、SHA256 与 included run count。各 run 以目录名/run ID 对应，**不回填 `run.yaml`**（见 §7 红线）。
 
 ---
 
@@ -156,15 +156,15 @@ Tier B 的引用方式：`run.yaml` 记录 release tag 与文件名。**不建 i
 
 **标准没有 CI 就只是愿望。** 落地时加 `scripts/check-repo-hygiene.sh`，在 CI 中对上述每一项做硬失败，并输出超限文件清单。
 
-### 完整性链接的红线
+### 完整性元数据的红线
 
-`run.yaml` 为每个 Tier B 文件记录三个字段：`sha256`、`record_count`、`bytes`。加上 release tag 与文件名，共五个字段。
+每个 milestone 只发布一个 Tier B archive。Release notes 是完整性元数据 owner，只记录 source commit、asset filename、SHA256 与 included run count；GitHub 提供 asset size，`run.yaml` 不回填。
 
-**这五个字段就是全部。** 一旦出现以下任何一项，说明 M0 的失败模式回来了，立即停止并回退：
+一旦出现以下任何一项，说明 M0 的失败模式回来了，立即停止并回退：
 
-- 独立的 manifest 文件或 manifest 版本
-- 校验工具链、staging 流程、publish attestation
-- 把 checksum 不匹配变成拒绝执行的闸门（它只应产生一条 comparison warning）
+- 独立的 manifest / index 文件或版本
+- 下载器、校验工具链、staging workflow、publish attestation
+- 把 checksum 不匹配变成拒绝执行的闸门
 
 参见 [AGENTS.md](../../AGENTS.md) §4 常设非目标。M0 曾为此产出 1,137 行的 `scripts/m0/m0-evidence.sh`。
 

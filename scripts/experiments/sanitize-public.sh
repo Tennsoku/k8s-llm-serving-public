@@ -2,7 +2,7 @@
 set -euo pipefail
 shopt -s lastpipe
 usage() {
-  echo "Usage: $0 <private-source> <public-destination> [--literal <value>]..." >&2
+  echo "Usage: $0 <private-run-source> <public-destination> [--literal <value>]..." >&2
 }
 valid_literal() {
   local value="$1"

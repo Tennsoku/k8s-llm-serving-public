@@ -2,7 +2,7 @@
   "schema_version": 1,
   "kind": "run_analysis",
   "showcase_id": "short-short",
-  "status": "reviewed",
+  "status": "final",
   "takeaway": "55→32-token、request-unique canonical replay在1/8/16并发下各完成3次，4,608 requests全部成功。预声明 C_eff=C8的median output TPS / TTFT p95 / E2E p95 为 1364.36tok/s / 0.02744s / 0.19248s；C16 仍无 waiting 且 output TPS 为 2556.85 tok/s，因此 C_pressure在当前tested range内为 Unknown，C16 只代表 highest_tested。",
   "operating_references": {
     "c1": {

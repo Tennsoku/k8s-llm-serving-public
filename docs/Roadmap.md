@@ -55,7 +55,7 @@ Milestone 工作   24.5 h/week   (196 h / 8 weeks)
 | # | 任务 | 工时 |
 |---|---|---:|
 | 1.1 | `showcase/m1/index.json` + `comparisons.json` 的 `summary_path` 改指 `benchmarks/raw-results/m1-vllm-baseline/<run-id>/derived/summary.json`；`source_status` → `published`；开启 GitHub Pages | 3 h |
-| 1.2 | 四种 workload shape 改为通用交互场景：短多轮对话 / 长文本生成 / 带状态上下文的问答 / 长会话 | 1 h |
+| 1.2 | 四种 workload shape 增加通用交互场景示例：短多轮对话 / 长文本生成 / 带状态上下文的问答 / 长会话 | 1 h |
 | 1.3 | README 顶部 "Results at a glance" 表：模型 / 四场景 / C1 / C_eff / TTFT p95 / output TPS / 失败数 / 7B decode roofline 占比 | 2 h |
 | 1.4 | README 用 3 句话记录 M1.3 prefix-cache confound、影响与修正后的结论 | 0.5 h |
 | 1.5 | 加 LICENSE（Apache-2.0）；删 `.codex/config.toml`；repo description + topics | 0.5 h |
@@ -309,11 +309,11 @@ decode 带宽 roofline ≈ 273 / 14 ≈ 19.5 tok/s
 
 ---
 
-## 附录 B — 历史 Milestone（已完成，保持不变）
+## 附录 B — 历史 Milestone 证据入口
 
-| Milestone | 状态 | 结论入口 |
-|---|---|---|
-| **M0** Platform Qualification | ✅ Complete | [`reviews/m0-review.md`](reviews/m0-review.md) — host CUDA、GPU container、200 Gb RoCE、NCCL 基线、兼容性边界 |
-| **M1** Single-Node vLLM Baseline | ✅ Complete | [`reviews/m1.3-review.md`](reviews/m1.3-review.md) + [`showcase/m1/`](../showcase/m1/) — 四场景 operating references、最小 OVAT、bounded boundary、7B 兼容性 |
+| Milestone | 结论入口 |
+|---|---|
+| **M0** Platform Qualification | [`reviews/m0-review.md`](reviews/m0-review.md) — host CUDA、GPU container、200 Gb RoCE、NCCL 基线、兼容性边界 |
+| **M1** Single-Node vLLM Baseline | [`reviews/m1.3-review.md`](reviews/m1.3-review.md) + [`showcase/m1/`](../showcase/m1/) — 四场景 operating references、最小 OVAT、bounded boundary、7B 兼容性 |
 
 M0/M1 的范围与 Exit Criteria 原文见 [`Roadmap-v1-archive.md`](Roadmap-v1-archive.md) 的对应章节。

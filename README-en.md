@@ -3,10 +3,11 @@
 Language: [中文](README.md) | English
 
 LLM inference platform engineering on two DGX Spark nodes (GB10 Grace Blackwell / ARM64 / unified memory). Starting from a single-node runtime baseline, then layering on Kubernetes, observability, and control loops.
+This is a personal research testbed for platform-layer LLM workload behavior and engineering boundaries, not a general-purpose, multi-tenant, or product platform.
 
 **Every conclusion is backed by request-level raw data. Failures are preserved, never filtered.**
 
-- Interactive results → [M1 Showcase](showcase/m1/)
+- Interactive results → [M1 Showcase](https://tennsoku.github.io/k8s-llm-serving-public/showcase/m1/)
 - Plan → [Roadmap](docs/Roadmap.md) · Current state → [Status](docs/context/current-status.md)
 
 ---
@@ -18,10 +19,10 @@ Four workload shapes, 3 repetitions per point, **10,368 requests with 0 failures
 
 | Scenario | in → out tokens | C1 TTFT p95 | C_eff | C_eff TTFT p95 | C_eff output tok/s |
 |---|---|---:|---:|---:|---:|
-| NPC dialogue | 55 → 32 | **12.8 ms** | 8 | 27.4 ms | 1,364 |
-| Narrative generation | 60 → 512 | **13.3 ms** | 8 | 29.3 ms | 1,482 |
-| World-state Q&A | 5,890 → 32 | **133 ms** | 4 | 307 ms | 205 |
-| Long session | 5,888 → 512 | **135 ms** | 8 | 274 ms | 749 |
+| short-short (e.g. NPC dialogue) | 55 → 32 | **12.8 ms** | 8 | 27.4 ms | 1,364 |
+| short-long (e.g. narrative generation) | 60 → 512 | **13.3 ms** | 8 | 29.3 ms | 1,482 |
+| long-short (e.g. world-state Q&A) | 5,890 → 32 | **133 ms** | 4 | 307 ms | 205 |
+| long-long (e.g. long session) | 5,888 → 512 | **135 ms** | 8 | 274 ms | 749 |
 
 `C_eff` = the concurrency reference where marginal throughput gain is still meaningful and service latency is still controlled. Determined independently per workload.
 
@@ -32,7 +33,7 @@ Four workload shapes, 3 repetitions per point, **10,368 requests with 0 failures
 | 0.5B | 148.2 | 14.3 ms | 1,493 |
 | 7B | 12.7 | 80.1 ms | 126.1 |
 
-The 7B result reaches **65% of the unified-memory bandwidth roofline** (273 GB/s ÷ 14 GB BF16 weights ≈ 19.5 tok/s) — decode is near the bandwidth limit, not blocked by scheduling or kernel efficiency.
+The 7B result reaches **65% of the estimated unified-memory bandwidth roofline** (273 GB/s ÷ 14 GB BF16 weights ≈ 19.5 tok/s). This is consistent with a memory-bandwidth constraint on decode, but does not by itself rule out scheduling or kernel effects.
 
 ---
 
@@ -66,7 +67,7 @@ Bounded boundary test on the long-long workload (C16 → C64):
 
 Quadrupling concurrency yields 9% more throughput while TTFT grows **10.7×** and the waiting queue grows linearly — a textbook queueing saturation signature.
 
-Note that **peak KV cache usage is only 28.9%**: the capacity limit is scheduling queue depth, not memory. Watching memory headroom alone would raise the alarm long after the service became unusable.
+Note that **peak KV cache usage is only 28.9%**: queueing and TTFT pressure appeared before high KV-cache usage in this test. That does not rule out other runtime bottlenecks, but it does show why memory headroom alone is not a capacity criterion.
 
 Likewise, GPU utilization held steady at 96% across C64/C96/C128 in the M1.3 measurements — **it does not track service state**. This project therefore explicitly rejects GPU utilization as a saturation or capacity criterion.
 
@@ -120,18 +121,7 @@ M0 qualified host CUDA, GPU containers, TCP/NCCL baselines, NIC counters and the
 
 ---
 
-## Progress
-
-| Milestone | Status |
-|---|---|
-| M0 — Platform Qualification | ✅ [review](docs/reviews/m0-review.md) |
-| M1 — Single-Node vLLM Baseline | ✅ [review](docs/reviews/m1.3-review.md) · [showcase](showcase/m1/) |
-| M2 — Serving optimization (quantization / speculative decoding / prefix cache) | 🚧 |
-| M3 — Kubernetes and GPU workload | ○ |
-| M4 — Observability, SLO and tracing | ○ |
-| M5 — Routing / canary / autoscaling / failure | ○ |
-
-Scope and exit criteria in the [Roadmap](docs/Roadmap.md).
+Current milestone state has a single owner: [Status](docs/context/current-status.md). Scope and exit criteria are in the [Roadmap](docs/Roadmap.md).
 
 ---
 

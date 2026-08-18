@@ -3,6 +3,7 @@
 语言：中文 | [English](README-en.md)
 
 两台 DGX Spark（GB10 Grace Blackwell / ARM64 / 统一内存）上的 LLM 推理平台工程实践。从单机 runtime 基线做起，逐步接入 Kubernetes、可观测性与控制回路。
+这是验证 LLM workload 平台层行为与工程边界的个人研究 testbed，不建设通用、多租户或产品化平台。
 
 **每个结论都由 request-level 原始数据支撑，失败数据全部保留。**
 
@@ -32,7 +33,7 @@ Qwen2.5-0.5B-Instruct · BF16 · TP=1 · vLLM（digest-pinned NGC ARM64 镜像�
 | 0.5B | 148.2 | 14.3 ms | 1,493 |
 | 7B | 12.7 | 80.1 ms | 126.1 |
 
-7B 的 12.7 tok/s 达到统一内存带宽 roofline 的 **65%**（273 GB/s ÷ 14 GB BF16 权重 ≈ 19.5 tok/s）——decode 已接近带宽瓶颈，不是调度或 kernel 效率问题。
+7B 的 12.7 tok/s 达到统一内存带宽 roofline 估算值的 **65%**（273 GB/s ÷ 14 GB BF16 权重 ≈ 19.5 tok/s）。这与 decode 受内存带宽约束的解释一致，但不能单独排除调度或 kernel 因素。
 
 ---
 
@@ -66,7 +67,7 @@ Long-long workload 的 bounded boundary test（C16 → C64）：
 
 并发翻两番，吞吐只涨 9%，TTFT 涨 **10.7×**，等待队列线性增长——典型的排队饱和。
 
-值得注意的是 **KV cache 峰值只有 28.9%**：容量瓶颈在调度排队，不在显存。只盯内存水位做容量判断，会在服务早已不可用之后才报警。
+值得注意的是 **KV cache 峰值只有 28.9%**：本次测试中，排队与 TTFT 压力先于高 KV-cache 水位出现。仅凭该信号不能排除其他 runtime 瓶颈，但它足以说明不能只用内存水位判断容量。
 
 同理，M1.3 测量中 GPU utilization 在 C64/C96/C128 都稳定在 96%，**不随服务状态变化**。本项目因此明确不把 GPU 利用率作为饱和或容量判据。
 
