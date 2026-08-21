@@ -8,7 +8,7 @@
 
 ---
 
-**最后更新**：2026-08-18
+**最后更新**：2026-08-19
 
 ---
 
@@ -29,7 +29,8 @@
 
 ## Next Steps
 
-M1 / M1.5 已在 `m1-freeze-20260818` 冻结，项目进入 M2。
+M1 / M1.5 已在 `m1-freeze-20260818` 冻结；M2 最小 pipeline / comparison 扩展已就绪。
+下一步执行 M2.0 compatibility inventory，并落地 M2.1 prefix hit/miss configs 与 smoke。
 
 ## Blockers
 

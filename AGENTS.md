@@ -50,7 +50,7 @@
 | Review / 结论 | 120 行 | 同上 |
 | ADR | 80 行 | 同上 |
 
-现存超标文件（`run-benchmark.sh` 687、`benchmark_utils.py` 705、`m0-evidence.sh` 1137、SLO 1336）是**待偿债务，不是先例**。不要援引它们为新增辩护。
+`benchmark_utils.py`（655 行）、`m0-evidence.sh`（1137 行）与 SLO（1336 行）仍是**待偿债务，不是先例**；`run-benchmark.sh` 的 scoped exception 见 [`serving/AGENTS.md`](serving/AGENTS.md#行数例外与现存债务)。不要援引它们为新增辩护。
 
 Milestone 计划指单个 milestone 的具体落地计划，全局 roadmap 在该显式规则外，也是唯一例外的"超预算"——它是**全局视图**，不是单个任务的产出。
 

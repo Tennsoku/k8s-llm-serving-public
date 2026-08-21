@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
-"""Create, enrich, and finalize the lightweight M1 run metadata document."""
+"""Create, enrich, and finalize a lightweight benchmark run metadata document."""
 
 from __future__ import annotations
 
 import argparse
 import platform
+import re
 import subprocess
 from pathlib import Path
 from typing import Any
@@ -96,13 +97,16 @@ def attach_server_observation(
 
 def capture(args: argparse.Namespace) -> int:
     output = args.run_dir / "run.yaml"
+    if re.fullmatch(r"[a-z][a-z0-9-]*", args.milestone) is None:
+        raise SystemExit("--milestone must be a lowercase safe identifier")
+
     config = load_config(args.config)
     git_status = git_value(args.repo_root, "status", "--porcelain")
     git_commit = git_value(args.repo_root, "rev-parse", "HEAD")
     metadata: dict[str, Any] = {
         "schema_version": 2,
         "run_id": args.run_id,
-        "milestone": "M1",
+        "milestone": args.milestone.upper(),
         "purpose": args.purpose,
         "timestamp_utc": utc_now(),
         "config_id": config["config_id"],
@@ -173,6 +177,7 @@ def arguments() -> argparse.Namespace:
     capture_parser = subparsers.add_parser("capture")
     capture_parser.add_argument("--run-dir", type=Path, required=True)
     capture_parser.add_argument("--run-id", required=True)
+    capture_parser.add_argument("--milestone", required=True)
     capture_parser.add_argument("--node-label", required=True)
     capture_parser.add_argument(
         "--purpose", choices=["exploratory", "canonical"], required=True

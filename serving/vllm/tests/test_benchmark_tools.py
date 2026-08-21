@@ -27,6 +27,7 @@ from benchmark_utils import (  # noqa: E402
     summarize_request_records,
 )
 import runtime_metrics as runtime_metrics_module  # noqa: E402
+from output_evaluator import score_output, summarize_rows  # noqa: E402
 from metrics_utils import (  # noqa: E402
     histogram_delta,
     semantic_counter_delta,
@@ -368,6 +369,45 @@ vllm:time_to_first_token_seconds_count{model_name="model"} 4
                 30,
             )
 
+    def test_output_evaluator_uses_declared_deterministic_scores(self) -> None:
+        self.assertTrue(score_output("Ａ\n  B", "normalized_exact", "a b"))
+        self.assertTrue(
+            score_output("answer two", "normalized_exact", ["answer one", "ANSWER TWO"])
+        )
+        self.assertFalse(score_output("almost", "normalized_exact", "exact"))
+        self.assertTrue(
+            score_output('{"b": [2], "a": 1}', "json_exact", {"a": 1, "b": [2]})
+        )
+        self.assertFalse(
+            score_output('{"value": 1}', "json_exact", {"value": True})
+        )
+
+        rows = [
+            {
+                "id": "normalized",
+                "prompt": "Return the declared answer.",
+                "scorer": "normalized_exact",
+                "expected": "yes",
+                "output": " YES ",
+                "error": None,
+                "correct": False,
+            },
+            {
+                "id": "request-error",
+                "prompt": "Return JSON.",
+                "scorer": "json_exact",
+                "expected": {"ok": True},
+                "output": None,
+                "error": "HTTP 500",
+                "correct": True,
+            },
+        ]
+        summary = summarize_rows(rows)
+        self.assertEqual(summary["correct"], 1)
+        self.assertEqual(summary["total"], 2)
+        self.assertEqual(summary["request_errors"], 1)
+        self.assertEqual(summary["outcome"], "failed")
+
 
 
 class BenchmarkConfigV2Tests(unittest.TestCase):
@@ -428,6 +468,59 @@ class BenchmarkConfigV2Tests(unittest.TestCase):
         self.assertEqual(first, repeated)
         self.assertEqual(len({first, second, warmup}), 3)
         self.assertRegex(first, r"^[0-9a-f]{64}$")
+
+    def test_shared_cache_identity_and_request_suffix_form_one_declared_axis(self) -> None:
+        candidate = copy.deepcopy(self.config)
+        candidate["workload"]["cache_identity"] = {
+            "mode": "run_shared",
+            "derivation": "sha256-run-v1",
+        }
+        candidate["workload"]["request_suffix"] = {"mode": "case_index"}
+        candidate["output_evaluation"] = {"cases_path": "accuracy-cases.jsonl"}
+        with tempfile.TemporaryDirectory() as temporary:
+            path = Path(temporary) / "candidate.yaml"
+            path.write_text(
+                yaml.safe_dump(candidate, sort_keys=False), encoding="utf-8"
+            )
+            loaded = load_config(path)
+
+            invalid = copy.deepcopy(candidate)
+            invalid["workload"]["cache_identity"]["derivation"] = (
+                "sha256-run-case-phase-index-v1"
+            )
+            invalid_path = Path(temporary) / "invalid.yaml"
+            invalid_path.write_text(
+                yaml.safe_dump(invalid, sort_keys=False), encoding="utf-8"
+            )
+            with self.assertRaises(ConfigError):
+                load_config(invalid_path)
+
+        derivation = loaded["workload"]["cache_identity"]["derivation"]
+        warmup = derive_cache_salt(
+            "run-a", "warmup", "warmup", 1, derivation, "run_shared"
+        )
+        measured = derive_cache_salt(
+            "run-a", "c001-r01", "measured", 9, derivation, "run_shared"
+        )
+        other_run = derive_cache_salt(
+            "run-b", "c001-r01", "measured", 9, derivation, "run_shared"
+        )
+        self.assertEqual(warmup, measured)
+        self.assertNotEqual(measured, other_run)
+
+        control = copy.deepcopy(loaded)
+        control["workload"]["cache_identity"] = {
+            "mode": "request_unique",
+            "derivation": "sha256-run-case-phase-index-v1",
+        }
+        prompt = render_prompt(loaded, "c001-r01", 1)
+        self.assertEqual(prompt, render_prompt(control, "c001-r01", 1))
+        self.assertNotEqual(prompt, render_prompt(loaded, "c001-r01", 2))
+        self.assertNotIn("run-a", prompt)
+        self.assertEqual(
+            case_contract_fingerprint(loaded, 1),
+            case_contract_fingerprint(control, 1),
+        )
 
     def test_model_templates_hold_non_model_controls_fixed(self) -> None:
         root = REPO_ROOT / "benchmarks/configs/vllm-single-node/m1.6"
@@ -525,13 +618,20 @@ class StreamingMeasurementTests(unittest.IsolatedAsyncioTestCase):
         finally:
             benchmark_utils_module.aiohttp = original
 
-        self.assertTrue(result.success)
-        self.assertTrue(result.request_id_verified)
-        self.assertEqual(result.input_tokens, 10)
-        self.assertEqual(result.output_tokens, 3)
-        self.assertEqual(result.content_chunk_count, 2)
-        self.assertIsNotNone(result.ttft_seconds)
-        self.assertIsNotNone(result.tpot_seconds)
+        schema_path = (
+            REPO_ROOT
+            / "benchmarks/configs/vllm-single-node/request-metrics.schema.jsonl"
+        )
+        schema = json.loads(schema_path.read_text(encoding="utf-8"))
+        Draft202012Validator(schema).validate(result)
+
+        self.assertTrue(result["success"])
+        self.assertTrue(result["request_id_verified"])
+        self.assertEqual(result["input_tokens"], 10)
+        self.assertEqual(result["output_tokens"], 3)
+        self.assertEqual(result["content_chunk_count"], 2)
+        self.assertIsNotNone(result["ttft_seconds"])
+        self.assertIsNotNone(result["tpot_seconds"])
 
 
 if __name__ == "__main__":

@@ -11,7 +11,7 @@ from typing import Any
 
 from jsonschema import Draft202012Validator, FormatChecker
 
-from benchmark_utils import read_jsonl, summarize_metrics
+from benchmark_utils import summarize_metrics
 from summary_context import (
     build_summary_context,
     case_contract_fingerprint,

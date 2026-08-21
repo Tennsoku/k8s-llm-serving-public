@@ -59,10 +59,13 @@ def case_contract_fingerprint(
     """Identify a measured point independently of the surrounding sweep."""
     if not isinstance(config, dict) or config.get("schema_version") != 2:
         return None
+    logical_workload = _workload_identity(config)
+    if logical_workload is not None:
+        logical_workload.pop("cache_identity", None)
     contract = {
-        "schema_version": 1,
+        "schema_version": 2,
         "concurrency": concurrency,
-        "workload": _workload_identity(config),
+        "workload": logical_workload,
         "warmup": config["warmup"],
         "metrics": config["metrics"],
     }

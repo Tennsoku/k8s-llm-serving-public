@@ -1,3 +1,4 @@
+/* Shared run-analysis page shell; milestone contracts remain local. */
 :root {
   color-scheme: dark;
   --bg: #07100f;
@@ -665,6 +666,35 @@ footer {
   color: var(--muted);
 }
 
+.summary-set-panel {
+  overflow: hidden;
+  border: 1px solid var(--line-strong);
+  border-radius: 16px;
+  background: rgba(5, 17, 15, 0.54);
+}
+
+.summary-set-scroll { overflow-x: auto; }
+.summary-set-table {
+  width: 100%;
+  min-width: 760px;
+  border-collapse: collapse;
+  font-variant-numeric: tabular-nums;
+}
+
+.summary-set-table th,
+.summary-set-table td {
+  padding: 16px 18px;
+  text-align: left;
+  border-bottom: 1px solid var(--line);
+}
+
+.summary-set-table th { color: var(--dim); font-size: 0.7rem; text-transform: uppercase; }
+.summary-set-table tbody tr:last-child td { border-bottom: 0; }
+.summary-set-label strong,
+.summary-set-label small { display: block; }
+.summary-set-label small { margin-top: 5px; color: var(--dim); font-size: 0.68rem; }
+#summarySetCaption { margin: 0; padding: 13px 18px; color: var(--dim); font-size: 0.75rem; }
+
 .viewer-frame-shell {
   min-height: 420px;
   overflow: hidden;
@@ -833,4 +863,3 @@ footer {
     box-shadow: none;
   }
 }
-

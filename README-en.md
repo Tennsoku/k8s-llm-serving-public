@@ -102,7 +102,7 @@ The engineering constraints behind the results above:
 | **Recomputability** | `derived/` must regenerate from `raw/`; flawed analysis is fixed and recomputed — `raw/` is never edited |
 | **Fixed configuration** | Node, image digest, model revision, server arguments and workload all recorded and fingerprinted |
 
-Single-entry replay: `serving/vllm/run-benchmark.sh --config <workload.yaml> --node-label <label>`
+Single-entry replay: `serving/vllm/run-benchmark.sh --milestone <milestone> --config <workload.yaml> --node-label <label>`
 
 ---
 

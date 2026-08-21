@@ -241,14 +241,43 @@
         "total_requests_per_repetition": {"type": "integer", "minimum": 1},
         "request_timeout_seconds": {"type": "number", "exclusiveMinimum": 0},
         "cache_identity": {
+          "oneOf": [
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["mode", "derivation"],
+              "properties": {
+                "mode": {"const": "request_unique"},
+                "derivation": {"const": "sha256-run-case-phase-index-v1"}
+              }
+            },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["mode", "derivation"],
+              "properties": {
+                "mode": {"const": "run_shared"},
+                "derivation": {"const": "sha256-run-v1"}
+              }
+            }
+          ]
+        },
+        "request_suffix": {
           "type": "object",
           "additionalProperties": false,
-          "required": ["mode", "derivation"],
+          "required": ["mode"],
           "properties": {
-            "mode": {"const": "request_unique"},
-            "derivation": {"const": "sha256-run-case-phase-index-v1"}
+            "mode": {"const": "case_index"}
           }
         }
+      }
+    },
+    "output_evaluation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["cases_path"],
+      "properties": {
+        "cases_path": {"type": "string", "minLength": 1}
       }
     },
     "sampling": {

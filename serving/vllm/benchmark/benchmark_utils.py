@@ -1,4 +1,4 @@
-"""Canonical request measurement and summary helpers for M1 benchmarks."""
+"""Request measurement and summary helpers for vLLM benchmarks."""
 
 from __future__ import annotations
 
@@ -6,7 +6,6 @@ import asyncio
 import json
 import math
 import time
-from dataclasses import asdict, dataclass
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, AsyncIterator
@@ -50,8 +49,6 @@ def percentile(values: list[float], quantile: float) -> float | None:
     """Return the R-7/NumPy-default percentile, or None for no observations."""
     if not values:
         return None
-    if not 0 <= quantile <= 1:
-        raise ValueError("quantile must be between zero and one")
     ordered = sorted(values)
     position = (len(ordered) - 1) * quantile
     lower = math.floor(position)
@@ -59,47 +56,6 @@ def percentile(values: list[float], quantile: float) -> float | None:
     if lower == upper:
         return ordered[lower]
     return ordered[lower] + (ordered[upper] - ordered[lower]) * (position - lower)
-
-
-@dataclass
-class RequestMeasurement:
-    schema_version: int
-    record_type: str
-    run_id: str
-    case_id: str
-    measured: bool
-    model: str
-    request_id: str
-    request_index: int
-    concurrency: int
-    repetition: int
-    start_wall_utc: str
-    end_wall_utc: str
-    start_monotonic_ns: int
-    response_headers_monotonic_ns: int | None
-    first_content_monotonic_ns: int | None
-    last_content_monotonic_ns: int | None
-    end_monotonic_ns: int
-    input_tokens: int | None
-    output_tokens: int | None
-    token_count_source: str
-    stream_event_count: int
-    content_chunk_count: int
-    ttft_seconds: float | None
-    decode_seconds: float | None
-    tpot_seconds: float | None
-    e2e_seconds: float
-    http_status: int | None
-    finish_reason: str | None
-    response_request_id: str | None
-    request_id_verified: bool
-    success: bool
-    timeout: bool
-    error_type: str | None
-    error_message: str | None
-
-    def to_dict(self) -> dict[str, Any]:
-        return asdict(self)
 
 
 async def _sse_data(response: Any) -> AsyncIterator[str]:
@@ -144,7 +100,7 @@ async def measure_request(
     concurrency: int,
     repetition: int,
     timeout_seconds: float,
-) -> RequestMeasurement:
+) -> dict[str, Any]:
     """Send and fully consume one streaming request.
 
     TTFT ends at the first non-empty generated-content event. HTTP chunks are
@@ -284,46 +240,46 @@ async def measure_request(
         if decode is not None and output_tokens is not None and output_tokens > 1
         else None
     )
-    return RequestMeasurement(
-        schema_version=1,
-        record_type="request",
-        run_id=run_id,
-        case_id=case_id,
-        measured=measured,
-        model=model,
-        request_id=request_id,
-        request_index=request_index,
-        concurrency=concurrency,
-        repetition=repetition,
-        start_wall_utc=start_wall,
-        end_wall_utc=utc_now(),
-        start_monotonic_ns=started_ns,
-        response_headers_monotonic_ns=headers_ns,
-        first_content_monotonic_ns=first_content_ns,
-        last_content_monotonic_ns=last_content_ns,
-        end_monotonic_ns=ended_ns,
-        input_tokens=input_tokens,
-        output_tokens=output_tokens,
-        token_count_source=(
+    return {
+        "schema_version": 1,
+        "record_type": "request",
+        "run_id": run_id,
+        "case_id": case_id,
+        "measured": measured,
+        "model": model,
+        "request_id": request_id,
+        "request_index": request_index,
+        "concurrency": concurrency,
+        "repetition": repetition,
+        "start_wall_utc": start_wall,
+        "end_wall_utc": utc_now(),
+        "start_monotonic_ns": started_ns,
+        "response_headers_monotonic_ns": headers_ns,
+        "first_content_monotonic_ns": first_content_ns,
+        "last_content_monotonic_ns": last_content_ns,
+        "end_monotonic_ns": ended_ns,
+        "input_tokens": input_tokens,
+        "output_tokens": output_tokens,
+        "token_count_source": (
             "server_usage"
             if input_tokens is not None and output_tokens is not None
             else "unavailable"
         ),
-        stream_event_count=event_count,
-        content_chunk_count=content_chunk_count,
-        ttft_seconds=ttft,
-        decode_seconds=decode,
-        tpot_seconds=tpot,
-        e2e_seconds=(ended_ns - started_ns) / 1_000_000_000,
-        http_status=status,
-        finish_reason=finish_reason,
-        response_request_id=response_request_id,
-        request_id_verified=response_request_id == request_id,
-        success=error_type is None,
-        timeout=timed_out,
-        error_type=error_type,
-        error_message=error_message,
-    )
+        "stream_event_count": event_count,
+        "content_chunk_count": content_chunk_count,
+        "ttft_seconds": ttft,
+        "decode_seconds": decode,
+        "tpot_seconds": tpot,
+        "e2e_seconds": (ended_ns - started_ns) / 1_000_000_000,
+        "http_status": status,
+        "finish_reason": finish_reason,
+        "response_request_id": response_request_id,
+        "request_id_verified": response_request_id == request_id,
+        "success": error_type is None,
+        "timeout": timed_out,
+        "error_type": error_type,
+        "error_message": error_message,
+    }
 
 
 def summarize_request_records(
@@ -507,18 +463,12 @@ def _concurrency_summary(
             row for row in all_rows if row.get("measurement_complete") is True
         ]
 
-        def observed(path: tuple[str, ...]) -> list[float]:
-            values: list[float] = []
-            for row in rows:
-                current: Any = row
-                for key in path:
-                    if not isinstance(current, dict):
-                        current = None
-                        break
-                    current = current.get(key)
-                if current is not None:
-                    values.append(float(current))
-            return values
+        def observed(path: tuple[str, str]) -> list[float]:
+            return [
+                float(row[path[0]][path[1]])
+                for row in rows
+                if row[path[0]].get(path[1]) is not None
+            ]
 
         summary: dict[str, Any] = {
             "concurrency": concurrency,

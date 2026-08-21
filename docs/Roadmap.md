@@ -97,7 +97,7 @@ M1 的 benchmark pipeline 可直接复用；M2 的主要新增成本转为 featu
 - [ ] 量化实验带精度结果，或量化路径被记录为可复现的兼容性边界
 - [ ] 投机解码报告 acceptance rate 与至少一个无收益/负收益场景
 - [ ] 前缀缓存 A/B 给出 TTFT 与 prefill token 的量化差异，并折算为成本口径
-- [ ] 所有结论进入 showcase 的 comparison 视图（复用已有 contract，不新建 UI）
+- [ ] 所有结论进入 showcase 的 comparison / run set analysis 视图（复用已有 contract，不新建 UI）
 
 ---
 

@@ -14,28 +14,32 @@ summary 与一份 M1.5 bounded-boundary summary；comparison selector 包含三�
 ## 结构
 
 ```text
-showcase/m1/
-├── index.html
-├── index.json
-├── showcase.css
-├── showcase.js
-├── compare.html
-├── compare.css
-├── compare.js
-├── comparisons.json
-└── analysis/
-    ├── milestone.json
-    ├── short-short.json
-    ├── short-long.json
-    ├── long-short.json
-    ├── long-long.json
-    ├── m1.3-historical.json
-    ├── bounded-boundary.json
-    ├── medium-model.json
-    └── comparisons/
-        ├── max-model-len.json
-        ├── max-num-seqs.json
-        └── gpu-memory-utilization.json
+showcase/
+├── shared/
+│   ├── compare-{data,model,view,app}.js
+│   ├── run-{model,app}.js
+│   ├── compare.css
+│   └── showcase.css
+└── m1/
+    ├── index.html
+    ├── index.json
+    ├── showcase.js
+    ├── compare.html
+    ├── compare.js
+    ├── comparisons.json
+    └── analysis/
+        ├── milestone.json
+        ├── short-short.json
+        ├── short-long.json
+        ├── long-short.json
+        ├── long-long.json
+        ├── m1.3-historical.json
+        ├── bounded-boundary.json
+        ├── medium-model.json
+        └── comparisons/
+            ├── max-model-len.json
+            ├── max-num-seqs.json
+            └── gpu-memory-utilization.json
 ```
 
 `index.json` 是 single-run 的selected run展示清单。`comparisons.json` 维护稳定 run registry
@@ -43,6 +47,9 @@ showcase/m1/
 run。最终 summaries 仍保存在 canonical public run 的
 `benchmarks/raw-results/<family>/<run-id>/derived/summary.json`，showcase 不维护第二份
 summary 或手写 numeric delta。
+
+M1 run-analysis entry 只接受单 run 的 `expected_run_id` + `summary_path`。
+共享模块只负责加载、校验和渲染；M1 policy 与 entry contract 保留在本目录入口。
 
 Comparison selector 包含三个 M1.5 runtime OVAT，以及一个 M1.6 small/medium
 model compatibility pair。页面从 captured summary 的 configuration、experiment、
@@ -105,9 +112,10 @@ axis 对应一个 runtime config path；`model_identity` 是一个逻辑变化�
 仍展示 lifecycle/stop evidence，但不会伪造 performance delta。
 
 当前三个 OVAT fixtures 都是 `descriptive_only`：M1.4 baseline 的 sampler interval
-为 0.5 秒且有三次 repetition，candidate 为 1 秒且只有一次 repetition，因此
-case contract fingerprint 不同。观测值仍可展示，但不能包装成严格 controlled
-causal conclusion。`max_num_seqs` study 还必须同屏显示 actual output-shape drift；
+为 0.5 秒且有三次 repetition，candidate 为 1 秒且只有一次 repetition，存在未声明的
+measurement config 差异。Fingerprint 只作诊断，不参与 comparability eligibility。
+观测值仍可展示，但不能包装成严格 controlled causal conclusion。`max_num_seqs`
+study 还必须同屏显示 actual output-shape drift；
 `gpu_memory_utilization` study 必须把 NVML process、cgroup 与 host memory scope 分开。
 
 `pending` 表示分析或实验尚未完成；`unknown` 表示已经完成预声明测试，但在范围内

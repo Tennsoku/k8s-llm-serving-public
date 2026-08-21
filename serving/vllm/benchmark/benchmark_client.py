@@ -20,6 +20,7 @@ from benchmark_utils import append_jsonl, measure_request, utc_now
 
 SAFE_ID = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_.-]*$")
 CACHE_SALT_DERIVATION = "sha256-run-case-phase-index-v1"
+RUN_SHARED_CACHE_SALT_DERIVATION = "sha256-run-v1"
 
 
 def positive(value: str) -> float:
@@ -35,10 +36,14 @@ def derive_cache_salt(
     phase: str,
     request_index: int,
     derivation: str,
+    mode: str = "request_unique",
 ) -> str:
-    if derivation != CACHE_SALT_DERIVATION:
-        raise ValueError(f"unsupported cache-salt derivation: {derivation}")
-    identity = f"{run_id}:{case_id}:{phase}:{request_index}"
+    if mode == "request_unique" and derivation == CACHE_SALT_DERIVATION:
+        identity = f"{run_id}:{case_id}:{phase}:{request_index}"
+    elif mode == "run_shared" and derivation == RUN_SHARED_CACHE_SALT_DERIVATION:
+        identity = run_id
+    else:
+        raise ValueError(f"unsupported cache identity: {mode}/{derivation}")
     return hashlib.sha256(identity.encode("utf-8")).hexdigest()
 
 
@@ -133,7 +138,6 @@ async def run_case(args: argparse.Namespace, config: dict[str, Any]) -> int:
     cache_identity = workload["cache_identity"]
     payload = {
         "model": args.model,
-        "messages": [{"role": "user", "content": render_prompt(config)}],
         "max_tokens": workload["max_output_tokens"],
         "temperature": sampling["temperature"],
         "seed": sampling["seed"],
@@ -184,15 +188,18 @@ async def run_case(args: argparse.Namespace, config: dict[str, Any]) -> int:
         async def one(index: int) -> dict[str, Any]:
             request_id = f"{args.run_id}-{args.case_id}-request-{index:06d}"
             request_payload = dict(payload)
+            prompt = render_prompt(config, args.case_id, index)
+            request_payload["messages"] = [{"role": "user", "content": prompt}]
             request_payload["cache_salt"] = derive_cache_salt(
                 args.run_id,
                 args.case_id,
                 request_phase,
                 index,
                 cache_identity["derivation"],
+                cache_identity["mode"],
             )
             async with gate:
-                measurement = await measure_request(
+                record = await measure_request(
                     session,
                     url=url,
                     payload=request_payload,
@@ -206,13 +213,11 @@ async def run_case(args: argparse.Namespace, config: dict[str, Any]) -> int:
                     repetition=args.repetition,
                     timeout_seconds=float(workload["request_timeout_seconds"]),
                 )
-            record = measurement.to_dict()
             record["cache_salt"] = request_payload["cache_salt"]
             return record
 
         tasks = [
-            asyncio.create_task(one(index))
-            for index in range(1, args.requests + 1)
+            asyncio.create_task(one(index)) for index in range(1, args.requests + 1)
         ]
         for task in asyncio.as_completed(tasks):
             record = await task

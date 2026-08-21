@@ -102,7 +102,7 @@ M1.3 首轮 concurrency sweep 得到 C64 输出 6,038 tok/s，数字很漂亮。
 | **可重算** | `derived/` 必须能从 `raw/` 重新生成；分析有误时修逻辑重算，不改 `raw/` |
 | **配置固定** | 节点、镜像 digest、model revision、server 参数、workload 全部记录并指纹化 |
 
-单入口重放：`serving/vllm/run-benchmark.sh --config <workload.yaml> --node-label <label>`
+单入口重放：`serving/vllm/run-benchmark.sh --milestone <milestone> --config <workload.yaml> --node-label <label>`
 
 ---
 

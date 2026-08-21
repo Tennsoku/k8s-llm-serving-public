@@ -173,6 +173,7 @@ freeze config and capture planned run metadata
        capture metrics-after.prom
   -> stop samplers
   -> capture final exposition
+  -> optionally capture and score the configured output-evaluation cases
   -> stop server
   -> validate raw JSONL and derive summaries
 ```
@@ -193,6 +194,7 @@ Validate the config and expanded sweep without starting Docker:
 
 ```bash
 serving/vllm/run-benchmark.sh \
+  --milestone m1 \
   --node-label spark-a \
   --purpose exploratory \
   --dry-run
@@ -209,6 +211,7 @@ Use the smoke workload to validate the complete lifecycle before a full run:
 
 ```bash
 serving/vllm/run-benchmark.sh \
+  --milestone m1 \
   --config benchmarks/configs/vllm-single-node/benchmark-smoke.yaml \
   --node-label spark-a \
   --purpose exploratory \
@@ -225,6 +228,7 @@ Run into a new private directory:
 
 ```bash
 serving/vllm/run-benchmark.sh \
+  --milestone m1 \
   --config benchmarks/configs/vllm-single-node/m1.4/selection/short-short.yaml \
   --node-label spark-a \
   --purpose canonical \

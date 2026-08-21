@@ -3,19 +3,20 @@ set -euo pipefail
 
 usage() {
   cat <<'HELP'
-Usage: run-benchmark.sh --node-label LABEL [options]
+Usage: run-benchmark.sh --milestone ID --node-label LABEL [options]
 
 Runs one complete single-node benchmark lifecycle from a versioned config.
 
 Options:
   -c, --config FILE                 Benchmark configuration
-  -o, --output-root DIR             Private run root
-      --run-id ID                   Unique run ID
+  -o, --output-root DIR             Private run root (default: artifacts/private/<milestone>)
+      --run-id ID                   Unique run ID (default includes <milestone>)
+      --milestone ID                Lowercase milestone identifier (required)
       --node-label LABEL            Sanitized logical node label (required)
       --purpose TYPE                exploratory or canonical (default: exploratory)
       --host HOST                   Host bind address (default: 127.0.0.1)
       --port PORT                   Host port (default: 8000)
-      --container-name NAME         Docker container name (default: vllm-m1)
+      --container-name NAME         Docker container name (default: vllm-<milestone>)
       --gpu-index INDEX             nvidia-smi GPU index (default: 0)
       --dry-run                     Validate and print the resolved plan
       --help                        Show this help
@@ -34,20 +35,21 @@ SCRIPT_DIR="${SERVING_DIR}/benchmark"
 REPO_ROOT="$(git -C "${SCRIPT_DIR}" rev-parse --show-toplevel)"
 CONFIG="${REPO_ROOT}/benchmarks/configs/vllm-single-node/benchmark-workload.yaml"
 SCHEMA_DIR="${REPO_ROOT}/benchmarks/configs/vllm-single-node"
-OUTPUT_ROOT="${REPO_ROOT}/artifacts/private/m1"
-RUN_ID="$(date -u +%Y%m%dT%H%M%SZ)-m1-vllm-single-node"
+OUTPUT_ROOT=""
+RUN_ID=""
+MILESTONE=""
 NODE_LABEL=""
 PURPOSE="exploratory"
 HOST="127.0.0.1"
 PORT="8000"
-CONTAINER_NAME="vllm-m1"
+CONTAINER_NAME=""
 GPU_INDEX="0"
 DRY_RUN=false
 PYTHON_BIN="python3"
 
 OPTS="$(getopt \
   -o c:o: \
-  --long config:,output-root:,run-id:,node-label:,purpose:,host:,port:,container-name:,gpu-index:,dry-run,help \
+  --long config:,output-root:,run-id:,milestone:,node-label:,purpose:,host:,port:,container-name:,gpu-index:,dry-run,help \
   -n 'run-benchmark.sh' -- "$@")" || {
   usage >&2
   exit 2
@@ -58,6 +60,7 @@ while true; do
   case "$1" in
     -c|--config) CONFIG="$2"; shift 2 ;;
     -o|--output-root) OUTPUT_ROOT="$2"; shift 2 ;;
+    --milestone) MILESTONE="$2"; shift 2 ;;
     --run-id) RUN_ID="$2"; shift 2 ;;
     --node-label) NODE_LABEL="$2"; shift 2 ;;
     --purpose) PURPOSE="$2"; shift 2 ;;
@@ -72,12 +75,20 @@ while true; do
   esac
 done
 
+[[ -n "${MILESTONE}" ]] || { echo "error: --milestone is required" >&2; exit 2; }
+[[ "${MILESTONE}" =~ ^[a-z][a-z0-9-]*$ ]] || {
+  echo "error: --milestone must be a lowercase safe identifier" >&2
+  exit 2
+}
 [[ $# -eq 0 ]] || { echo "error: unexpected positional arguments: $*" >&2; exit 2; }
 [[ -n "${NODE_LABEL}" ]] || { echo "error: --node-label is required" >&2; exit 2; }
 [[ "${NODE_LABEL}" =~ ^[A-Za-z0-9][A-Za-z0-9_.-]*$ ]] || {
   echo "error: --node-label must be a sanitized logical label" >&2
   exit 2
 }
+OUTPUT_ROOT="${OUTPUT_ROOT:-${REPO_ROOT}/artifacts/private/${MILESTONE}}"
+RUN_ID="${RUN_ID:-$(date -u +%Y%m%dT%H%M%SZ)-${MILESTONE}-vllm-single-node}"
+CONTAINER_NAME="${CONTAINER_NAME:-vllm-${MILESTONE}}"
 [[ "${RUN_ID}" =~ ^[A-Za-z0-9][A-Za-z0-9_.-]*$ ]] || {
   echo "error: unsafe --run-id" >&2
   exit 2
@@ -103,7 +114,7 @@ CONFIG="$(cd "$(dirname "${CONFIG}")" && pwd -P)/$(basename "${CONFIG}")"
 SOURCE_CONFIG="${CONFIG}"
 FROZEN_CONFIG_TEMP=""
 if [[ "${DRY_RUN}" == false ]]; then
-  FROZEN_CONFIG_TEMP="$(mktemp /tmp/m1-benchmark-config.XXXXXX)"
+  FROZEN_CONFIG_TEMP="$(mktemp "/tmp/${MILESTONE}-benchmark-config.XXXXXX")"
   trap '[[ -z "${FROZEN_CONFIG_TEMP}" ]] || rm -f -- "${FROZEN_CONFIG_TEMP}"' EXIT
   cp "${SOURCE_CONFIG}" "${FROZEN_CONFIG_TEMP}"
   CONFIG="${FROZEN_CONFIG_TEMP}"
@@ -159,6 +170,19 @@ READY_TIMEOUT="$(config_get ready-timeout)"
 IDLE_TIMEOUT="$(config_get idle-timeout)"
 STOP_TIMEOUT="$(config_get stop-timeout)"
 STOP_ON_FAILURE="$(config_get stop-on-failure)"
+OUTPUT_EVALUATION_CASES="$(config_get output-evaluation-cases)"
+EVALUATION_CASES_SOURCE=""
+if [[ -n "${OUTPUT_EVALUATION_CASES}" ]]; then
+  case "${OUTPUT_EVALUATION_CASES}" in
+    /*) EVALUATION_CASES_SOURCE="${OUTPUT_EVALUATION_CASES}" ;;
+    *) EVALUATION_CASES_SOURCE="$(dirname "${SOURCE_CONFIG}")/${OUTPUT_EVALUATION_CASES}" ;;
+  esac
+  [[ -f "${EVALUATION_CASES_SOURCE}" && -r "${EVALUATION_CASES_SOURCE}" ]] || {
+    echo "error: unreadable output evaluation cases: ${EVALUATION_CASES_SOURCE}" >&2
+    exit 1
+  }
+  EVALUATION_CASES_SOURCE="$(cd "$(dirname "${EVALUATION_CASES_SOURCE}")" && pwd -P)/$(basename "${EVALUATION_CASES_SOURCE}")"
+fi
 CONFIG_FINGERPRINT="$(
   "${PYTHON_BIN}" "${SCRIPT_DIR}/benchmark_config.py" \
     --config "${CONFIG}" fingerprint
@@ -171,8 +195,9 @@ fi
 
 
 if [[ "${DRY_RUN}" == true ]]; then
-  printf 'run_id=%s\nnode_label=%s\npurpose=%s\nconfig=%s\n' \
-    "${RUN_ID}" "${NODE_LABEL}" "${PURPOSE}" "${SOURCE_CONFIG}"
+  printf 'milestone=%s\nrun_id=%s\nnode_label=%s\npurpose=%s\nconfig=%s\n' \
+    "${MILESTONE}" "${RUN_ID}" "${NODE_LABEL}" "${PURPOSE}" "${SOURCE_CONFIG}"
+  printf 'output_root=%s\ncontainer_name=%s\n' "${OUTPUT_ROOT}" "${CONTAINER_NAME}"
   printf 'config_id=%s\nconfig_status=%s\nconfig_fingerprint=%s\n' \
     "${CONFIG_ID}" "${CONFIG_STATUS}" "${CONFIG_FINGERPRINT}"
   printf 'experiment_step=%s\nexperiment_kind=%s\ncomparison_group=%s\nvariant=%s\naxis=%s\n' \
@@ -192,6 +217,7 @@ if [[ "${DRY_RUN}" == true ]]; then
     "${IDLE_TIMEOUT}" "${STOP_TIMEOUT}" "${STOP_ON_FAILURE}"
   printf 'total_cases=%s\ntotal_measured_requests=%s\n' \
     "${TOTAL_CASES}" "${TOTAL_REQUESTS}"
+  printf 'output_evaluation_cases=%s\n' "${EVALUATION_CASES_SOURCE:-none}"
   printf 'extra_args='
   if (( ${#VLLM_EXTRA_ARGS[@]} > 0 )); then
     printf '%q ' "${VLLM_EXTRA_ARGS[@]}"
@@ -218,6 +244,11 @@ mv "${FROZEN_CONFIG_TEMP}" "${RUN_DIR}/raw/benchmark-config.yaml"
 FROZEN_CONFIG_TEMP=""
 trap - EXIT
 CONFIG="${RUN_DIR}/raw/benchmark-config.yaml"
+EVALUATION_CASES_FROZEN=""
+if [[ -n "${EVALUATION_CASES_SOURCE}" ]]; then
+  EVALUATION_CASES_FROZEN="${RUN_DIR}/raw/output-evaluation-cases.jsonl"
+  cp "${EVALUATION_CASES_SOURCE}" "${EVALUATION_CASES_FROZEN}"
+fi
 
 SERVER_DIR="${RUN_DIR}/raw/server"
 BASE_URL=""
@@ -237,6 +268,7 @@ FIRST_UNSUPPORTED_CASE=""
 "${PYTHON_BIN}" "${SCRIPT_DIR}/run_metadata.py" capture \
   --run-dir "${RUN_DIR}" \
   --run-id "${RUN_ID}" \
+  --milestone "${MILESTONE}" \
   --node-label "${NODE_LABEL}" \
   --purpose "${PURPOSE}" \
   --config "${CONFIG}" \
@@ -366,12 +398,10 @@ printf 'phase=benchmark_plan cases=%s requests_per_case=%s total_requests=%s\n' 
   "${TOTAL_CASES}" "${REQUEST_COUNT}" "${TOTAL_REQUESTS}" >&2
 CURRENT_PHASE="start_server"
 printf 'phase=%s\n' "${CURRENT_PHASE}" >&2
-set +e
+start_server_rc=0
 "${SERVING_DIR}/start-server.sh" "${start_args[@]}" \
   >"${RUN_DIR}/raw/start-server.stdout.log" \
-  2>"${RUN_DIR}/raw/start-server.stderr.log"
-start_server_rc=$?
-set -e
+  2>"${RUN_DIR}/raw/start-server.stderr.log" || start_server_rc=$?
 printf '%d\n' "${start_server_rc}" >"${RUN_DIR}/raw/start-server-exit-code.txt"
 if [[ -s "${SERVER_DIR}/container-id.txt" ]]; then
   SERVER_STARTED=true
@@ -389,13 +419,11 @@ fi
 
 CURRENT_PHASE="wait_ready"
 printf 'phase=%s\n' "${CURRENT_PHASE}" >&2
-set +e
+ready_rc=0
 "${SERVING_DIR}/wait-ready.sh" \
   --output-dir "${SERVER_DIR}" --timeout "${READY_TIMEOUT}" \
   >"${RUN_DIR}/raw/wait-ready.stdout.log" \
-  2>"${RUN_DIR}/raw/wait-ready.stderr.log"
-ready_rc=$?
-set -e
+  2>"${RUN_DIR}/raw/wait-ready.stderr.log" || ready_rc=$?
 if (( ready_rc != 0 )); then
   FAILURE_PHASE="wait_ready"
   STOP_REASON="readiness_loss"
@@ -408,19 +436,17 @@ BASE_URL="$(sed -n '1p' "${SERVER_DIR}/base-url.txt")"
   --phase ready
 
 CURRENT_PHASE="initial_metrics"
-set +e
+initial_metrics_rc=0
 "${PYTHON_BIN}" "${SCRIPT_DIR}/runtime_metrics.py" capture \
   --base-url "${BASE_URL}" \
-  --output "${RUN_DIR}/raw/exposition/run-initial.prom"
-initial_metrics_rc=$?
-set -e
+  --output "${RUN_DIR}/raw/exposition/run-initial.prom" || initial_metrics_rc=$?
 if (( initial_metrics_rc != 0 )); then
   echo "warning: initial runtime metrics capture failed; benchmark will continue" >&2
   RUN_WARNINGS+=("initial_metrics")
 fi
 
 CURRENT_PHASE="warmup"
-set +e
+warmup_rc=0
 "${PYTHON_BIN}" "${SCRIPT_DIR}/benchmark_client.py" \
   --config "${CONFIG}" \
   --base-url "${BASE_URL}" \
@@ -434,9 +460,7 @@ set +e
   --case-events "${RUN_DIR}/raw/warmup-case-events.jsonl" \
   --warmup \
   >"${RUN_DIR}/raw/warmup.stdout.log" \
-  2>"${RUN_DIR}/raw/warmup.stderr.log"
-warmup_rc=$?
-set -e
+  2>"${RUN_DIR}/raw/warmup.stderr.log" || warmup_rc=$?
 if (( warmup_rc != 0 )); then
   FAILURE_PHASE="warmup"
   if (( warmup_rc == 2 )); then
@@ -447,14 +471,12 @@ if (( warmup_rc != 0 )); then
   exit "${warmup_rc}"
 fi
 
-set +e
+warmup_idle_rc=0
 "${PYTHON_BIN}" "${SCRIPT_DIR}/runtime_metrics.py" wait-idle \
   --base-url "${BASE_URL}" --run-id "${RUN_ID}" \
   --model-name "${SERVED_MODEL_NAME}" \
   --timeout "${IDLE_TIMEOUT}" \
-  --output "${RUN_DIR}/raw/warmup-idle.jsonl"
-warmup_idle_rc=$?
-set -e
+  --output "${RUN_DIR}/raw/warmup-idle.jsonl" || warmup_idle_rc=$?
 if (( warmup_idle_rc != 0 )); then
   FAILURE_PHASE="warmup_idle"
   STOP_REASON="idle_failure:warmup"
@@ -500,14 +522,12 @@ for concurrency in "${CONCURRENCIES[@]}"; do
     mkdir -p "${case_dir}"
 
     printf 'phase=wait_idle_before case_id=%s\n' "${case_id}" >&2
-    set +e
+    idle_before_rc=0
     "${PYTHON_BIN}" "${SCRIPT_DIR}/runtime_metrics.py" wait-idle \
       --base-url "${BASE_URL}" --run-id "${RUN_ID}" \
       --model-name "${SERVED_MODEL_NAME}" \
       --timeout "${IDLE_TIMEOUT}" \
-      --output "${case_dir}/idle-before.jsonl"
-    idle_before_rc=$?
-    set -e
+      --output "${case_dir}/idle-before.jsonl" || idle_before_rc=$?
     if (( idle_before_rc != 0 )); then
       printf '%d\n' "${idle_before_rc}" >"${case_dir}/idle-before-exit-code.txt"
       benchmark_failed=true
@@ -518,12 +538,10 @@ for concurrency in "${CONCURRENCIES[@]}"; do
       break
     fi
 
-    set +e
+    capture_before_rc=0
     "${PYTHON_BIN}" "${SCRIPT_DIR}/runtime_metrics.py" capture \
       --base-url "${BASE_URL}" \
-      --output "${case_dir}/metrics-before.prom"
-    capture_before_rc=$?
-    set -e
+      --output "${case_dir}/metrics-before.prom" || capture_before_rc=$?
     if (( capture_before_rc != 0 )); then
       echo "warning: runtime metrics-before capture failed for ${case_id}; client case will continue" >&2
       RUN_WARNINGS+=("metrics_before:${case_id}")
@@ -531,7 +549,7 @@ for concurrency in "${CONCURRENCIES[@]}"; do
 
     printf 'phase=run_case case_id=%s concurrency=%s requests=%s\n' \
       "${case_id}" "${concurrency}" "${REQUEST_COUNT}" >&2
-    set +e
+    client_rc=0
     "${PYTHON_BIN}" "${SCRIPT_DIR}/benchmark_client.py" \
       --config "${CONFIG}" \
       --base-url "${BASE_URL}" \
@@ -545,9 +563,7 @@ for concurrency in "${CONCURRENCIES[@]}"; do
       --case-events "${RUN_DIR}/raw/case-events.jsonl" \
       --measured \
       >"${case_dir}/client.stdout.log" \
-      2> >(tee "${case_dir}/client.stderr.log" >&2)
-    client_rc=$?
-    set -e
+      2> >(tee "${case_dir}/client.stderr.log" >&2) || client_rc=$?
     printf '%d\n' "${client_rc}" >"${case_dir}/client-exit-code.txt"
     if (( client_rc != 0 )); then
       benchmark_failed=true
@@ -563,22 +579,18 @@ for concurrency in "${CONCURRENCIES[@]}"; do
     fi
 
     printf 'phase=wait_idle_after case_id=%s client_rc=%s\n' "${case_id}" "${client_rc}" >&2
-    set +e
+    idle_after_rc=0
     "${PYTHON_BIN}" "${SCRIPT_DIR}/runtime_metrics.py" wait-idle \
       --base-url "${BASE_URL}" --run-id "${RUN_ID}" \
       --model-name "${SERVED_MODEL_NAME}" \
       --timeout "${IDLE_TIMEOUT}" \
-      --output "${case_dir}/idle-after.jsonl"
-    idle_after_rc=$?
-    set -e
+      --output "${case_dir}/idle-after.jsonl" || idle_after_rc=$?
     printf '%d\n' "${idle_after_rc}" >"${case_dir}/idle-after-exit-code.txt"
 
-    set +e
+    capture_after_rc=0
     "${PYTHON_BIN}" "${SCRIPT_DIR}/runtime_metrics.py" capture \
       --base-url "${BASE_URL}" \
-      --output "${case_dir}/metrics-after.prom"
-    capture_after_rc=$?
-    set -e
+      --output "${case_dir}/metrics-after.prom" || capture_after_rc=$?
     printf '%d\n' "${capture_after_rc}" >"${case_dir}/metrics-after-exit-code.txt"
     if (( capture_after_rc != 0 )); then
       echo "warning: runtime metrics-after capture failed for ${case_id}" >&2
@@ -609,35 +621,49 @@ done
 STOP_REASON="${STOP_REASON:-sweep_completed}"
 
 CURRENT_PHASE="stop_samplers"
-set +e
-stop_samplers
-sampler_rc=$?
-set -e
+sampler_rc=0
+stop_samplers || sampler_rc=$?
 if (( sampler_rc != 0 )); then
   echo "warning: one or more telemetry samplers exited non-zero" >&2
   RUN_WARNINGS+=("stop_samplers")
 fi
 
 CURRENT_PHASE="final_metrics"
-set +e
+final_metrics_rc=0
 "${PYTHON_BIN}" "${SCRIPT_DIR}/runtime_metrics.py" capture \
   --base-url "${BASE_URL}" \
-  --output "${RUN_DIR}/raw/exposition/run-after.prom"
-final_metrics_rc=$?
-set -e
+  --output "${RUN_DIR}/raw/exposition/run-after.prom" || final_metrics_rc=$?
 if (( final_metrics_rc != 0 )); then
   echo "warning: final runtime metrics capture failed" >&2
   RUN_WARNINGS+=("final_metrics")
 fi
 
+if [[ -n "${EVALUATION_CASES_FROZEN}" && "${benchmark_failed}" == false ]]; then
+  CURRENT_PHASE="output_evaluation"
+  printf 'phase=%s\n' "${CURRENT_PHASE}" >&2
+  evaluation_rc=0
+  "${PYTHON_BIN}" "${SCRIPT_DIR}/output_evaluator.py" capture \
+    --config "${CONFIG}" \
+    --cases "${EVALUATION_CASES_FROZEN}" \
+    --base-url "${BASE_URL}" \
+    --model "${SERVED_MODEL_NAME}" \
+    --raw-output "${RUN_DIR}/raw/output-evaluation.jsonl" \
+    --summary-output "${RUN_DIR}/derived/output-evaluation-summary.json" \
+    >"${RUN_DIR}/raw/output-evaluation.stdout.log" \
+    2>"${RUN_DIR}/raw/output-evaluation.stderr.log" || evaluation_rc=$?
+  if (( evaluation_rc != 0 )); then
+    benchmark_failed=true
+    FAILURE_PHASE="${FAILURE_PHASE:-output_evaluation}"
+    [[ "${STOP_REASON}" != sweep_completed ]] || STOP_REASON="output_evaluation_failed"
+  fi
+fi
+
 CURRENT_PHASE="stop_server"
-set +e
+stop_rc=0
 "${SERVING_DIR}/stop-server.sh" \
   --output-dir "${SERVER_DIR}" --timeout "${STOP_TIMEOUT}" \
   >"${RUN_DIR}/raw/stop-server.stdout.log" \
-  2>"${RUN_DIR}/raw/stop-server.stderr.log"
-stop_rc=$?
-set -e
+  2>"${RUN_DIR}/raw/stop-server.stderr.log" || stop_rc=$?
 SERVER_STARTED=false
 if (( stop_rc != 0 )); then
   benchmark_failed=true
@@ -669,11 +695,9 @@ fi
 finalize_metadata "${outcome}" "${FAILURE_PHASE}"
 
 CURRENT_PHASE="summarize"
-set +e
+summary_rc=0
 "${PYTHON_BIN}" "${SCRIPT_DIR}/summarize_metrics.py" \
-  --run-dir "${RUN_DIR}" --schema-dir "${SCHEMA_DIR}"
-summary_rc=$?
-set -e
+  --run-dir "${RUN_DIR}" --schema-dir "${SCHEMA_DIR}" || summary_rc=$?
 if (( summary_rc != 0 )); then
   echo "warning: benchmark completed but derived summary generation failed" >&2
   RUN_WARNINGS+=("summarize")

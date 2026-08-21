@@ -75,8 +75,8 @@ timeout、OOM、non-zero exit、HTTP error、server restart、部分完成的请
 
 ---
 
-## 现存债务
+## 行数例外与现存债务
 
-`run-benchmark.sh` 687 行、`benchmark_utils.py` 705 行超出根 §2 的 250/300 行预算。
+`run-benchmark.sh` 是跨 milestone 递增的单一 lifecycle owner；本轮复核基线为 711 行，例外于根 §2 的 Shell 250 行硬上限。后续新增仍须先声明 scope / budget 并优先减法；不得为凑行数拆成只有单一调用点的 helper 或 phase script。
 
-它们是**待偿债务，不是先例**。改动这两个文件时优先做减法；不要援引它们的规模为新增辩护。
+`benchmark_utils.py` 仍按根 §2 作为**待偿债务，不是先例**；不要援引其规模为新增辩护。

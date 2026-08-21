@@ -45,17 +45,30 @@ def _mapping(value: Any, name: str) -> dict[str, Any]:
     return value
 
 
-def render_prompt(config: dict[str, Any]) -> str:
-    """Render the exact prompt without mutating the versioned configuration."""
-    prompt = _mapping(config.get("workload"), "workload").get("prompt")
+def render_prompt(
+    config: dict[str, Any],
+    case_id: str | None = None,
+    request_index: int | None = None,
+) -> str:
+    """Render the base or request-specific prompt without mutating config."""
+    workload = _mapping(config.get("workload"), "workload")
+    prompt = workload.get("prompt")
     if isinstance(prompt, str):
-        return prompt
-    parts = _mapping(prompt, "workload.prompt")
-    return (
-        str(parts["prefix"])
-        + str(parts["repeated_text"]) * int(parts["repetitions"])
-        + str(parts["suffix"])
-    )
+        rendered = prompt
+    else:
+        parts = _mapping(prompt, "workload.prompt")
+        rendered = (
+            str(parts["prefix"])
+            + str(parts["repeated_text"]) * int(parts["repetitions"])
+            + str(parts["suffix"])
+        )
+    if (
+        workload.get("request_suffix") is not None
+        and case_id is not None
+        and request_index is not None
+    ):
+        rendered += f"\n\nRequest: {case_id}:{request_index:06d}"
+    return rendered
 
 
 def fingerprint(value: Any) -> str:
@@ -116,6 +129,10 @@ def load_config(path: Path) -> dict[str, Any]:
 
 
 def config_value(config: dict[str, Any], name: str) -> Any:
+    if name == "output-evaluation-cases":
+        evaluation = config.get("output_evaluation")
+        return evaluation.get("cases_path") if isinstance(evaluation, dict) else None
+
     paths = {
         "config-id": ("config_id",),
         "config-status": ("experiment", "status"),
@@ -185,6 +202,7 @@ GET_NAMES = (
     "idle-timeout",
     "stop-timeout",
     "stop-on-failure",
+    "output-evaluation-cases",
 )
 
 
