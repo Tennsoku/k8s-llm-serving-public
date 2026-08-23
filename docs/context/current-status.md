@@ -8,7 +8,7 @@
 
 ---
 
-**最后更新**：2026-08-19
+**最后更新**：2026-08-23
 
 ---
 
@@ -29,11 +29,9 @@
 
 ## Next Steps
 
-M1 / M1.5 已在 `m1-freeze-20260818` 冻结；M2 最小 pipeline / comparison 扩展已就绪。
-下一步执行 M2.0 compatibility inventory，并落地 M2.1 prefix hit/miss configs 与 smoke。
+M2.0 compatibility inventory 与 M2.1 exploratory selection/showcase 已落地。
+下一步冻结 C1+C16 config，并执行两侧 canonical replay。
 
 ## Blockers
 
-| 项 | 说明 |
-|---|---|
-| 无 | — |
+无。

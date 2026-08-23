@@ -1,126 +1,106 @@
-# M2 — Serving 优化实验室（执行计划，draft）
+# M2 — Serving 优化实验（执行计划）
 
-> 本文只定义 M2 的**执行顺序、实验 contract 与停手边界**；范围、工时和 Exit Criteria 只见 [Roadmap](../Roadmap.md)，当前进度只见 [current-status](../context/current-status.md)。
-> 结果数据进入 benchmark / showcase，结论、限制与 unknowns 进入 `docs/reviews/m2-review.md`；本文不复制状态或结果。预算 ≤ 150 行。
+> 该文档为 M2 的执行顺序、实验约束和停手条件。范围、工时与 Exit Criteria 见 [Roadmap](../Roadmap.md)，当前进度见 [current-status](../context/current-status.md)，实验结论见 [M2 review](../reviews/m2-review.md)。
+> 预算 ≤ 150 行。
 
----
-## 交付物
-| 类别 | 产出 |
-|---|---|
-| 实验配置 | `benchmarks/configs/vllm-single-node/m2/` — prefix cache、quantization、speculative decoding、long-context 的 versioned config |
-| 工程增量 | 只在现有 `serving/vllm/` pipeline 中补 shared cache identity、deterministic suffix、可选 output evaluator、实际观测到的 metric 语义与最小测试；不另建 M2 runner |
-| 原始证据 | `artifacts/private/m2/<run-id>/` 保存完整 run；代表性 canonical run 投影到 `benchmarks/raw-results/m2-serving-optimization/` |
-| 结论 | `docs/reviews/m2-review.md`；`showcase/m2/` 保存 M2 contract 并复用 `showcase/shared/` 渲染器，不新建 UI |
+## 研究
 
----
-## M2 要回答的问题
+M2 分别研究prefix caching、量化和speculative decoding：它们能节省多少 prefill、计算或内存，又会带来哪些兼容性、输出质量或额外开销？
 
-在固定 runtime、模型、workload 和测量边界下，**prefix reuse、量化与 speculative decoding 分别在什么条件下改善 TTFT、TPOT、吞吐、内存或成本；收益以什么质量、兼容性或额外开销为代价？**
+长上下文只做边界检查：观察实际输入变长后 TTFT、KV cache 和统一内存的变化，不把 `max_model_len` 配置值当成已经验证的上下文能力。
 
-长上下文只做 bounded boundary：确认实际输入长度上升时 KV 占用与 TTFT 如何变化，不把 `max_model_len` 配置值本身误写成已验证的上下文能力。
-
----
-## 执行序列
+## 执行顺序
 
 ```text
-M2.0 冻结输入与 feature smoke
-  → M2.1 prefix-cache hit/miss A/B
-  → M2.2 quantization：兼容性 → 精度 → 性能
-  → M2.3 speculative decoding：兼容性 → 正收益 hypothesis → 负收益边界
-  → M2.4 long-context bounded checkpoint
-  → 重算 derived → 选代表性证据 → review / comparison view → close
+M2.0 兼容性检查
+  → M2.1 prefix caching hit / miss A/B
+  → M2.2 量化：兼容性 → 输出检查 → 性能 A/B
+  → M2.3 speculative decoding：兼容性 → 场景选择 → 性能 A/B
+  → M2.4 长上下文边界检查
+  → 重算 derived → 选择代表性证据 → 更新 review 和 showcase
 ```
 
-对照型工作包 M2.1–M2.3 遵循 `机制问题 → hypothesis → smoke → exploratory 选点 → canonical A/B → review`；M2.4 只做 bounded single-run checkpoints。**不先展开 Cartesian matrix**。学习组织约按 6:4 分配给机制/实验解释与实现/执行，M2.1–M2.4 分别使用独立 thread。
+M2.1–M2.3 都按 `smoke → exploratory → canonical` 执行。Smoke 只检查流程能否跑通；exploratory 只选择少量测试点；canonical 固定配置运行 3 次。不要展开全参数组合。
 
----
-## 固定实验 contract
+## 所有实验共同遵守的规则
 
-| 项 | 约束 |
-|---|---|
-| Runtime | 使用 M1 冻结的 digest-pinned NGC vLLM 镜像与 Spark A；每项 feature 先确认实际 flag、模型资产和 `/metrics` 支持；每个 server config 使用 fresh runtime 与独立 run directory |
-| 模型 | Qwen2.5-7B 为主要 target；Qwen2.5-0.5B 只作 pipeline smoke 或 speculative draft。若 7B 在时限内不可执行，降级必须写清结论范围 |
-| 基线 | 每个 M2 A/B 都在 M2 内重跑 baseline；M1 数据只作 prior，不与新 candidate 混成 causal comparison |
-| 受控变量 | 一次只改变一个声明 axis；若 backend 强制同时改变 weight/KV dtype，标为 descriptive comparison，不拆分归因 |
-| 运行等级 | smoke 验证端到端；exploratory 验证兼容性与选点；canonical 固定配置重复 3 次并保留 request-level evidence |
-| 请求 | 固定 prompt corpus、generation config、sampling 与请求顺序；默认 deterministic decoding。A/B 的逻辑输入 token 必须一致；性能 request 不保存文本，只有配置 `output_evaluation` 时才另采逐题输出 |
-| 指标 | client-observed TTFT/E2E/TPOT 与 token throughput 为主；runtime counter/histogram 为机制证据；统一内存按既有 cgroup/NVML/host 信号解释 |
-| 失败 | readiness、timeout、OOM、restart、non-zero exit 全部保留；同一 run 中不静默 fallback。fallback 使用新 config、新 run-id |
-| 表述 | metric 不存在是 telemetry 缺口，不写成 `Unknown`；只有完成声明范围测试但无直接证据时才使用 `Unknown` |
+1. 使用 M1 冻结的 vLLM image digest 和 Spark A；每个 server config 都启动新的 runtime，并使用独立 run ID。
+2. 除speculative decoding外，Qwen2.5-7B 是默认 target。speculative decoding使用 M2.0 选出的兼容组合，并为实际 target 单独重跑 baseline。
+3. 每组 A/B 都在 M2 内重跑 baseline；M1 结果只能作为背景，不能与 M2 candidate 组成因果比较。
+4. A/B 只改变预先声明的实验因素。模型、prompt、sampling、请求顺序和对应请求的输入 token 必须一致。
+5. 主要读数是 client 侧 TTFT、TPOT、E2E、吞吐和失败数；runtime counter 与 histogram 用来确认机制是否实际生效。
+6. Readiness failure、timeout、OOM、restart 和 non-zero exit 都保留。失败后使用新 run ID，不覆盖原目录。
+7. `revision`、fingerprint 和 `cache_salt` 是描述与对齐信息，不是运行许可。
+8. `/metrics` 中没有所需 metric 时，记录为 telemetry 缺口；不要从日志推算不存在的 counter。
+9. 性能请求不保存输出文本。只有配置了输出检查时，才把输入、输出和评分保存在私有 raw 中。
 
----
-## M2.0 — 输入冻结与 compatibility inventory
+## M2.0 — 兼容性检查
 
-1. 从 M1 的 7B short-long config 派生最小 smoke；冻结 image digest、model revision、tokenizer、dtype、generation config 与 sampler interval。
-2. 分别启动 APC、FP8 KV cache、weight FP8、draft-model speculative decoding，保存 expanded command、readiness、server log 和原始 `/metrics` exposition。
-3. 只把**实际出现**且 M2 结论需要的 metric 加入 `metrics_utils.py`；metric 缺失时保留 exposition，不从日志猜测 counter。
-4. 记录 feature matrix：`supported / startup_failed / model_asset_missing / telemetry_unsupported`。关键 telemetry 缺失时保留执行证据、标记对应 Exit Criterion 未满足，并回到 Roadmap 决定范围，不以 `Unknown` close。
+1. 分别检查 APC、FP8 KV cache、online FP8 weight 和 draft-model speculative decoding；每个配置只启用一项待测能力。
+2. 每项都保留 frozen config、完整命令、readiness、server log、原始 `/metrics`、request JSONL、final state 和可重算 summary。
+3. 只使用 `supported`、`startup_failed`、`model_asset_missing` 和 `telemetry_unsupported` 分类。APC 必须完成请求，并提供单位明确的 prefix query/hit counter，才能进入 M2.1。结果见 [M2 review](../reviews/m2-review.md)。
 
----
-## M2.1 — Prefix cache hit vs miss A/B
+## M2.1 — Prefix caching hit / miss A/B
 
-**机制问题**：共享 prefix 的完整 KV block 可复用时，prefill 工作量减少能否稳定反映到 TTFT 与 allocated GPU-seconds；并发是否改变收益。
+> 大量请求共享同一段长前缀时，缓存命中能否减少 prefill token，并降低 TTFT 和单位请求成本？
 
-1. 构造一个面向角色扮演 / 智能 NPC 的 prefix-heavy workload：共享 system prompt + 固定世界设定/角色记忆 + 短 unique user suffix + 短输出。
-2. 两组使用完全相同的 shared prefix、deterministic per-request suffix 和数量相同的未计入测量 warm-up，并各自使用 fresh runtime：
-   - `miss-control`：`request_unique` identity，warm-up 与测量请求使用 request-unique `cache_salt`；
-   - `hit-candidate`：`run_shared` identity，同一 run 的 warm-up 与测量共享 `cache_salt`，由 warm-up/priming request 填充 prefix。
-3. 先以 0.5B/C1 做 pipeline smoke；canonical 优先使用 7B，在 C1 与一个 exploratory 选出的 bounded concurrent point 运行，7B 并发上探不超过 M1 已验证范围。
-4. 预声明比较：TTFT p50/p95、server prefill time、prefix-cache hit/query counter delta、prompt throughput、失败数；counter 单位必须由 pinned runtime 的 HELP/TYPE 或版本文档确认。
-5. counter 单位确认是 token 后，成本口径才报告 `allocated GPU-seconds / 1M logical prompt tokens` 与 `uncached prefill tokens / request`；分开呈现 measured post-priming 与含一次 priming 的摊销口径，前者是资源占用代理，不冒充实际能耗。
-6. design control 与 observed hit ratio 分开写；runtime counter 不可用时，只能声明 workload identity 设计生效，不能声明实际命中率。
+1. 构造 prefix-heavy NPC workload：长且固定的 instruction、世界设定和角色记忆，加一个短的 request-specific suffix，输出保持较短。
+2. 两侧都启用 APC，并保持 prompt、suffix 规则、warm-up、请求数和并发顺序相同。唯一差异是 cache identity：
+   - `miss-control`：每个请求使用不同的 `cache_salt`；
+   - `hit-candidate`：同一 run 的 warm-up 和 measured request 共享 `cache_salt`，由 warm-up 先填充缓存。
+3. 先用 0.5B / C1 smoke 检查 prompt、salt、请求完整性和 counter。Candidate 没有产生更高的实际 hit ratio 时，不进入 7B。
+4. 7B exploratory 只测试 C1 和 M1 已验证范围内的少量并发点，再选择一个双方都完整的非 C1 点。
+5. Canonical 只保留 C1 与该非 C1 点，每侧运行 3 次；冻结后不再修改 workload。
+6. 比较 TTFT p50/p95、prefill time、prefix query/hit token、prompt throughput 和失败数。设计上允许复用，不等于 runtime 已经命中，必须以 counter 为准。
+7. Counter 单位确认为 token 后，才计算 `uncached prefill tokens/request` 和 `allocated GPU-s/1M logical prompt tokens`。
+8. 分开报告不含 priming 的 measured 结果，以及把一次 priming 分摊进去的结果。Allocated GPU-seconds 是资源占用口径，不是实际能耗。
 
----
-## M2.2 — Quantization + accuracy gate
+## M2.2 — Quantization 与输出检查
 
-**机制问题**：KV cache 与 weight quantization 优化的是不同资源；吞吐/容量收益是否伴随可观测的输出质量退化，以及 pinned ARM64/SM121 runtime 的兼容边界在哪里。
+> KV cache 和权重量化分别能节省多少资源，这些变化是否伴随输出退化？
 
-1. 受控候选按顺序执行：
+1. 按顺序测试：
    - baseline：BF16 weight + BF16 KV；
    - candidate A：BF16 weight + FP8 KV；
-   - candidate B：FP8 W8A8 weight，KV dtype 尽量保持与 baseline 相同；
-   - FP8 不可用时：INT4 AWQ/GPTQ；仍不可用则收敛为 reproducible compatibility boundary。
-2. candidate B 若只能与 FP8 KV 绑定，明确记录两个 axis 同时变化，只作 end-to-end 配置比较，不分别归因。
-3. 精度闸门使用冻结的本地 JSONL prompt set，覆盖短指令、事实抽取、格式约束、长上下文检索；temperature=0，只使用 `normalized_exact` / `json_exact` 的二元判分，保存逐题输入、输出、score 与 item-level flip。
-4. evaluator 是 `run-benchmark` 的可选外挂：性能采样与 final metrics 结束后、服务停止前顺序执行，完整输出只进入私有 raw，summary 可由 raw 重算；未配置时不改变既有 run。**不为 M2 引入 lm-eval 依赖、语义打分模型或通用评测平台**。
-5. 精度结果报告 aggregate score delta 与逐题变化；没有预声明容忍度时不自动贴“可接受/不可接受”标签，由 review 结合服务收益解释。
-6. 性能测量保持小矩阵：KV candidate 用 long-input case 观察 KV 占用/TTFT；weight candidate 用 short-long case 观察 TPOT/output TPS；每个受支持的主 A/B 才进入 canonical。
-7. 内存结论联合使用 runtime KV capacity、container cgroup、container-attributed NVML process allocation 与 host `MemAvailable`；不把 DGX Spark 不支持的 aggregate framebuffer 数值解释为 0。
+   - candidate B：online FP8 weight，实际 weight/activation dtype 以 runtime log 为准。
+2. 若 runtime 强制同时改变 weight 与 KV dtype，只比较整套配置，不分别归因。
+3. 先做兼容性 smoke，再做输出检查；通过这两步的候选才进入性能 A/B。
+4. 输出检查使用冻结的本地 JSONL prompt set，覆盖短指令、事实抽取、格式约束和长上下文检索。`temperature=0`，只使用 `normalized_exact` 和 `json_exact` 二元评分。
+5. 保存每题输出、评分和 baseline/candidate flip；报告总分变化。没有预先声明阈值时，不自动写成“可接受”或“不可接受”。
+6. FP8 KV 重点观察长输入下的 KV capacity、TTFT 和内存；online FP8 weight 重点观察 short-long workload 的 TPOT、output TPS 和内存。
+7. 内存结论联合使用 runtime KV capacity、container cgroup、container 对应的 NVML process allocation 和 host `MemAvailable`。不把缺失的 framebuffer telemetry 当成 0。
+8. FP8 不可用时再测试 INT4 AWQ/GPTQ；仍不可用就记录兼容性边界，不继续扩展量化路径。
 
----
-## M2.3 — Speculative decoding
+## M2.3 — Speculative Decoding
 
-**机制问题**：draft token 被接受带来的 target decode 节省，何时大于 draft-model、verification 与调度开销。
+> Speculative Decoding 只有在节省的 target 解码时间大于 draft 推理和 token 验证开销时才有收益。本step要找出它何时更快、何时反而更慢。
 
-1. 首选 Qwen2.5-0.5B draft + Qwen2.5-7B target；若 pinned runtime/model pairing 不支持，使用 n-gram 路径。EAGLE 仅在已有兼容资产时使用，不新增训练支线。
-2. baseline 与 candidate 固定 target model、prompt、sampling、output length 和并发；candidate 只增加 speculative method 与其必要参数。
-3. 选择两个预声明场景：
-   - 正收益 hypothesis：decode-heavy `short-long`、低并发；
-   - 负收益边界：短输出或较高并发场景，验证额外开销是否令 TPOT、E2E 或 output TPS 变差。
-4. 先从原始 `/metrics` 确认 accepted/drafted token counter，再最小扩展 semantic mapping；报告 acceptance rate、mean accepted tokens/draft、TTFT、TPOT、output TPS、失败数。
-5. acceptance rate 只解释“draft 命中程度”，不单独等价为端到端收益；最终判断必须同时看延迟和吞吐。
-6. deterministic 请求额外比较 normalized output；若输出变化，先判定 sampling/compatibility 是否一致，再决定该 pair 是否仍可比较。
+1. 根据 [M2 review](../reviews/m2-review.md) 选择已通过兼容性检查的 model pair。Baseline 与 candidate 使用相同 target；candidate 只增加 speculative 配置及 backend 必需的变化。
+2. 若 model-based 路径不可比较，改用 Qwen2.5-7B 的 n-gram 路径。EAGLE 只在已有兼容资产时使用，不新增训练工作。
+3. 固定两个场景：decode-heavy、低并发场景用于验证可能的正收益；短输出或较高并发场景用于寻找无收益或负收益边界。
+4. 从原始 `/metrics` 确认 drafted/accepted token counter 后，再加入最小 metric mapping。
+5. 报告 acceptance rate、mean accepted tokens/draft、TTFT、TPOT、output TPS 和失败数。Acceptance rate 只能说明草稿命中程度，不能单独证明端到端收益。
+6. Deterministic 请求还要比较 normalized output。若输出不同，先检查模型、tokenizer 和 sampling 是否一致，再判断 A/B 是否可比较。
+7. Backend 若自动切换 scheduler、model runner 或其他执行路径，把它列为必要的配置差异；无法隔离时只报告整套配置结果。
 
----
-## M2.4 — Long-context bounded checkpoint
+## M2.4 — 长上下文边界检查
 
-**机制问题**：实际输入 token 增长时，何处开始出现 TTFT 非线性增长、KV 压力或运行失败。
+> 实际输入越来越长时，TTFT、KV cache 和统一内存在哪个范围开始出现明显压力或运行失败？
 
-1. 先用 `max_model_len` OVAT 找到 pinned runtime 可启动的 bounded range；每个值使用新 runtime，不把 startup success 等价为长上下文推理成功。
-2. 在 C1 下递增**实际 prompt token length**，最多选择 3 个点；每点单次 exploratory，记录实际 token、TTFT、prefill time、KV usage、统一内存与 outcome。
-3. 首个 readiness/client/OOM/restart 失败即停止继续上探并保留失败；不外推未测试长度，不用单次运行声明 tail latency。
-4. 本项只形成同屏 run set 与候选 knee；严格质量评测、RoPE scaling 与长上下文准确率不在 M2 范围。每点只需要单次 exploratory run，不必重复 canonical。
+1. 先用 `max_model_len` OVAT 找到能够启动的范围，但不把启动成功当成长上下文请求成功。
+2. 在 C1 下最多选择 3 个实际 prompt length，每点运行一次 exploratory。
+3. 记录实际 input token、TTFT、prefill time、KV usage、统一内存和 outcome。
+4. 出现首个 readiness、client、OOM 或 restart 失败后停止上探并保留证据；不外推未测试长度，也不用单次运行声明 tail latency。
+5. 本项不做长上下文准确率、RoPE scaling 或新的质量评测框架。
 
----
-## 收敛、展示与交接
+## 收尾
 
-1. 所有 `derived/` 必须由 raw + frozen config 重算；comparison 只接 contract-compatible pair，不匹配 pair 标 descriptive。
-2. 每项只发布能支撑 review 核心声明的 Tier A 代表性 run；完整 raw 进入 M2 单一 Tier B archive，失败证据不采样。
-3. `m2-review.md` 按 `Observed Fact / Interpretation / Hypothesis / Unknown` 写结论，并明确 compatibility/telemetry/execution gap。
-4. comparison view 至少覆盖：prefix hit/miss、量化 baseline/candidate、spec baseline/candidate。long-context 使用 run analysis 的 2–3 run 同屏 set；复用现有 UI，不扩展通用 x-axis。
-5. 交给 M3/M4/M5/M6：受支持的 runtime flags 与模型资产、M2 canonical configs、量化后的资源基线、prefix/spec runtime metrics、成本折算输入。
+1. 所有 `derived/` 必须能从 raw 和 frozen config 重算。
+2. 只有实验条件一致的 A/B 才做对照；条件不同的 run 只能并列展示。
+3. 完整 private run 按 [evidence retention](../experiments/evidence-retention.md) 保留，只投影足以支撑核心结论的代表性结果。
+4. Observed Fact 指向具体 raw/derived；Interpretation 与 Hypothesis 必须明确标出。
+5. Showcase 复用已有 comparison / run analysis 页面，不增加新的通用 UI 或 x-axis。
 
----
-## 明确不做
+## 不做
 
-Chunked prefill、CUDA graph A/B、Nsight/kernel profiling、跨节点 TP、SGLang 对比、自动参数搜索、全局 accuracy framework、M2 专属 runner/evidence framework，以及为 showcase 新建 UI。
+不做 Chunked prefill、CUDA graph A/B、Nsight/kernel profiling、跨节点 TP、SGLang 对比、自动参数搜索、全局 accuracy framework、M2 专属 runner/evidence framework，也不为 M2 新建展示 UI。

@@ -229,7 +229,7 @@ Run into a new private directory:
 ```bash
 serving/vllm/run-benchmark.sh \
   --milestone m1 \
-  --config benchmarks/configs/vllm-single-node/m1.4/selection/short-short.yaml \
+  --config benchmarks/configs/vllm-single-node/m1/m1.4/selection/short-short.yaml \
   --node-label spark-a \
   --purpose canonical \
   --run-id "$(date -u +%Y%m%dT%H%M%SZ)-m1-baseline"

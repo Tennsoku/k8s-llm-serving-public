@@ -1,0 +1,181 @@
+{
+  "cases": [],
+  "concurrency_summary": [],
+  "context": {
+    "configuration": {
+      "config_id": "m2.0-draft-spec-compat-v1",
+      "metrics": {
+        "sample_interval_seconds": 1
+      },
+      "model": {
+        "artifact_revision": "a09a35458c702b33eeacc393d103063234e8bc28",
+        "id": "Qwen/Qwen2.5-7B-Instruct",
+        "path": "/models/Qwen2.5-7B-Instruct",
+        "runtime_revision": null,
+        "served_name": "qwen2.5-7b-instruct",
+        "tokenizer_revision": null
+      },
+      "orchestration": {
+        "idle_timeout_seconds": 120,
+        "ready_timeout_seconds": 900,
+        "stop_on_failure": true,
+        "stop_timeout_seconds": 60
+      },
+      "runtime": {
+        "container_memory_limit": "64g",
+        "dtype": "bfloat16",
+        "extra_args": [
+          "--speculative-config={\"method\":\"draft_model\",\"model\":\"/models/Qwen2.5-0.5B-Instruct\",\"num_speculative_tokens\":3}"
+        ],
+        "generation_config": "vllm",
+        "gpu_memory_utilization": 0.25,
+        "image": "nvcr.io/nvidia/vllm@sha256:1de8e6bfdb4c81c1f31a806cc9b13b5c6352714a7cec87f4d24964bcc91159b2",
+        "max_model_len": 8192,
+        "max_num_seqs": 128,
+        "quantization": null
+      },
+      "sampling": {
+        "include_usage": true,
+        "seed": 42,
+        "stream": true,
+        "temperature": 0.0
+      },
+      "sweep": {
+        "concurrency": [
+          1
+        ],
+        "measured_repetitions": 2,
+        "reference_points": {
+          "c1": 1,
+          "c_eff": null,
+          "c_pressure": null,
+          "highest_tested": null
+        }
+      },
+      "warmup": {
+        "concurrency": 1,
+        "requests": 2
+      },
+      "workload": {
+        "cache_identity": {
+          "derivation": "sha256-run-case-phase-index-v1",
+          "mode": "request_unique"
+        },
+        "input_tokens_target": 60,
+        "max_output_tokens": 512,
+        "name": "m1.4-short-long",
+        "prompt_sha256": "7617bc9eaa798732b39ca244528366d25eb8846ea14611cb81d482c1d0d5f160",
+        "request_timeout_seconds": 600,
+        "shape": "short-long",
+        "total_requests_per_repetition": 4
+      }
+    },
+    "context_warnings": [],
+    "environment": {
+      "architecture": "aarch64",
+      "git": {
+        "commit": "eb9e38df5b16d03eb5c53d123f7026fb79cd2c2a",
+        "dirty": true
+      },
+      "node": "spark-a"
+    },
+    "experiment": {
+      "axis": null,
+      "baseline_config_id": null,
+      "comparison_group": "m2.0-compatibility",
+      "kind": "compatibility",
+      "status": "ready",
+      "step": "M2.0",
+      "variant": "draft-speculative"
+    },
+    "fingerprints": {
+      "config_sha256": "7381dc75ffa3c127fa667e7fb1dc32d0a438ed1d349c0cd84f4330040c31cc57",
+      "measurement_plan_sha256": "537d64c7c4f5c74e076940cccf6c0b173344cc43a0f45e6f8159ac752d31789c",
+      "model_sha256": "4855610c28721374e45e14604f7891605bae03b6b310620a2079db11d1be4cf8",
+      "runtime_sha256": "615b0320dd838b5edafca4ec4f0bc981ce7f3eb2b9f989c152baa4718b6b4826",
+      "workload_sha256": "230ac5ac6c4f83155ed9c5f806fb9666959e1e272f33c46712f41ebb8dd1e9a4"
+    },
+    "observed_server": {
+      "command_sha256": "66f5e2140f5b2f2c0438723c0ff14653977c5a13c9bd20cd8ff61013b012010d",
+      "image": "nvcr.io/nvidia/vllm@sha256:1de8e6bfdb4c81c1f31a806cc9b13b5c6352714a7cec87f4d24964bcc91159b2",
+      "runtime_revision": null,
+      "shutdown": {
+        "container_exit_code": "1",
+        "container_remove_rc": "0",
+        "container_removed": "true",
+        "container_running": "false",
+        "container_status": "exited",
+        "docker_stop_attempted": "false",
+        "docker_stop_rc": "not_run",
+        "graceful_shutdown": "false",
+        "lifecycle_success": "true",
+        "logging_complete": "true",
+        "oom_killed": "false",
+        "post_stop_inspect_rc": "0",
+        "restart_count": "0",
+        "server_log_capture_rc": "0",
+        "stop_seconds": "0.004"
+      },
+      "started_at_utc": "2026-08-23T04:10:47-04:00",
+      "tokenizer_revision": null
+    },
+    "run": {
+      "failure_phase": "wait_ready",
+      "finished_at_utc": "2026-08-23T08:10:59.862185+00:00",
+      "first_unsupported_case": null,
+      "last_supported_case": null,
+      "outcome": "failed",
+      "purpose": "exploratory",
+      "started_at_utc": "2026-08-23T08:10:47.802401+00:00",
+      "stop_reason": "readiness_loss",
+      "warnings": []
+    },
+    "schema_version": 1
+  },
+  "data_quality": {
+    "complete_case_count": 0,
+    "measured_case_count": 0,
+    "raw_schema_valid": false
+  },
+  "enrichment_schema_version": 1,
+  "generated_at_utc": "2026-08-23T08:10:59.969103+00:00",
+  "raw_record_counts": {
+    "case_events": 0,
+    "requests": 0,
+    "runtime_samples": 0,
+    "system_samples": 0
+  },
+  "raw_validation": {
+    "case_events": {
+      "errors": [
+        "missing <HOME>/workspace/k8s-llm-serving/artifacts/private/m2/20260823-compat-draft-speculative-qwen2.5/raw/case-events.jsonl"
+      ],
+      "record_count": 0,
+      "valid": false
+    },
+    "requests": {
+      "errors": [
+        "missing <HOME>/workspace/k8s-llm-serving/artifacts/private/m2/20260823-compat-draft-speculative-qwen2.5/raw/requests.jsonl"
+      ],
+      "record_count": 0,
+      "valid": false
+    },
+    "runtime_samples": {
+      "errors": [
+        "missing <HOME>/workspace/k8s-llm-serving/artifacts/private/m2/20260823-compat-draft-speculative-qwen2.5/raw/runtime-samples.jsonl"
+      ],
+      "record_count": 0,
+      "valid": false
+    },
+    "system_samples": {
+      "errors": [
+        "missing <HOME>/workspace/k8s-llm-serving/artifacts/private/m2/20260823-compat-draft-speculative-qwen2.5/raw/system-samples.jsonl"
+      ],
+      "record_count": 0,
+      "valid": false
+    }
+  },
+  "raw_validation_passed": false,
+  "run_id": "20260823-compat-draft-speculative-qwen2.5",
+  "schema_version": 2
+}

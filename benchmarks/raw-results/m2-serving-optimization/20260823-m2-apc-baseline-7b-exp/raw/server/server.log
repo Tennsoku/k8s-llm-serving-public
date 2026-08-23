@@ -1,0 +1,295 @@
+2026-08-23T09:12:29.618373659Z (APIServer pid=56) INFO 08-23 09:12:29 [api_utils.py:339] 
+2026-08-23T09:12:29.618430811Z (APIServer pid=56) INFO 08-23 09:12:29 [api_utils.py:339]        █     █     █▄   ▄█
+2026-08-23T09:12:29.618434347Z (APIServer pid=56) INFO 08-23 09:12:29 [api_utils.py:339]  ▄▄ ▄█ █     █     █ ▀▄▀ █  version 0.24.0+092c4842.dev
+2026-08-23T09:12:29.618437563Z (APIServer pid=56) INFO 08-23 09:12:29 [api_utils.py:339]   █▄█▀ █     █     █     █  model   /models/Qwen2.5-7B-Instruct
+2026-08-23T09:12:29.618439691Z (APIServer pid=56) INFO 08-23 09:12:29 [api_utils.py:339]    ▀▀  ▀▀▀▀▀ ▀▀▀▀▀ ▀     ▀
+2026-08-23T09:12:29.618441611Z (APIServer pid=56) INFO 08-23 09:12:29 [api_utils.py:339] 
+2026-08-23T09:12:29.620716151Z (APIServer pid=56) INFO 08-23 09:12:29 [api_utils.py:273] non-default args: {'model_tag': '/models/Qwen2.5-7B-Instruct', 'host': '0.0.0.0', 'enable_request_id_headers': True, 'model': '/models/Qwen2.5-7B-Instruct', 'dtype': 'bfloat16', 'max_model_len': 8192, 'served_model_name': ['qwen2.5-7b-instruct'], 'generation_config': 'vllm', 'gpu_memory_utilization': 0.25, 'enable_prefix_caching': True, 'max_num_seqs': 128}
+2026-08-23T09:12:29.621123097Z (APIServer pid=56) WARNING 08-23 09:12:29 [envs.py:2033] Unknown vLLM environment variable detected: VLLM_VERSION
+2026-08-23T09:12:29.621129321Z (APIServer pid=56) WARNING 08-23 09:12:29 [envs.py:2033] Unknown vLLM environment variable detected: VLLM_FLASH_ATTN_SRC_DIR
+2026-08-23T09:12:34.714929958Z (APIServer pid=56) INFO 08-23 09:12:34 [model.py:598] Resolved architecture: Qwen2ForCausalLM
+2026-08-23T09:12:34.715335753Z (APIServer pid=56) INFO 08-23 09:12:34 [model.py:1725] Using max model len 8192
+2026-08-23T09:12:34.716124557Z (APIServer pid=56) INFO 08-23 09:12:34 [vllm.py:1006] Asynchronous scheduling is enabled.
+2026-08-23T09:12:34.716142157Z (APIServer pid=56) INFO 08-23 09:12:34 [kernel.py:276] Final IR op priority after setting platform defaults: IrOpPriorityConfig(rms_norm=['native'], fused_add_rms_norm=['native'])
+2026-08-23T09:12:40.346183727Z (EngineCore pid=192) INFO 08-23 09:12:40 [core.py:114] Initializing a V1 LLM engine (v0.24.0+092c4842.dev) with config: model='/models/Qwen2.5-7B-Instruct', speculative_config=None, tokenizer='/models/Qwen2.5-7B-Instruct', skip_tokenizer_init=False, tokenizer_mode=auto, revision=None, tokenizer_revision=None, trust_remote_code=False, dtype=torch.bfloat16, max_seq_len=8192, download_dir=None, load_format=auto, tensor_parallel_size=1, pipeline_parallel_size=1, data_parallel_size=1, decode_context_parallel_size=1, dcp_comm_backend=ag_rs, disable_custom_all_reduce=False, quantization=None, quantization_config=None, enforce_eager=False, enable_return_routed_experts=False, kv_cache_dtype=auto, device_config=cuda, structured_outputs_config=StructuredOutputsConfig(backend='auto', disable_any_whitespace=False, disable_additional_properties=False, reasoning_parser='', reasoning_parser_plugin='', enable_in_reasoning=False), observability_config=ObservabilityConfig(show_hidden_metrics_for_version=None, otlp_traces_endpoint=None, collect_detailed_traces=None, kv_cache_metrics=False, kv_cache_metrics_sample=0.01, cudagraph_metrics=False, enable_layerwise_nvtx_tracing=False, enable_mfu_metrics=False, enable_mm_processor_stats=False, enable_logging_iteration_details=False, jit_monitor_verbose=False), seed=0, served_model_name=qwen2.5-7b-instruct, enable_prefix_caching=True, enable_chunked_prefill=True, pooler_config=None, compilation_config={'mode': <CompilationMode.VLLM_COMPILE: 3>, 'debug_dump_path': None, 'cache_dir': '', 'compile_cache_save_format': 'binary', 'backend': 'inductor', 'custom_ops': ['none'], 'ir_enable_torch_wrap': True, 'splitting_ops': ['vllm::unified_attention_with_output', 'vllm::unified_mla_attention_with_output', 'vllm::mamba_mixer2', 'vllm::mamba_mixer', 'vllm::short_conv', 'vllm::linear_attention', 'vllm::plamo2_mamba_mixer', 'vllm::qwen_gdn_attention_core', 'vllm::gdn_attention_core_xpu', 'vllm::olmo_hybrid_gdn_full_forward', 'vllm::kda_attention', 'vllm::sparse_attn_indexer', 'vllm::rocm_aiter_sparse_attn_indexer', 'vllm::deepseek_v4_attention', 'vllm::unified_kv_cache_update', 'vllm::unified_mla_kv_cache_update'], 'compile_mm_encoder': False, 'cudagraph_mm_encoder': False, 'encoder_cudagraph_token_budgets': [], 'encoder_cudagraph_max_vision_items_per_batch': 0, 'encoder_cudagraph_max_frames_per_batch': None, 'compile_sizes': [], 'compile_ranges_endpoints': [2048], 'inductor_compile_config': {'enable_auto_functionalized_v2': False, 'combo_kernels': True, 'benchmark_combo_kernel': True}, 'inductor_passes': {}, 'cudagraph_mode': <CUDAGraphMode.FULL_AND_PIECEWISE: (2, 1)>, 'cudagraph_num_of_warmups': 1, 'cudagraph_capture_sizes': [1, 2, 4, 8, 16, 24, 32, 40, 48, 56, 64, 72, 80, 88, 96, 104, 112, 120, 128, 136, 144, 152, 160, 168, 176, 184, 192, 200, 208, 216, 224, 232, 240, 248, 256], 'cudagraph_copy_inputs': False, 'cudagraph_specialize_lora': True, 'use_inductor_graph_partition': False, 'pass_config': {'fuse_norm_quant': False, 'fuse_act_quant': False, 'fuse_attn_quant': False, 'enable_sp': False, 'fuse_gemm_comms': False, 'fuse_allreduce_rms': False, 'fuse_rope_kvcache_cat_mla': False, 'fuse_act_padding': False}, 'max_cudagraph_capture_size': 256, 'dynamic_shapes_config': {'type': <DynamicShapesType.BACKED: 'backed'>, 'evaluate_guards': False, 'assume_32_bit_indexing': False}, 'local_cache_dir': None, 'fast_moe_cold_start': False, 'static_all_moe_layers': []}, kernel_config=KernelConfig(ir_op_priority=IrOpPriorityConfig(rms_norm=['native'], fused_add_rms_norm=['native']), enable_flashinfer_autotune=True, moe_backend='auto', linear_backend='auto')
+2026-08-23T09:12:40.680614435Z (EngineCore pid=192) INFO 08-23 09:12:40 [parallel_state.py:1588] world_size=1 rank=0 local_rank=0 distributed_init_method=tcp://<IPV4>:43935 backend=nccl
+2026-08-23T09:12:40.709475303Z (EngineCore pid=192) INFO 08-23 09:12:40 [parallel_state.py:1923] rank 0 in world size 1 is assigned as DP rank 0, PP rank 0, PCP rank 0, TP rank 0, EP rank N/A, EPLB rank N/A
+2026-08-23T09:12:41.363244543Z (EngineCore pid=192) INFO 08-23 09:12:41 [topk_topp_sampler.py:55] Using FlashInfer for top-p & top-k sampling.
+2026-08-23T09:12:41.399478953Z (EngineCore pid=192) INFO 08-23 09:12:41 [gpu_model_runner.py:5160] Starting to load model /models/Qwen2.5-7B-Instruct...
+2026-08-23T09:12:41.721479963Z (EngineCore pid=192) INFO 08-23 09:12:41 [cuda.py:480] Using FLASH_ATTN attention backend out of potential backends: ['FLASH_ATTN', 'FLASHINFER', 'TRITON_ATTN', 'FLEX_ATTENTION'].
+2026-08-23T09:12:41.721519996Z (EngineCore pid=192) INFO 08-23 09:12:41 [flash_attn.py:670] Using FlashAttention version 2
+2026-08-23T09:12:42.311157033Z (EngineCore pid=192) INFO 08-23 09:12:42 [weight_utils.py:849] Filesystem type for checkpoints: EXT4. Checkpoint size: 14.19 GiB. Available RAM: 86.56 GiB.
+2026-08-23T09:12:42.311187385Z (EngineCore pid=192) INFO 08-23 09:12:42 [weight_utils.py:872] Auto-prefetch is disabled because the filesystem (EXT4) is not a recognized network FS (NFS/Lustre). If you want to force prefetching, start vLLM with --safetensors-load-strategy=prefetch.
+2026-08-23T09:12:42.311375034Z (EngineCore pid=192) Loading safetensors checkpoint shards:   0% Completed | 0/4 [00:00<?, ?it/s]
+2026-08-23T09:13:10.233724137Z (EngineCore pid=192) Loading safetensors checkpoint shards:  25% Completed | 1/4 [00:27<01:23, 27.92s/it]
+2026-08-23T09:13:38.264777002Z (EngineCore pid=192) Loading safetensors checkpoint shards:  50% Completed | 2/4 [00:55<00:55, 27.99s/it]
+2026-08-23T09:14:06.116220353Z (EngineCore pid=192) Loading safetensors checkpoint shards:  75% Completed | 3/4 [01:23<00:27, 27.92s/it]
+2026-08-23T09:14:30.999703013Z (EngineCore pid=192) Loading safetensors checkpoint shards: 100% Completed | 4/4 [01:48<00:00, 26.72s/it]
+2026-08-23T09:14:30.999741205Z (EngineCore pid=192) Loading safetensors checkpoint shards: 100% Completed | 4/4 [01:48<00:00, 27.17s/it]
+2026-08-23T09:14:30.999744357Z (EngineCore pid=192) 
+2026-08-23T09:14:31.504955562Z (EngineCore pid=192) INFO 08-23 09:14:31 [default_loader.py:430] Loading weights took 109.19 seconds
+2026-08-23T09:14:31.855476989Z (EngineCore pid=192) INFO 08-23 09:14:31 [gpu_model_runner.py:5255] Model loading took 14.29 GiB memory and 109.956671 seconds
+2026-08-23T09:14:35.092386541Z (EngineCore pid=192) INFO 08-23 09:14:35 [backends.py:1089] Using cache directory: <HOME>/.cache/vllm/torch_compile_cache/7cca6a9299/rank_0_0/backbone for vLLM's torch.compile
+2026-08-23T09:14:35.092405725Z (EngineCore pid=192) INFO 08-23 09:14:35 [backends.py:1148] Dynamo bytecode transform time: 2.62 s
+2026-08-23T09:14:38.121573922Z (EngineCore pid=192) [rank0]:W0823 09:14:38.120000 192 torch/_inductor/utils.py:1934] Not enough SMs to use max_autotune_gemm mode
+2026-08-23T09:14:39.957459281Z (EngineCore pid=192) INFO 08-23 09:14:39 [backends.py:393] Compiling a graph for compile range (1, 2048) takes 4.82 s
+2026-08-23T09:14:41.460483631Z (EngineCore pid=192) INFO 08-23 09:14:41 [backends.py:915] collected artifacts: 29 entries, 3 artifacts, 4490842 bytes total
+2026-08-23T09:14:41.491801888Z (EngineCore pid=192) INFO 08-23 09:14:41 [decorators.py:708] saved AOT compiled function to <HOME>/.cache/vllm/torch_compile_cache/torch_aot_compile/62645c059d997b788f2d36a264cee148dbd579628a0367b55bde7d475ca83170/rank_0_0/model
+2026-08-23T09:14:41.491828384Z (EngineCore pid=192) INFO 08-23 09:14:41 [monitor.py:53] torch.compile took 9.02 s in total
+2026-08-23T09:14:41.788155387Z (EngineCore pid=192) INFO 08-23 09:14:41 [monitor.py:81] Initial profiling/warmup run took 0.30 s
+2026-08-23T09:14:45.875852407Z (EngineCore pid=192) INFO 08-23 09:14:45 [gpu_model_runner.py:6483] Profiling CUDA graph memory: PIECEWISE=35 (largest=256), FULL=19 (largest=128)
+2026-08-23T09:14:46.927194948Z (EngineCore pid=192) INFO 08-23 09:14:46 [gpu_model_runner.py:6588] Estimated CUDA graph memory: 0.24 GiB total
+2026-08-23T09:14:47.158766623Z (EngineCore pid=192) INFO 08-23 09:14:47 [gpu_worker.py:508] Available KV cache memory: 13.49 GiB
+2026-08-23T09:14:47.158800399Z (EngineCore pid=192) INFO 08-23 09:14:47 [gpu_worker.py:523] CUDA graph memory profiling is enabled (default since v0.21.0). The current --gpu-memory-utilization=0.2500 is equivalent to --gpu-memory-utilization=0.2480 without CUDA graph memory profiling. To maintain the same effective KV cache size as before, increase --gpu-memory-utilization to 0.2520. To disable, set VLLM_MEMORY_PROFILER_ESTIMATE_CUDAGRAPHS=0.
+2026-08-23T09:14:47.158825951Z (EngineCore pid=192) INFO 08-23 09:14:47 [kv_cache_utils.py:2146] GPU KV cache size: 252,528 tokens
+2026-08-23T09:14:47.158828271Z (EngineCore pid=192) INFO 08-23 09:14:47 [kv_cache_utils.py:2147] Maximum concurrency for 8,192 tokens per request: 30.83x
+2026-08-23T09:14:47.685349368Z (EngineCore pid=192) INFO 08-23 09:14:47 [deep_gemm.py:175] deep_gemm not found in site-packages, trying vendored vllm.third_party.deep_gemm
+2026-08-23T09:14:47.685380920Z (EngineCore pid=192) INFO 08-23 09:14:47 [deep_gemm.py:202] DeepGEMM PDL enabled on vllm.third_party.deep_gemm.
+2026-08-23T09:14:47.686703038Z (EngineCore pid=192) 2026-08-23 09:14:47,686 - INFO - autotuner.py:651 - flashinfer.jit: [Autotuner]: Autotuning process starts ...
+2026-08-23T09:14:47.690989858Z (EngineCore pid=192) 2026-08-23 09:14:47,690 - INFO - autotuner.py:674 - flashinfer.jit: [Autotuner]: Autotuning process ends
+2026-08-23T09:14:50.896925335Z (EngineCore pid=192) Capturing CUDA graphs (mixed prefill-decode, PIECEWISE):   0%|          | 0/35 [00:00<?, ?it/s]Capturing CUDA graphs (mixed prefill-decode, PIECEWISE):   6%|▌         | 2/35 [00:00<00:02, 11.81it/s]Capturing CUDA graphs (mixed prefill-decode, PIECEWISE):  11%|█▏        | 4/35 [00:00<00:02, 11.85it/s]Capturing CUDA graphs (mixed prefill-decode, PIECEWISE):  17%|█▋        | 6/35 [00:00<00:02, 11.93it/s]Capturing CUDA graphs (mixed prefill-decode, PIECEWISE):  23%|██▎       | 8/35 [00:00<00:02, 11.94it/s]Capturing CUDA graphs (mixed prefill-decode, PIECEWISE):  29%|██▊       | 10/35 [00:00<00:02, 11.72it/s]Capturing CUDA graphs (mixed prefill-decode, PIECEWISE):  34%|███▍      | 12/35 [00:01<00:01, 12.04it/s]Capturing CUDA graphs (mixed prefill-decode, PIECEWISE):  40%|████      | 14/35 [00:01<00:01, 12.04it/s]Capturing CUDA graphs (mixed prefill-decode, PIECEWISE):  46%|████▌     | 16/35 [00:01<00:01, 12.25it/s]Capturing CUDA graphs (mixed prefill-decode, PIECEWISE):  51%|█████▏    | 18/35 [00:01<00:01, 12.60it/s]Capturing CUDA graphs (mixed prefill-decode, PIECEWISE):  57%|█████▋    | 20/35 [00:01<00:01, 12.81it/s]Capturing CUDA graphs (mixed prefill-decode, PIECEWISE):  63%|██████▎   | 22/35 [00:01<00:01, 12.93it/s]Capturing CUDA graphs (mixed prefill-decode, PIECEWISE):  69%|██████▊   | 24/35 [00:01<00:00, 13.06it/s]Capturing CUDA graphs (mixed prefill-decode, PIECEWISE):  74%|███████▍  | 26/35 [00:02<00:00, 13.24it/s]Capturing CUDA graphs (mixed prefill-decode, PIECEWISE):  80%|████████  | 28/35 [00:02<00:00, 13.32it/s]Capturing CUDA graphs (mixed prefill-decode, PIECEWISE):  86%|████████▌ | 30/35 [00:02<00:00, 13.56it/s]Capturing CUDA graphs (mixed prefill-decode, PIECEWISE):  91%|█████████▏| 32/35 [00:02<00:00, 13.97it/s]Capturing CUDA graphs (mixed prefill-decode, PIECEWISE):  97%|█████████▋| 34/35 [00:02<00:00, 14.27it/s]Capturing CUDA graphs (mixed prefill-decode, PIECEWISE): 100%|██████████| 35/35 [00:02<00:00, 12.86it/s]
+2026-08-23T09:14:52.244752353Z (EngineCore pid=192) Capturing CUDA graphs (decode, FULL):   0%|          | 0/19 [00:00<?, ?it/s]Capturing CUDA graphs (decode, FULL):  11%|█         | 2/19 [00:00<00:01, 13.48it/s]Capturing CUDA graphs (decode, FULL):  21%|██        | 4/19 [00:00<00:01, 13.45it/s]Capturing CUDA graphs (decode, FULL):  32%|███▏      | 6/19 [00:00<00:00, 13.63it/s]Capturing CUDA graphs (decode, FULL):  42%|████▏     | 8/19 [00:00<00:00, 13.76it/s]Capturing CUDA graphs (decode, FULL):  53%|█████▎    | 10/19 [00:00<00:00, 13.85it/s]Capturing CUDA graphs (decode, FULL):  63%|██████▎   | 12/19 [00:00<00:00, 13.71it/s]Capturing CUDA graphs (decode, FULL):  74%|███████▎  | 14/19 [00:01<00:00, 13.86it/s]Capturing CUDA graphs (decode, FULL):  84%|████████▍ | 16/19 [00:01<00:00, 14.31it/s]Capturing CUDA graphs (decode, FULL):  95%|█████████▍| 18/19 [00:01<00:00, 14.80it/s]Capturing CUDA graphs (decode, FULL): 100%|██████████| 19/19 [00:01<00:00, 14.10it/s]
+2026-08-23T09:14:52.487126696Z (EngineCore pid=192) INFO 08-23 09:14:52 [gpu_model_runner.py:6656] Graph capturing finished in 5 secs, took 0.36 GiB
+2026-08-23T09:14:52.487150664Z (EngineCore pid=192) INFO 08-23 09:14:52 [gpu_worker.py:667] CUDA graph pool memory: 0.36 GiB (actual), 0.24 GiB (estimated), difference: 0.12 GiB (32.8%).
+2026-08-23T09:14:52.496351026Z (EngineCore pid=192) INFO 08-23 09:14:52 [jit_monitor.py:60] Kernel JIT monitor activated — Triton JIT compilations during inference will be logged as warnings.
+2026-08-23T09:14:52.811443896Z (EngineCore pid=192) INFO 08-23 09:14:52 [core.py:337] init engine (profile, create kv cache, warmup model) took 20.96 s (compilation: 9.02 s)
+2026-08-23T09:14:53.120750338Z (EngineCore pid=192) INFO 08-23 09:14:53 [vllm.py:1006] Asynchronous scheduling is enabled.
+2026-08-23T09:14:53.120954915Z (EngineCore pid=192) INFO 08-23 09:14:53 [kernel.py:276] Final IR op priority after setting platform defaults: IrOpPriorityConfig(rms_norm=['native'], fused_add_rms_norm=['native'])
+2026-08-23T09:14:53.124201713Z (APIServer pid=56) INFO 08-23 09:14:53 [api_server.py:577] Supported tasks: ['generate']
+2026-08-23T09:14:53.402834894Z (APIServer pid=56) INFO 08-23 09:14:53 [hf.py:548] Detected the chat template content format to be 'string'. You can set `--chat-template-content-format` to override this.
+2026-08-23T09:14:53.410023231Z (APIServer pid=56) INFO 08-23 09:14:53 [api_server.py:581] Starting vLLM server on http://0.0.0.0:8000
+2026-08-23T09:14:53.410051103Z (APIServer pid=56) INFO 08-23 09:14:53 [launcher.py:37] Available routes are:
+2026-08-23T09:14:53.410054095Z (APIServer pid=56) INFO 08-23 09:14:53 [launcher.py:46] Route: /openapi.json, Methods: HEAD, GET
+2026-08-23T09:14:53.410056336Z (APIServer pid=56) INFO 08-23 09:14:53 [launcher.py:46] Route: /docs, Methods: HEAD, GET
+2026-08-23T09:14:53.410058336Z (APIServer pid=56) INFO 08-23 09:14:53 [launcher.py:46] Route: /docs/oauth2-redirect, Methods: HEAD, GET
+2026-08-23T09:14:53.410060208Z (APIServer pid=56) INFO 08-23 09:14:53 [launcher.py:46] Route: /redoc, Methods: HEAD, GET
+2026-08-23T09:14:53.410073904Z (APIServer pid=56) INFO 08-23 09:14:53 [launcher.py:46] Route: /load, Methods: GET
+2026-08-23T09:14:53.410075920Z (APIServer pid=56) INFO 08-23 09:14:53 [launcher.py:46] Route: /version, Methods: GET
+2026-08-23T09:14:53.410077760Z (APIServer pid=56) INFO 08-23 09:14:53 [launcher.py:46] Route: /health, Methods: GET
+2026-08-23T09:14:53.410079632Z (APIServer pid=56) INFO 08-23 09:14:53 [launcher.py:46] Route: /metrics, Methods: GET
+2026-08-23T09:14:53.410081632Z (APIServer pid=56) INFO 08-23 09:14:53 [launcher.py:46] Route: /tokenize, Methods: POST
+2026-08-23T09:14:53.410099168Z (APIServer pid=56) INFO 08-23 09:14:53 [launcher.py:46] Route: /detokenize, Methods: POST
+2026-08-23T09:14:53.410101104Z (APIServer pid=56) INFO 08-23 09:14:53 [launcher.py:46] Route: /v1/models, Methods: GET
+2026-08-23T09:14:53.410121008Z (APIServer pid=56) INFO 08-23 09:14:53 [launcher.py:46] Route: /ping, Methods: GET
+2026-08-23T09:14:53.410130848Z (APIServer pid=56) INFO 08-23 09:14:53 [launcher.py:46] Route: /ping, Methods: POST
+2026-08-23T09:14:53.410132720Z (APIServer pid=56) INFO 08-23 09:14:53 [launcher.py:46] Route: /invocations, Methods: POST
+2026-08-23T09:14:53.410134176Z (APIServer pid=56) INFO 08-23 09:14:53 [launcher.py:46] Route: /v1/chat/completions, Methods: POST
+2026-08-23T09:14:53.410135632Z (APIServer pid=56) INFO 08-23 09:14:53 [launcher.py:46] Route: /v1/chat/completions/batch, Methods: POST
+2026-08-23T09:14:53.410139792Z (APIServer pid=56) INFO 08-23 09:14:53 [launcher.py:46] Route: /v1/responses, Methods: POST
+2026-08-23T09:14:53.410141104Z (APIServer pid=56) INFO 08-23 09:14:53 [launcher.py:46] Route: /v1/responses/{response_id}, Methods: GET
+2026-08-23T09:14:53.410151328Z (APIServer pid=56) INFO 08-23 09:14:53 [launcher.py:46] Route: /v1/responses/{response_id}/cancel, Methods: POST
+2026-08-23T09:14:53.410156176Z (APIServer pid=56) INFO 08-23 09:14:53 [launcher.py:46] Route: /v1/completions, Methods: POST
+2026-08-23T09:14:53.410161760Z (APIServer pid=56) INFO 08-23 09:14:53 [launcher.py:46] Route: /v1/messages, Methods: POST
+2026-08-23T09:14:53.410167312Z (APIServer pid=56) INFO 08-23 09:14:53 [launcher.py:46] Route: /v1/messages/count_tokens, Methods: POST
+2026-08-23T09:14:53.410185136Z (APIServer pid=56) INFO 08-23 09:14:53 [launcher.py:46] Route: /generative_scoring, Methods: POST
+2026-08-23T09:14:53.410188416Z (APIServer pid=56) INFO 08-23 09:14:53 [launcher.py:46] Route: /inference/v1/generate, Methods: POST
+2026-08-23T09:14:53.410221728Z (APIServer pid=56) INFO 08-23 09:14:53 [launcher.py:46] Route: /scale_elastic_ep, Methods: POST
+2026-08-23T09:14:53.410228592Z (APIServer pid=56) INFO 08-23 09:14:53 [launcher.py:46] Route: /is_scaling_elastic_ep, Methods: POST
+2026-08-23T09:14:53.410230592Z (APIServer pid=56) INFO 08-23 09:14:53 [launcher.py:46] Route: /v1/chat/completions/render, Methods: POST
+2026-08-23T09:14:53.410232256Z (APIServer pid=56) INFO 08-23 09:14:53 [launcher.py:46] Route: /v1/completions/render, Methods: POST
+2026-08-23T09:14:53.410236640Z (APIServer pid=56) INFO 08-23 09:14:53 [launcher.py:46] Route: /v1/chat/completions/derender, Methods: POST
+2026-08-23T09:14:53.410237920Z (APIServer pid=56) INFO 08-23 09:14:53 [launcher.py:46] Route: /v1/completions/derender, Methods: POST
+2026-08-23T09:14:53.417441361Z (APIServer pid=56) INFO:     Started server process [56]
+2026-08-23T09:14:53.417450753Z (APIServer pid=56) INFO:     Waiting for application startup.
+2026-08-23T09:14:53.582301045Z (APIServer pid=56) INFO:     Application startup complete.
+2026-08-23T09:14:54.041388893Z (EngineCore pid=192) WARNING 08-23 09:14:54 [jit_monitor.py:106] Triton kernel JIT compilation during inference: _compute_slot_mapping_kernel. This causes a latency spike; consider extending warmup to cover this shape/config.
+2026-08-23T09:20:10.539231666Z (APIServer pid=56) INFO:     <IPV4>:37992 - "GET /metrics HTTP/1.1" 200 OK
+2026-08-23T09:20:10.632823743Z (APIServer pid=56) INFO:     <IPV4>:37998 - "GET /metrics HTTP/1.1" 200 OK
+2026-08-23T09:20:10.637465552Z (APIServer pid=56) INFO:     <IPV4>:38010 - "GET /metrics HTTP/1.1" 200 OK
+2026-08-23T09:20:11.141248136Z (APIServer pid=56) INFO:     <IPV4>:38016 - "GET /metrics HTTP/1.1" 200 OK
+2026-08-23T09:20:11.235735944Z (APIServer pid=56) INFO:     <IPV4>:38018 - "GET /metrics HTTP/1.1" 200 OK
+2026-08-23T09:20:11.333241012Z (APIServer pid=56) INFO:     <IPV4>:38074 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+2026-08-23T09:20:11.334315544Z (APIServer pid=56) INFO:     <IPV4>:38062 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+2026-08-23T09:20:11.335289308Z (APIServer pid=56) INFO:     <IPV4>:38052 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+2026-08-23T09:20:11.336530976Z (APIServer pid=56) INFO:     <IPV4>:38070 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+2026-08-23T09:20:11.337772645Z (APIServer pid=56) INFO:     <IPV4>:38026 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+2026-08-23T09:20:11.338125014Z (APIServer pid=56) INFO:     <IPV4>:38038 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+2026-08-23T09:20:11.339375387Z (APIServer pid=56) INFO:     <IPV4>:38090 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+2026-08-23T09:20:11.340445023Z (APIServer pid=56) INFO:     <IPV4>:38078 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+2026-08-23T09:20:11.640075276Z (APIServer pid=56) INFO:     <IPV4>:38102 - "GET /metrics HTTP/1.1" 200 OK
+2026-08-23T09:20:12.640223164Z (APIServer pid=56) INFO:     <IPV4>:38114 - "GET /metrics HTTP/1.1" 200 OK
+2026-08-23T09:20:13.609243479Z (APIServer pid=56) INFO 08-23 09:20:13 [loggers.py:273] Engine 000: Avg prompt throughput: 1659.2 tokens/s, Avg generation throughput: 58.1 tokens/s, Running: 8 reqs, Waiting: 0 reqs, GPU KV cache usage: 3.3%, Prefix cache hit rate: 0.0%
+2026-08-23T09:20:13.641183166Z (APIServer pid=56) INFO:     <IPV4>:38128 - "GET /metrics HTTP/1.1" 200 OK
+2026-08-23T09:20:14.639480259Z (APIServer pid=56) INFO:     <IPV4>:41936 - "GET /metrics HTTP/1.1" 200 OK
+2026-08-23T09:20:15.641617365Z (APIServer pid=56) INFO:     <IPV4>:41938 - "GET /metrics HTTP/1.1" 200 OK
+2026-08-23T09:20:15.803465167Z (APIServer pid=56) INFO:     <IPV4>:38074 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+2026-08-23T09:20:15.867295405Z (APIServer pid=56) INFO:     <IPV4>:38062 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+2026-08-23T09:20:15.927355820Z (APIServer pid=56) INFO:     <IPV4>:38052 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+2026-08-23T09:20:15.929246531Z (APIServer pid=56) INFO:     <IPV4>:38070 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+2026-08-23T09:20:16.103848221Z (APIServer pid=56) INFO:     <IPV4>:38038 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+2026-08-23T09:20:16.105415027Z (APIServer pid=56) INFO:     <IPV4>:38026 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+2026-08-23T09:20:16.288868925Z (APIServer pid=56) INFO:     <IPV4>:38090 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+2026-08-23T09:20:16.289871377Z (APIServer pid=56) INFO:     <IPV4>:38078 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+2026-08-23T09:20:16.639887527Z (APIServer pid=56) INFO:     <IPV4>:41950 - "GET /metrics HTTP/1.1" 200 OK
+2026-08-23T09:20:17.642184373Z (APIServer pid=56) INFO:     <IPV4>:41958 - "GET /metrics HTTP/1.1" 200 OK
+2026-08-23T09:20:18.640512723Z (APIServer pid=56) INFO:     <IPV4>:41960 - "GET /metrics HTTP/1.1" 200 OK
+2026-08-23T09:20:19.640699846Z (APIServer pid=56) INFO:     <IPV4>:41966 - "GET /metrics HTTP/1.1" 200 OK
+2026-08-23T09:20:20.639138400Z (APIServer pid=56) INFO:     <IPV4>:41974 - "GET /metrics HTTP/1.1" 200 OK
+2026-08-23T09:20:21.639642801Z (APIServer pid=56) INFO:     <IPV4>:41986 - "GET /metrics HTTP/1.1" 200 OK
+2026-08-23T09:20:21.829034063Z (APIServer pid=56) INFO:     <IPV4>:42002 - "GET /metrics HTTP/1.1" 200 OK
+2026-08-23T09:20:22.335493974Z (APIServer pid=56) INFO:     <IPV4>:42012 - "GET /metrics HTTP/1.1" 200 OK
+2026-08-23T09:20:22.434270724Z (APIServer pid=56) INFO:     <IPV4>:42026 - "GET /metrics HTTP/1.1" 200 OK
+2026-08-23T09:20:22.533348467Z (APIServer pid=56) INFO:     <IPV4>:42038 - "GET /metrics HTTP/1.1" 200 OK
+2026-08-23T09:20:22.638876027Z (APIServer pid=56) INFO:     <IPV4>:42044 - "GET /metrics HTTP/1.1" 200 OK
+2026-08-23T09:20:23.039853161Z (APIServer pid=56) INFO:     <IPV4>:42058 - "GET /metrics HTTP/1.1" 200 OK
+2026-08-23T09:20:23.136024686Z (APIServer pid=56) INFO:     <IPV4>:42074 - "GET /metrics HTTP/1.1" 200 OK
+2026-08-23T09:20:23.241182467Z (APIServer pid=56) INFO:     <IPV4>:42170 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+2026-08-23T09:20:23.242129623Z (APIServer pid=56) INFO:     <IPV4>:42106 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+2026-08-23T09:20:23.243397932Z (APIServer pid=56) INFO:     <IPV4>:42088 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+2026-08-23T09:20:23.244579056Z (APIServer pid=56) INFO:     <IPV4>:42104 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+2026-08-23T09:20:23.245893941Z (APIServer pid=56) INFO:     <IPV4>:42182 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+2026-08-23T09:20:23.246982457Z (APIServer pid=56) INFO:     <IPV4>:42200 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+2026-08-23T09:20:23.248691535Z (APIServer pid=56) INFO:     <IPV4>:42164 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+2026-08-23T09:20:23.249870980Z (APIServer pid=56) INFO:     <IPV4>:42156 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+2026-08-23T09:20:23.251233785Z (APIServer pid=56) INFO:     <IPV4>:42154 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+2026-08-23T09:20:23.252187148Z (APIServer pid=56) INFO:     <IPV4>:42144 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+2026-08-23T09:20:23.253918019Z (APIServer pid=56) INFO:     <IPV4>:42084 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+2026-08-23T09:20:23.254886262Z (APIServer pid=56) INFO:     <IPV4>:42128 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+2026-08-23T09:20:23.256926990Z (APIServer pid=56) INFO:     <IPV4>:42136 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+2026-08-23T09:20:23.258101778Z (APIServer pid=56) INFO:     <IPV4>:42172 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+2026-08-23T09:20:23.259085718Z (APIServer pid=56) INFO:     <IPV4>:42186 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+2026-08-23T09:20:23.259987465Z (APIServer pid=56) INFO:     <IPV4>:42126 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+2026-08-23T09:20:23.609723913Z (APIServer pid=56) INFO 08-23 09:20:23 [loggers.py:273] Engine 000: Avg prompt throughput: 933.3 tokens/s, Avg generation throughput: 70.5 tokens/s, Running: 3 reqs, Waiting: 7 reqs, GPU KV cache usage: 1.2%, Prefix cache hit rate: 0.0%
+2026-08-23T09:20:23.639120326Z (APIServer pid=56) INFO:     <IPV4>:42206 - "GET /metrics HTTP/1.1" 200 OK
+2026-08-23T09:20:24.638416076Z (APIServer pid=56) INFO:     <IPV4>:56910 - "GET /metrics HTTP/1.1" 200 OK
+2026-08-23T09:20:25.639011957Z (APIServer pid=56) INFO:     <IPV4>:56912 - "GET /metrics HTTP/1.1" 200 OK
+2026-08-23T09:20:26.639828269Z (APIServer pid=56) INFO:     <IPV4>:56920 - "GET /metrics HTTP/1.1" 200 OK
+2026-08-23T09:20:27.641604071Z (APIServer pid=56) INFO:     <IPV4>:56922 - "GET /metrics HTTP/1.1" 200 OK
+2026-08-23T09:20:28.640643093Z (APIServer pid=56) INFO:     <IPV4>:56924 - "GET /metrics HTTP/1.1" 200 OK
+2026-08-23T09:20:29.641253030Z (APIServer pid=56) INFO:     <IPV4>:56934 - "GET /metrics HTTP/1.1" 200 OK
+2026-08-23T09:20:30.590714153Z (APIServer pid=56) INFO:     <IPV4>:56948 - "GET /metrics HTTP/1.1" 200 OK
+2026-08-23T09:20:30.639546013Z (APIServer pid=56) INFO:     <IPV4>:56954 - "GET /metrics HTTP/1.1" 200 OK
+2026-08-23T09:20:31.099755201Z (APIServer pid=56) INFO:     <IPV4>:56962 - "GET /metrics HTTP/1.1" 200 OK
+2026-08-23T09:20:31.198024539Z (APIServer pid=56) INFO:     <IPV4>:56964 - "GET /metrics HTTP/1.1" 200 OK
+2026-08-23T09:20:31.298739583Z (APIServer pid=56) INFO:     <IPV4>:56972 - "GET /metrics HTTP/1.1" 200 OK
+2026-08-23T09:20:31.640040891Z (APIServer pid=56) INFO:     <IPV4>:56984 - "GET /metrics HTTP/1.1" 200 OK
+2026-08-23T09:20:31.808001175Z (APIServer pid=56) INFO:     <IPV4>:56996 - "GET /metrics HTTP/1.1" 200 OK
+2026-08-23T09:20:31.917979741Z (APIServer pid=56) INFO:     <IPV4>:57000 - "GET /metrics HTTP/1.1" 200 OK
+2026-08-23T09:20:32.023485618Z (APIServer pid=56) INFO:     <IPV4>:57034 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+2026-08-23T09:20:32.024639366Z (APIServer pid=56) INFO:     <IPV4>:57068 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+2026-08-23T09:20:32.025742474Z (APIServer pid=56) INFO:     <IPV4>:57032 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+2026-08-23T09:20:32.026715262Z (APIServer pid=56) INFO:     <IPV4>:57014 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+2026-08-23T09:20:32.027759602Z (APIServer pid=56) INFO:     <IPV4>:57094 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+2026-08-23T09:20:32.028785382Z (APIServer pid=56) INFO:     <IPV4>:57076 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+2026-08-23T09:20:32.029878586Z (APIServer pid=56) INFO:     <IPV4>:57022 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+2026-08-23T09:20:32.031068590Z (APIServer pid=56) INFO:     <IPV4>:57056 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+2026-08-23T09:20:32.032165986Z (APIServer pid=56) INFO:     <IPV4>:57104 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+2026-08-23T09:20:32.032732836Z (APIServer pid=56) INFO:     <IPV4>:57078 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+2026-08-23T09:20:32.033757528Z (APIServer pid=56) INFO:     <IPV4>:57112 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+2026-08-23T09:20:32.035021437Z (APIServer pid=56) INFO:     <IPV4>:57024 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+2026-08-23T09:20:32.036003104Z (APIServer pid=56) INFO:     <IPV4>:57122 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+2026-08-23T09:20:32.037028292Z (APIServer pid=56) INFO:     <IPV4>:57128 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+2026-08-23T09:20:32.037979303Z (APIServer pid=56) INFO:     <IPV4>:57136 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+2026-08-23T09:20:32.039148460Z (APIServer pid=56) INFO:     <IPV4>:57148 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+2026-08-23T09:20:32.640553766Z (APIServer pid=56) INFO:     <IPV4>:57152 - "GET /metrics HTTP/1.1" 200 OK
+2026-08-23T09:20:33.610823937Z (APIServer pid=56) INFO 08-23 09:20:33 [loggers.py:273] Engine 000: Avg prompt throughput: 2177.4 tokens/s, Avg generation throughput: 82.6 tokens/s, Running: 9 reqs, Waiting: 7 reqs, GPU KV cache usage: 3.7%, Prefix cache hit rate: 0.0%
+2026-08-23T09:20:33.639907740Z (APIServer pid=56) INFO:     <IPV4>:57158 - "GET /metrics HTTP/1.1" 200 OK
+2026-08-23T09:20:34.641613704Z (APIServer pid=56) INFO:     <IPV4>:51630 - "GET /metrics HTTP/1.1" 200 OK
+2026-08-23T09:20:35.640223559Z (APIServer pid=56) INFO:     <IPV4>:51638 - "GET /metrics HTTP/1.1" 200 OK
+2026-08-23T09:20:36.639729224Z (APIServer pid=56) INFO:     <IPV4>:51650 - "GET /metrics HTTP/1.1" 200 OK
+2026-08-23T09:20:37.640216666Z (APIServer pid=56) INFO:     <IPV4>:51662 - "GET /metrics HTTP/1.1" 200 OK
+2026-08-23T09:20:38.638844948Z (APIServer pid=56) INFO:     <IPV4>:51668 - "GET /metrics HTTP/1.1" 200 OK
+2026-08-23T09:20:38.649665420Z (APIServer pid=56) INFO:     <IPV4>:51674 - "GET /metrics HTTP/1.1" 200 OK
+2026-08-23T09:20:39.157900249Z (APIServer pid=56) INFO:     <IPV4>:51690 - "GET /metrics HTTP/1.1" 200 OK
+2026-08-23T09:20:39.273817635Z (APIServer pid=56) INFO:     <IPV4>:51706 - "GET /metrics HTTP/1.1" 200 OK
+2026-08-23T09:20:39.373150720Z (APIServer pid=56) INFO:     <IPV4>:51710 - "GET /metrics HTTP/1.1" 200 OK
+2026-08-23T09:20:39.640767176Z (APIServer pid=56) INFO:     <IPV4>:51716 - "GET /metrics HTTP/1.1" 200 OK
+2026-08-23T09:20:39.881615405Z (APIServer pid=56) INFO:     <IPV4>:51720 - "GET /metrics HTTP/1.1" 200 OK
+2026-08-23T09:20:39.982061934Z (APIServer pid=56) INFO:     <IPV4>:51736 - "GET /metrics HTTP/1.1" 200 OK
+2026-08-23T09:20:40.084315558Z (APIServer pid=56) INFO:     <IPV4>:51800 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+2026-08-23T09:20:40.085299530Z (APIServer pid=56) INFO:     <IPV4>:51786 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+2026-08-23T09:20:40.086247805Z (APIServer pid=56) INFO:     <IPV4>:51778 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+2026-08-23T09:20:40.087554370Z (APIServer pid=56) INFO:     <IPV4>:51770 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+2026-08-23T09:20:40.088488853Z (APIServer pid=56) INFO:     <IPV4>:51758 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+2026-08-23T09:20:40.089511865Z (APIServer pid=56) INFO:     <IPV4>:51828 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+2026-08-23T09:20:40.090512845Z (APIServer pid=56) INFO:     <IPV4>:51840 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+2026-08-23T09:20:40.091598049Z (APIServer pid=56) INFO:     <IPV4>:51820 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+2026-08-23T09:20:40.092619237Z (APIServer pid=56) INFO:     <IPV4>:51804 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+2026-08-23T09:20:40.093608264Z (APIServer pid=56) INFO:     <IPV4>:51746 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+2026-08-23T09:20:40.094497036Z (APIServer pid=56) INFO:     <IPV4>:51866 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+2026-08-23T09:20:40.095493327Z (APIServer pid=56) INFO:     <IPV4>:51872 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+2026-08-23T09:20:40.096530739Z (APIServer pid=56) INFO:     <IPV4>:51854 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+2026-08-23T09:20:40.097635303Z (APIServer pid=56) INFO:     <IPV4>:51816 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+2026-08-23T09:20:40.098561690Z (APIServer pid=56) INFO:     <IPV4>:51874 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+2026-08-23T09:20:40.099749503Z (APIServer pid=56) INFO:     <IPV4>:51810 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+2026-08-23T09:20:40.640546690Z (APIServer pid=56) INFO:     <IPV4>:51886 - "GET /metrics HTTP/1.1" 200 OK
+2026-08-23T09:20:41.638185746Z (APIServer pid=56) INFO:     <IPV4>:51894 - "GET /metrics HTTP/1.1" 200 OK
+2026-08-23T09:20:42.639414254Z (APIServer pid=56) INFO:     <IPV4>:51908 - "GET /metrics HTTP/1.1" 200 OK
+2026-08-23T09:20:43.611412125Z (APIServer pid=56) INFO 08-23 09:20:43 [loggers.py:273] Engine 000: Avg prompt throughput: 2696.0 tokens/s, Avg generation throughput: 92.4 tokens/s, Running: 16 reqs, Waiting: 0 reqs, GPU KV cache usage: 6.7%, Prefix cache hit rate: 0.0%
+2026-08-23T09:20:43.638852130Z (APIServer pid=56) INFO:     <IPV4>:51918 - "GET /metrics HTTP/1.1" 200 OK
+2026-08-23T09:20:44.638784965Z (APIServer pid=56) INFO:     <IPV4>:46080 - "GET /metrics HTTP/1.1" 200 OK
+2026-08-23T09:20:45.639747706Z (APIServer pid=56) INFO:     <IPV4>:46088 - "GET /metrics HTTP/1.1" 200 OK
+2026-08-23T09:20:46.639107976Z (APIServer pid=56) INFO:     <IPV4>:46094 - "GET /metrics HTTP/1.1" 200 OK
+2026-08-23T09:20:46.727996222Z (APIServer pid=56) INFO:     <IPV4>:46102 - "GET /metrics HTTP/1.1" 200 OK
+2026-08-23T09:20:47.234051003Z (APIServer pid=56) INFO:     <IPV4>:46110 - "GET /metrics HTTP/1.1" 200 OK
+2026-08-23T09:20:47.331020511Z (APIServer pid=56) INFO:     <IPV4>:46116 - "GET /metrics HTTP/1.1" 200 OK
+2026-08-23T09:20:47.427209615Z (APIServer pid=56) INFO:     <IPV4>:46118 - "GET /metrics HTTP/1.1" 200 OK
+2026-08-23T09:20:47.637526977Z (APIServer pid=56) INFO:     <IPV4>:46132 - "GET /metrics HTTP/1.1" 200 OK
+2026-08-23T09:20:47.935158146Z (APIServer pid=56) INFO:     <IPV4>:46136 - "GET /metrics HTTP/1.1" 200 OK
+2026-08-23T09:20:48.041977017Z (APIServer pid=56) INFO:     <IPV4>:46142 - "GET /metrics HTTP/1.1" 200 OK
+2026-08-23T09:20:48.148074462Z (APIServer pid=56) INFO:     <IPV4>:46176 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+2026-08-23T09:20:48.149075953Z (APIServer pid=56) INFO:     <IPV4>:46186 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+2026-08-23T09:20:48.150171701Z (APIServer pid=56) INFO:     <IPV4>:46172 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+2026-08-23T09:20:48.151225625Z (APIServer pid=56) INFO:     <IPV4>:46170 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+2026-08-23T09:20:48.152228333Z (APIServer pid=56) INFO:     <IPV4>:46236 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+2026-08-23T09:20:48.153237537Z (APIServer pid=56) INFO:     <IPV4>:46154 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+2026-08-23T09:20:48.154277076Z (APIServer pid=56) INFO:     <IPV4>:46222 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+2026-08-23T09:20:48.155372520Z (APIServer pid=56) INFO:     <IPV4>:46210 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+2026-08-23T09:20:48.156190923Z (APIServer pid=56) INFO:     <IPV4>:46204 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+2026-08-23T09:20:48.157227183Z (APIServer pid=56) INFO:     <IPV4>:46198 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+2026-08-23T09:20:48.158507156Z (APIServer pid=56) INFO:     <IPV4>:46254 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+2026-08-23T09:20:48.159358535Z (APIServer pid=56) INFO:     <IPV4>:46228 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+2026-08-23T09:20:48.160327019Z (APIServer pid=56) INFO:     <IPV4>:46262 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+2026-08-23T09:20:48.161317726Z (APIServer pid=56) INFO:     <IPV4>:46238 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+2026-08-23T09:20:48.162318130Z (APIServer pid=56) INFO:     <IPV4>:46272 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+2026-08-23T09:20:48.163176165Z (APIServer pid=56) INFO:     <IPV4>:46270 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+2026-08-23T09:20:48.639148627Z (APIServer pid=56) INFO:     <IPV4>:46286 - "GET /metrics HTTP/1.1" 200 OK
+2026-08-23T09:20:49.639271694Z (APIServer pid=56) INFO:     <IPV4>:46292 - "GET /metrics HTTP/1.1" 200 OK
+2026-08-23T09:20:50.638812293Z (APIServer pid=56) INFO:     <IPV4>:46308 - "GET /metrics HTTP/1.1" 200 OK
+2026-08-23T09:20:51.641198309Z (APIServer pid=56) INFO:     <IPV4>:46320 - "GET /metrics HTTP/1.1" 200 OK
+2026-08-23T09:20:52.639149251Z (APIServer pid=56) INFO:     <IPV4>:46324 - "GET /metrics HTTP/1.1" 200 OK
+2026-08-23T09:20:53.612421173Z (APIServer pid=56) INFO 08-23 09:20:53 [loggers.py:273] Engine 000: Avg prompt throughput: 1659.1 tokens/s, Avg generation throughput: 126.4 tokens/s, Running: 16 reqs, Waiting: 0 reqs, GPU KV cache usage: 6.9%, Prefix cache hit rate: 0.0%
+2026-08-23T09:20:53.639001686Z (APIServer pid=56) INFO:     <IPV4>:46336 - "GET /metrics HTTP/1.1" 200 OK
+2026-08-23T09:20:54.640961215Z (APIServer pid=56) INFO:     <IPV4>:45238 - "GET /metrics HTTP/1.1" 200 OK
+2026-08-23T09:20:54.776828110Z (APIServer pid=56) INFO:     <IPV4>:45248 - "GET /metrics HTTP/1.1" 200 OK
+2026-08-23T09:20:55.282500467Z (APIServer pid=56) INFO:     <IPV4>:45250 - "GET /metrics HTTP/1.1" 200 OK
+2026-08-23T09:20:55.395325487Z (APIServer pid=56) INFO:     <IPV4>:45264 - "GET /metrics HTTP/1.1" 200 OK
+2026-08-23T09:20:55.515030788Z (APIServer pid=56) INFO:     <IPV4>:45272 - "GET /metrics HTTP/1.1" 200 OK
+2026-08-23T09:20:55.599339895Z (APIServer pid=56) INFO 08-23 09:20:55 [launcher.py:100] [shutdown] API server: shutdown triggered
+2026-08-23T09:20:55.599374231Z (APIServer pid=56) INFO 08-23 09:20:55 [launcher.py:116] [shutdown] API server: stopping engine client mode=abort timeout=0s
+2026-08-23T09:20:55.599883657Z (APIServer pid=56) INFO 08-23 09:20:55 [core_client.py:655] [shutdown] MPClient: start timeout=0s
+2026-08-23T09:20:55.600014730Z (APIServer pid=56) INFO 08-23 09:20:55 [core_client.py:657] [shutdown] MPClient: stopping engine manager
+2026-08-23T09:20:55.600297595Z (APIServer pid=56) WARNING 08-23 09:20:55 [utils.py:620] [shutdown] Process manager: force killing remaining processes count=1
+2026-08-23T09:20:55.600309483Z (EngineCore pid=192) INFO 08-23 09:20:55 [core.py:1214] [shutdown] EngineCore: trigger received signal=SIGTERM
+2026-08-23T09:20:55.600625740Z (EngineCore pid=192) INFO 08-23 09:20:55 [core.py:1333] [shutdown] EngineCore: start mode=abort timeout=0s
+2026-08-23T09:20:55.600647324Z (EngineCore pid=192) INFO 08-23 09:20:55 [core.py:1364] [shutdown] EngineCore: request processing complete; starting resource teardown
+2026-08-23T09:20:55.600650972Z (EngineCore pid=192) INFO 08-23 09:20:55 [core.py:1227] [shutdown] EngineCore: exiting busy loop
+2026-08-23T09:20:55.601064493Z (APIServer pid=56) INFO 08-23 09:20:55 [core_client.py:659] [shutdown] MPClient: engine manager stopped
+2026-08-23T09:20:55.601075917Z (APIServer pid=56) INFO 08-23 09:20:55 [core_client.py:660] [shutdown] MPClient: cleaning up background resources
+2026-08-23T09:20:55.601118478Z (APIServer pid=56) INFO 08-23 09:20:55 [core_client.py:662] [shutdown] MPClient: complete
+2026-08-23T09:20:55.601397663Z (APIServer pid=56) INFO 08-23 09:20:55 [launcher.py:125] [shutdown] API server: engine client stopped
+2026-08-23T09:20:55.601426591Z (APIServer pid=56) INFO 08-23 09:20:55 [launcher.py:128] [shutdown] API server: signalling HTTP server shutdown
+2026-08-23T09:20:55.608878346Z (APIServer pid=56) INFO 08-23 09:20:55 [launcher.py:149] [shutdown] API server: shutting down FastAPI HTTP server
+2026-08-23T09:20:55.609006554Z (APIServer pid=56) INFO:     Shutting down
+2026-08-23T09:20:55.710261308Z (APIServer pid=56) INFO:     Waiting for application shutdown.
+2026-08-23T09:20:55.710294364Z (APIServer pid=56) INFO:     Application shutdown complete.
+2026-08-23T09:20:55.716460114Z (APIServer pid=56) Traceback (most recent call last):
+2026-08-23T09:20:55.716482402Z (APIServer pid=56)   File "/usr/lib/python3.12/weakref.py", line 666, in _exitfunc
+2026-08-23T09:20:55.716639971Z (APIServer pid=56)     f()
+2026-08-23T09:20:55.716654147Z (APIServer pid=56)   File "/usr/lib/python3.12/weakref.py", line 590, in __call__
+2026-08-23T09:20:55.716662659Z (APIServer pid=56)     return info.func(*info.args, **(info.kwargs or {}))
+2026-08-23T09:20:55.716664899Z (APIServer pid=56)            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2026-08-23T09:20:55.716666995Z (APIServer pid=56)   File "/usr/local/lib/python3.12/dist-packages/torch/library.py", line 663, in _del_library
+2026-08-23T09:20:55.716858516Z (APIServer pid=56)     _clear_torch_ops_cache(op_defs)
+2026-08-23T09:20:55.716872596Z (APIServer pid=56)   File "/usr/local/lib/python3.12/dist-packages/torch/library.py", line 628, in _clear_torch_ops_cache
+2026-08-23T09:20:55.716875300Z (APIServer pid=56)     if not hasattr(namespace, name):
+2026-08-23T09:20:55.716883252Z (APIServer pid=56)            ^^^^^^^^^^^^^^^^^^^^^^^^
+2026-08-23T09:20:55.716885316Z (APIServer pid=56)   File "/usr/local/lib/python3.12/dist-packages/torch/_ops.py", line 1387, in __getattr__
+2026-08-23T09:20:55.717316037Z (APIServer pid=56)     op, overload_names = _get_packet(qualified_op_name, module_name)
+2026-08-23T09:20:55.717337253Z (APIServer pid=56)                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2026-08-23T09:20:55.717340149Z (APIServer pid=56)   File "/usr/local/lib/python3.12/dist-packages/torch/_ops.py", line 1412, in _get_packet
+2026-08-23T09:20:55.717535814Z (APIServer pid=56)     op, overload_names = torch._C._jit_get_operation(qualname)
+2026-08-23T09:20:55.717549974Z (APIServer pid=56)                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2026-08-23T09:20:55.717552614Z (APIServer pid=56) UnicodeDecodeError: 'utf-8' codec can't decode byte 0xef in position 180: invalid continuation byte
+2026-08-23T09:20:56.387948563Z /usr/lib/python3.12/multiprocessing/resource_tracker.py:254: UserWarning: resource_tracker: There appear to be 1 leaked semaphore objects to clean up at shutdown
+2026-08-23T09:20:56.387979427Z   warnings.warn('resource_tracker: There appear to be %d '

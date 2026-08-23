@@ -98,7 +98,7 @@ private run
 公开、脱敏后的 representative run 放在：
 
 ```text
-benchmarks/raw-results/<experiment-family>/<run-id>/
+benchmarks/raw-results/<milestone>/<run-id>/
 ```
 
 **哪些 artifact 以什么形态进入公开树，见 [证据留存与仓库卫生标准](evidence-retention.md)**——三层留存、采样契约、文件数与体积预算由该文档规定；本文只管目录结构与脱敏。
@@ -115,9 +115,16 @@ scripts/experiments/sanitize-public.sh \
 ```
 
 脚本只修改新建的 public destination，不修改 private source。成功且无 request failure
-的 run 按 [证据留存标准](evidence-retention.md) 生成 Tier A 白名单副本；run、
-request、case outcome 或已落盘 exit code 显示失败时保留 failure-bearing tree 与全部失败记录，
-并明确提示 hygiene 可能失败，避免为满足预算丢弃失败证据。
+的 run 按 [证据留存标准](evidence-retention.md) 生成 Tier A 白名单副本；输入完整但 outcome
+显示失败的 run 保留 failure-bearing tree 与全部失败记录。
+
+中途中断且可能缺少正常发布输入的 failure evidence 使用显式模式：
+
+```bash
+scripts/experiments/sanitize-public.sh "artifacts/private/m2/$run_id" "benchmarks/raw-results/m2/$run_id" --failed
+```
+
+`--failed` 只复制并脱敏 source 中现存的树，不补造缺失 artifact，也不做成功 run 的采样、summary 或 lifecycle 聚合。路径、文件类型与 privacy gates 仍执行；failure / incomplete 的预算豁免见[证据留存标准 §7](evidence-retention.md#7-预算与强制)，其他 hygiene violation 仍硬失败。
 
 进入 public copy 的非 NUL regular file 会处理当前 hostname、IP、MAC、home/user path
 和重复的 `--literal` 值，并在复制前后扫描常见 credential/token pattern。目标目录必须

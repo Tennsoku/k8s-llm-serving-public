@@ -76,7 +76,7 @@ class SummaryContextTests(unittest.TestCase):
     def test_selection_analysis_is_annotation_only(self) -> None:
         config_path = (
             REPO_ROOT
-            / "benchmarks/configs/vllm-single-node/m1.4/selection/long-long.yaml"
+            / "benchmarks/configs/vllm-single-node/m1/m1.4/selection/long-long.yaml"
         )
         config = load_config(config_path)
         rows = [
@@ -137,7 +137,7 @@ class SummaryContextTests(unittest.TestCase):
     def test_legacy_selection_policy_is_normalized_for_summary(self) -> None:
         config = load_config(
             REPO_ROOT
-            / "benchmarks/configs/vllm-single-node/m1.4/selection/long-long.yaml"
+            / "benchmarks/configs/vllm-single-node/m1/m1.4/selection/long-long.yaml"
         )
         policy = config["experiment"].pop("selection_criteria")
         policy["pressure_signals"] = policy.pop("pressure_indicators")

@@ -29,7 +29,7 @@
     "Unified memory环境下不同memory scope较为特殊，NVML process memory/cgroup memory/host memory需要分别解读。"
   ],
   "links": [
-    {"label": "Alternate config", "href": "../../../../benchmarks/configs/vllm-single-node/m1.5/ovat/gpu-memory-utilization.yaml"},
+    {"label": "Alternate config", "href": "../../../../benchmarks/configs/vllm-single-node/m1/m1.5/ovat/gpu-memory-utilization.yaml"},
     {"label": "Published baseline evidence", "href": "https://github.com/Tennsoku/k8s-llm-serving-public/tree/main/benchmarks/raw-results/m1-vllm-baseline/20260814-m1.4-l-l"},
     {"label": "Published candidate evidence", "href": "https://github.com/Tennsoku/k8s-llm-serving-public/tree/main/benchmarks/raw-results/m1-vllm-baseline/20260814-m1.5-ovat-gpu"}
   ]

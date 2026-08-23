@@ -6,7 +6,7 @@ TPOT - Time per Output Token，模型生成每个 token 所需的时间，通常
 
 ITL - Inter-Token Latency，相邻输出 token 之间的延迟, 在大多数情况下，ITL = TPOT。
 
-# Distributed Training相关
+# Distributed Training / Inference 相关
 
 ## DDP
 
@@ -27,7 +27,7 @@ ITL - Inter-Token Latency，相邻输出 token 之间的延迟, 在大多数情�
 - Tensor Parallel，张量并行训练
 - 将模型的单个层的参数分割到多个 GPU 上进行计算，最后通过All-Reduce或者All-Gather通信操作来聚合结果
 - Row Parallel或者Column Parallel会不同，Row - All-Reduce/Reduce-Scatter，Column - All-Gather或者局部拼接，甚至不拼直接传
-- 优点：有效切分巨大模型，缺点：对网络要求极高，更高频，对延迟极度敏感，所以往往严格要求同一节点、同一NVLink/NVSwitch高速互联域内的 GPU 进行通信，跨机通信会严重影响性能。
+- 优点：有效切分巨大模型，缺点：对网络要求高，更高频，对延迟极度敏感，所以往往严格要求同一节点、同一NVLink/NVSwitch高速互联域内的 GPU 进行通信，跨机通信会严重影响性能。
 
 ## PP
 
@@ -73,6 +73,23 @@ ITL - Inter-Token Latency，相邻输出 token 之间的延迟, 在大多数情�
 | ZeRO Stage 3    | Optimizer States + Gradients + Parameters |
 | FSDP FULL_SHARD | Parameters + Gradients + Optimizer States |
 
+## AFD
+- Activation - FFN Disaggregation
+- 将Transformer中FFN层的计算拆分为两个阶段。Activation阶段负责生成FFN的输入激活，而FFN阶段则执行实际的前馈神经网络计算。
+- 实际是Decode层的再拆分，甚至可以和P/D Disaggregation结合使用，形成更细粒度的流水线。
+  ```
+  Prefill
+  Decode:
+    Attention | FFN
+
+  Decode
+    │
+    ├── Attention → memory/KV-heavy
+    │
+    └── FFN/MoE   → compute/expert-heavy
+  ```
+- 适合和MoE结合使用，因为FFN最后还是需要在Attention层上聚合进行下一个layer的计算，独立使用需要搭建一整套额外的通信层，而MoE天然需要使用这个通信层。
+- Attention pool 和 Expert pool 最优的 GPU 数量、batch size、并行策略甚至硬件类型都可能完全不同。这也是 AFD 真正想榨出来的性能来源。（同理P/D）
 
 ## 增补：通信方式
 - All-Reduce:    多方聚合，所有方得到相同结果

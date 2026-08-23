@@ -151,10 +151,10 @@ Tier B 的引用方式：每个 milestone 只在 showcase 放一个 Release 下�
 | 单个 public run 目录 | 12 个文件 / 1 MiB |
 | git 内单个证据文件 | 512 KiB |
 | `derived/summary.json` | 256 KiB |
-| `benchmarks/raw-results/` 总计 | 60 个文件 / 8 MiB（M0 树除外） |
-| tracked 文件总数中 raw results 占比 | ≤ 30%（M0 树从分子、分母均排除） |
+| 每个 milestone 的 Tier A public evidence 合计 | 60 个文件 / 8 MiB（M0 树除外） |
+| M1+ 全局文件数、字节数与 raw-results 占比 | 仅报告，不作 hard gate（M0 树除外） |
 
-**标准没有 CI 就只是愿望。** 落地时加 `scripts/check-repo-hygiene.sh`，在 CI 中对上述每一项做硬失败，并输出超限文件清单。
+Milestone 归属以 success run 的 `run.yaml` 顶层 `milestone` 字段为准；上述数值预算不约束 failure / incomplete evidence，它们全量保留、从预算与全局统计中排除但仍单独报告。其余 violation 由 `scripts/check-repo-hygiene.sh` 在 CI 中硬失败。**标准没有 CI 就只是愿望。**
 
 ### 完整性元数据的红线
 

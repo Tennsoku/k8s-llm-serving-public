@@ -2,60 +2,49 @@
 set -euo pipefail
 shopt -s lastpipe
 usage() {
-  echo "Usage: $0 <private-run-source> <public-destination> [--literal <value>]..." >&2
+  echo "Usage: $0 <private-run-source> <public-destination> [--failed] [--literal <value>]..." >&2
 }
+usage_error() { usage; exit 2; }
+die() { echo "$1" >&2; exit "${2:-2}"; }
 valid_literal() {
   local value="$1"
   [[ ${#value} -ge 4 && "$value" != "/" && "$value" != "." && "$value" != ".." &&
      "$value" != *$'\n'* && "$value" != *$'\r'* ]]
 }
-if (( $# < 2 )); then
-  usage
-  exit 2
-fi
+(( $# >= 2 )) || usage_error
 source_dir="$1"
 destination="$2"
 shift 2
 declare -a configured_literals=()
+failed_mode=false
 while (( $# > 0 )); do
-  if [[ "$1" != "--literal" || $# -lt 2 ]] || ! valid_literal "$2"; then
-    usage
-    exit 2
-  fi
-  configured_literals+=("$2")
-  shift 2
+  case "$1" in
+    --failed) failed_mode=true; shift ;;
+    --literal)
+      (( $# >= 2 )) && valid_literal "$2" || usage_error
+      configured_literals+=("$2"); shift 2 ;;
+    *) usage_error ;;
+  esac
 done
-if [[ ! -d "$source_dir" || -L "$source_dir" ]]; then
-  echo "Private source must be a real directory: $source_dir" >&2
-  exit 2
-fi
-if [[ -e "$destination" || -L "$destination" ]]; then
-  echo "Public destination already exists: $destination" >&2
-  exit 2
-fi
+[[ -d "$source_dir" && ! -L "$source_dir" ]] || die "Private source must be a real directory: $source_dir"
+[[ ! -e "$destination" && ! -L "$destination" ]] || die "Public destination already exists: $destination"
 source_abs="$(realpath -e -- "$source_dir")"
 destination_abs="$(realpath -m -- "$destination")"
 case "$destination_abs" in
   "$source_abs"|"$source_abs"/*)
-    echo "Public destination must not be inside the private source" >&2
-    exit 2
+    die "Public destination must not be inside the private source"
     ;;
 esac
-for required in run.yaml derived/summary.json raw/requests.jsonl raw/case-events.jsonl raw/server/server.log; do
-  if [[ ! -f "$source_abs/$required" || -L "$source_abs/$required" ]]; then
-    echo "Required publication input is missing or not a regular file: $required" >&2
-    exit 2
-  fi
-done
+if [[ "$failed_mode" == false ]]; then
+  for required in run.yaml derived/summary.json raw/requests.jsonl raw/case-events.jsonl raw/server/server.log; do
+    [[ -f "$source_abs/$required" && ! -L "$source_abs/$required" ]] || die "Required publication input is missing or not a regular file: $required"
+  done
+fi
 unsafe_entry="$(find "$source_abs" -mindepth 1 ! -type f ! -type d -print -quit)" || { echo "Private source traversal failed" >&2; exit 2; }
 unreadable_file="$(find "$source_abs" -type f ! -readable -print -quit)" || { echo "Private source traversal failed" >&2; exit 2; }
-if [[ -n "$unsafe_entry" || -n "$unreadable_file" ]]; then
-  echo "Private source must contain only readable regular files and directories" >&2
-  exit 2
-fi
+[[ -z "$unsafe_entry" && -z "$unreadable_file" ]] || die "Private source must contain only readable regular files and directories"
 if ! perl -MJSON::PP -MSocket=AF_INET,AF_INET6,inet_pton -e 1 2>/dev/null || ! python3 -c 'import yaml' 2>/dev/null; then
-  echo "Perl JSON::PP/Socket and Python PyYAML support are required" >&2
-  exit 2
+  die "Perl JSON::PP/Socket and Python PyYAML support are required"
 fi
 short_hostname="$(hostname 2>/dev/null || true)"
 fqdn_hostname="$(hostname -f 2>/dev/null || true)"
@@ -124,20 +113,25 @@ scan_tree() {
   (( suspected == 0 ))
 }
 
-if LC_ALL=C grep -Eqi -- "$secret_pattern" <<<"$destination"; then
-  echo "Public destination contains a suspected secret pattern" >&2
-  exit 3
-fi
+LC_ALL=C grep -Eqi -- "$secret_pattern" <<<"$destination" && die "Public destination contains a suspected secret pattern" 3
 if ! scan_tree "$source_abs" "private source"; then
   echo "No public copy was created. Review the private source before publication." >&2
   exit 3
 fi
 
-run_outcome="$(awk -F: '/^outcome:[[:space:]]*/ {sub(/^[^:]*:[[:space:]]*/, ""); gsub(/["'\''[:space:]]/, ""); print; exit}' "$source_abs/run.yaml")"
-[[ -n "$run_outcome" ]] || { echo "run.yaml is missing top-level outcome" >&2; exit 3; }
+if [[ "$failed_mode" == false ]]; then
+  run_outcome="$(awk -F: '/^outcome:[[:space:]]*/ {sub(/^[^:]*:[[:space:]]*/, ""); gsub(/["'\''[:space:]]/, ""); print; exit}' "$source_abs/run.yaml")"
+  [[ -n "$run_outcome" ]] || die "run.yaml is missing top-level outcome" 3
+fi
 
 mkdir -p -- "$(dirname -- "$destination_abs")"
 trap 'echo "Sanitization failed; treat any created public copy as unsafe." >&2' ERR
+mkdir -p -- "$destination_abs"
+preserved_failure_tree=false
+if [[ "$failed_mode" == true ]]; then
+  cp -R -- "$source_abs/." "$destination_abs/"
+  preserved_failure_tree=true
+else
 mkdir -p -- "$destination_abs/derived" "$destination_abs/raw/server"
 cp -- "$source_abs/run.yaml" "$destination_abs/run.yaml"
 publication_state="$(perl -MJSON::PP -e '
@@ -196,7 +190,6 @@ publication_state="$(perl -MJSON::PP -e '
   open my $so,">:raw",$summary_out or die "$summary_out: $!\n"; print $so $compact,"\n"; print $failure ? "failure\n" : "success\n";
 ' "$source_abs/raw/requests.jsonl" "$source_abs/raw/case-events.jsonl" "$source_abs/derived/summary.json" "$source_abs/raw/cases" \
   "$destination_abs/.requests.jsonl" "$destination_abs/.case-lifecycle.jsonl" "$destination_abs/.summary.json")"
-preserved_failure_tree=false
 if [[ "$run_outcome" != "success" || "$publication_state" != "success" ]]; then
   cp -R -- "$source_abs/." "$destination_abs/"
   preserved_failure_tree=true
@@ -212,6 +205,7 @@ if [[ "$preserved_failure_tree" == false ]]; then
       start=NR-199; if(start<1) start=1; for(i=start;i<=NR;i++) keep[i]=1;
       if(stop) for(i=stop;i<=NR;i++) keep[i]=1; for(i=1;i<=NR;i++) if(keep[i]) print line[i] }
   ' "$source_abs/raw/server/server.log" >"$destination_abs/raw/server/server.log"
+fi
 fi
 structure_code='import hashlib,json,sys,yaml; from pathlib import Path; root=Path(sys.argv[1])
 shape=lambda value: ["dict",[(key,shape(value[key])) for key in sorted(value)]] if isinstance(value,dict) else ["list",[shape(item) for item in value]] if isinstance(value,list) else type(value).__name__

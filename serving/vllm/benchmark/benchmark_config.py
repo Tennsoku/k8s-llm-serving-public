@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Load and validate the M1 single-node benchmark configuration."""
+"""Load and validate the single-node benchmark configuration."""
 
 from __future__ import annotations
 

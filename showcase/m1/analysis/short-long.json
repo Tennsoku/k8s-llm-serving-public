@@ -51,13 +51,13 @@
       "id": "canonical-config",
       "kind": "configuration",
       "label": "Canonical configuration",
-      "href": "../../../benchmarks/configs/vllm-single-node/m1.4/canonical/short-long.yaml"
+      "href": "../../../benchmarks/configs/vllm-single-node/m1/m1.4/canonical/short-long.yaml"
     },
     {
       "id": "selection-config",
       "kind": "method",
       "label": "Selection configuration",
-      "href": "../../../benchmarks/configs/vllm-single-node/m1.4/selection/short-long.yaml"
+      "href": "../../../benchmarks/configs/vllm-single-node/m1/m1.4/selection/short-long.yaml"
     },
     {
       "id": "fixture",

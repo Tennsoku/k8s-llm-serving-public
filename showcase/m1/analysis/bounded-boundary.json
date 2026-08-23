@@ -41,7 +41,7 @@
       "id": "executed-config",
       "kind": "configuration",
       "label": "Executed boundary configuration",
-      "href": "../../../benchmarks/configs/vllm-single-node/m1.5/boundary/long-long-concurrency.yaml"
+      "href": "../../../benchmarks/configs/vllm-single-node/m1/m1.5/boundary/long-long-concurrency.yaml"
     },
     {
       "id": "canonical-analysis",

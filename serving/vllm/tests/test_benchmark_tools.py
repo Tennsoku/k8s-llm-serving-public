@@ -523,7 +523,7 @@ class BenchmarkConfigV2Tests(unittest.TestCase):
         )
 
     def test_model_templates_hold_non_model_controls_fixed(self) -> None:
-        root = REPO_ROOT / "benchmarks/configs/vllm-single-node/m1.6"
+        root = REPO_ROOT / "benchmarks/configs/vllm-single-node/m1/m1.6"
         small = load_config(root / "small-common.yaml")
         medium = load_config(root / "medium.yaml")
         for control in (
