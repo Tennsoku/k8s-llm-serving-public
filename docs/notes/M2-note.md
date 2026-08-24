@@ -31,3 +31,10 @@ BF16
 Compatibility check 中发现 Spec Decoding 的 draft 模型和 target 模型在当前 vLLM 版本下强制要求 vocab size 一致，否则会 validation failed。Qwen2.5-7B 的 vocab size 和 Qwen2.5-0.5B 的不一致。
 最新版本 v0.27.0 的 vLLM 已经更新了 `--enable-heterogeneous-vocab` 参, 不过不打算因为这个事情去更换已经固定的 vLLM image digest。
 研究了一下 Qwen3-0.6B 和 Qwen3-8B 是一组好的实验组。SD 就用这个跑吧。
+
+M2.1 的 canonical pair 和重算过程跑完了，在准备写结论的时候，感觉现在的展示方式还是有点问题。
+M1为了提升数据可视度把showcase做成了结论owner，但也导致了结论分散在不同json里，横向可视性反而下降了很多。
+讨论了一下以后觉得最好的方案还是把review.md当作结论owner，showcase只做可视化和复用已有结论的展示。
+最合适的折中是在markdown里把需要展示的结论/限制写成raw HTML，然后在showcase里直接抽出并嵌入。
+
+先留存，等 M2 收尾的时候再试试。在没有AI的时代这种程度的refactor改动可得整个好几天。。。

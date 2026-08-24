@@ -73,7 +73,7 @@ class BenchmarkToolTests(unittest.TestCase):
     def test_workload_contract(self) -> None:
         config = load_config(
             REPO_ROOT
-            / "benchmarks/configs/vllm-single-node/benchmark-workload.yaml"
+            / "benchmarks/configs/benchmark-workload.yaml"
         )
         self.assertEqual(config["schema_version"], 2)
         self.assertEqual(config["sweep"]["concurrency"][:5], [1, 2, 4, 8, 16])
@@ -87,7 +87,7 @@ class BenchmarkToolTests(unittest.TestCase):
 
         smoke = load_config(
             REPO_ROOT
-            / "benchmarks/configs/vllm-single-node/benchmark-smoke.yaml"
+            / "benchmarks/configs/benchmark-smoke.yaml"
         )
         self.assertEqual(smoke["workload"]["total_requests_per_repetition"], 4)
         self.assertEqual(smoke["sweep"]["measured_repetitions"], 1)
@@ -248,7 +248,7 @@ vllm:time_to_first_token_seconds_count{model_name="model"} 4
         )
 
     def test_json_schemas_are_valid(self) -> None:
-        schema_dir = REPO_ROOT / "benchmarks/configs/vllm-single-node"
+        schema_dir = REPO_ROOT / "benchmarks/configs"
         paths = [
             *schema_dir.glob("*.schema.json"),
             *schema_dir.glob("*.schema.jsonl"),
@@ -414,12 +414,12 @@ class BenchmarkConfigV2Tests(unittest.TestCase):
     def setUp(self) -> None:
         self.config_path = (
             REPO_ROOT
-            / "benchmarks/configs/vllm-single-node/benchmark-smoke.yaml"
+            / "benchmarks/configs/benchmark-smoke.yaml"
         )
         self.config = load_config(self.config_path)
 
     def test_all_published_configs_validate(self) -> None:
-        root = REPO_ROOT / "benchmarks/configs/vllm-single-node"
+        root = REPO_ROOT / "benchmarks/configs"
         paths = sorted([*root.glob("*.yaml"), *root.glob("m*/**/*.yaml")])
         self.assertTrue(paths)
         for path in paths:
@@ -523,7 +523,7 @@ class BenchmarkConfigV2Tests(unittest.TestCase):
         )
 
     def test_model_templates_hold_non_model_controls_fixed(self) -> None:
-        root = REPO_ROOT / "benchmarks/configs/vllm-single-node/m1/m1.6"
+        root = REPO_ROOT / "benchmarks/configs/m1/m1.6"
         small = load_config(root / "small-common.yaml")
         medium = load_config(root / "medium.yaml")
         for control in (
@@ -620,7 +620,7 @@ class StreamingMeasurementTests(unittest.IsolatedAsyncioTestCase):
 
         schema_path = (
             REPO_ROOT
-            / "benchmarks/configs/vllm-single-node/request-metrics.schema.jsonl"
+            / "benchmarks/configs/request-metrics.schema.jsonl"
         )
         schema = json.loads(schema_path.read_text(encoding="utf-8"))
         Draft202012Validator(schema).validate(result)

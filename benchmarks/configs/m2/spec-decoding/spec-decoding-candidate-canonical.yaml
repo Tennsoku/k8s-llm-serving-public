@@ -1,22 +1,22 @@
 schema_version: 2
-config_id: m2.3-baseline-nothink-v1
+config_id: m2.3-spec-decoding-candidate-canonical-v1
 
 experiment:
   step: M2.3
-  kind: selection
+  kind: canonical
   status: ready
-  comparison_group: m2.3
-  variant: baseline
-  axis: null
-  baseline_config_id: null
+  comparison_group: m2.3-spec-decoding-canonical
+  variant: spec-decoding
+  axis: runtime.speculative-config
+  baseline_config_id: m2.3-spec-decoding-baseline-canonical-v1
 
 model:
-  id: Qwen/Qwen2.5-7B-Instruct
-  path: /models/Qwen2.5-7B-Instruct
-  artifact_revision: a09a35458c702b33eeacc393d103063234e8bc28
+  id: Qwen/Qwen3-8B
+  path: /models/Qwen3-8B
+  artifact_revision: b968826d9c46dd6066d109eabc6255188de91218
   runtime_revision: null
   tokenizer_revision: null
-  served_name: qwen2.5-7b-instruct-medium
+  served_name: qwen3-8b
 
 runtime:
   image: nvcr.io/nvidia/vllm@sha256:1de8e6bfdb4c81c1f31a806cc9b13b5c6352714a7cec87f4d24964bcc91159b2
@@ -27,7 +27,7 @@ runtime:
   max_num_seqs: 128
   gpu_memory_utilization: 0.25
   container_memory_limit: 64g
-  extra_args: []
+  extra_args: ["--speculative-config={\"method\":\"draft_model\",\"model\":\"/models/Qwen3-0.6B\",\"num_speculative_tokens\":3}"]
 
 workload:
   name: m1.4-short-long
@@ -37,9 +37,9 @@ workload:
     prefix: ""
     repeated_text: "Write a detailed primer on LLM inference scheduling. "
     repetitions: 2
-    suffix: "\n/no_think"
+    suffix: ""
   max_output_tokens: 512
-  total_requests_per_repetition: 4
+  total_requests_per_repetition: 16
   request_timeout_seconds: 600
   cache_identity:
     mode: request_unique
@@ -56,8 +56,8 @@ warmup:
   concurrency: 1
 
 sweep:
-  concurrency: [1]
-  measured_repetitions: 2
+  concurrency: [1, 16]
+  measured_repetitions: 3
   reference_points:
     c1: 1
     c_eff: null

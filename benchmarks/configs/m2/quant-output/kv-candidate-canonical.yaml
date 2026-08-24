@@ -1,14 +1,14 @@
 schema_version: 2
-config_id: m2.1-apc-baseline-exploratory-v1
+config_id: m2.2-kv-quant-candidate-canonical-v1
 
 experiment:
-  step: M2.1
-  kind: selection
+  step: M2.2
+  kind: canonical
   status: ready
-  comparison_group: m2.1-exploratory
-  variant: prefix-caching
-  axis: workload.cache_identity
-  baseline_config_id: null
+  comparison_group: m2.2-kv-quant-canonical
+  variant: kv-cache-dtype
+  axis: runtime.kv_cache_dtype
+  baseline_config_id: m2.2-kv-quant-baseline-canonical-v1
 
 model:
   id: Qwen/Qwen2.5-7B-Instruct
@@ -27,7 +27,7 @@ runtime:
   max_num_seqs: 128
   gpu_memory_utilization: 0.25
   container_memory_limit: 64g
-  extra_args: ["--enable-prefix-caching"]
+  extra_args: ["--kv-cache-dtype=fp8"]
 
 workload:
   name: m2.1-prefix-heavy
@@ -115,11 +115,14 @@ workload:
   request_suffix:
     mode: case_index
   max_output_tokens: 64
-  total_requests_per_repetition: 16
+  total_requests_per_repetition: 8
   request_timeout_seconds: 600
   cache_identity:
     mode: request_unique
     derivation: sha256-run-case-phase-index-v1
+
+output_evaluation:
+  cases_path: private_cases/cases.output-eval.m2.jsonl
 
 sampling:
   temperature: 0.0
@@ -132,8 +135,8 @@ warmup:
   concurrency: 1
 
 sweep:
-  concurrency: [1, 8, 16]
-  measured_repetitions: 4
+  concurrency: [1]
+  measured_repetitions: 3
   reference_points:
     c1: 1
     c_eff: null

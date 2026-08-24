@@ -15,7 +15,7 @@ from jsonschema import Draft202012Validator
 
 CONFIG_SCHEMA = (
     Path(__file__).resolve().parents[3]
-    / "benchmarks/configs/vllm-single-node/benchmark-config.schema.json"
+    / "benchmarks/configs/benchmark-config.schema.json"
 )
 
 MANAGED_VLLM_ARGUMENTS = {

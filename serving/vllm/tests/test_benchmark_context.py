@@ -28,12 +28,12 @@ class SummaryContextTests(unittest.TestCase):
     def schema_path(self) -> Path:
         return (
             REPO_ROOT
-            / "benchmarks/configs/vllm-single-node/benchmark-summary.schema.json"
+            / "benchmarks/configs/benchmark-summary.schema.json"
         )
 
     def test_zero_case_summary_keeps_context_warnings_as_annotations(self) -> None:
         config_path = (
-            REPO_ROOT / "benchmarks/configs/vllm-single-node/benchmark-smoke.yaml"
+            REPO_ROOT / "benchmarks/configs/benchmark-smoke.yaml"
         )
         with tempfile.TemporaryDirectory() as temporary:
             run_dir = Path(temporary) / "metadata-run-id"
@@ -76,7 +76,7 @@ class SummaryContextTests(unittest.TestCase):
     def test_selection_analysis_is_annotation_only(self) -> None:
         config_path = (
             REPO_ROOT
-            / "benchmarks/configs/vllm-single-node/m1/m1.4/selection/long-long.yaml"
+            / "benchmarks/configs/m1/m1.4/selection/long-long.yaml"
         )
         config = load_config(config_path)
         rows = [
@@ -137,7 +137,7 @@ class SummaryContextTests(unittest.TestCase):
     def test_legacy_selection_policy_is_normalized_for_summary(self) -> None:
         config = load_config(
             REPO_ROOT
-            / "benchmarks/configs/vllm-single-node/m1/m1.4/selection/long-long.yaml"
+            / "benchmarks/configs/m1/m1.4/selection/long-long.yaml"
         )
         policy = config["experiment"].pop("selection_criteria")
         policy["pressure_signals"] = policy.pop("pressure_indicators")
@@ -178,7 +178,7 @@ class SummaryContextTests(unittest.TestCase):
 
     def test_raw_validation_diagnostics_do_not_reject_summary(self) -> None:
         config_path = (
-            REPO_ROOT / "benchmarks/configs/vllm-single-node/benchmark-smoke.yaml"
+            REPO_ROOT / "benchmarks/configs/benchmark-smoke.yaml"
         )
         with tempfile.TemporaryDirectory() as temporary:
             run_dir = Path(temporary) / "diagnostic-run"
@@ -207,7 +207,7 @@ class SummaryContextTests(unittest.TestCase):
                     "--run-dir",
                     str(run_dir),
                     "--schema-dir",
-                    str(REPO_ROOT / "benchmarks/configs/vllm-single-node"),
+                    str(REPO_ROOT / "benchmarks/configs"),
                 ],
                 check=False,
                 capture_output=True,

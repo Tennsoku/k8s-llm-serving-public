@@ -29,8 +29,8 @@
 
 ## Next Steps
 
-M2.0 compatibility inventory 与 M2.1 exploratory selection/showcase 已落地。
-下一步冻结 C1+C16 config，并执行两侧 canonical replay。
+M2.2 — 量化与输出检查已收尾。
+M2.3 smoke 已完成，下一步是 M2.3 exploratory 与 canonical。
 
 ## Blockers
 

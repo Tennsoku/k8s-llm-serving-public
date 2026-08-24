@@ -1,23 +1,22 @@
-# Pipeline/API smoke only; do not use this run for latency or capacity claims.
 schema_version: 2
-config_id: m1-pipeline-smoke-v1
+config_id: m2.3-spec-decoding-baseline-canonical-v1
 
 experiment:
-  step: M1.4
-  kind: smoke
+  step: M2.3
+  kind: canonical
   status: ready
-  comparison_group: m1-pipeline-smoke
-  variant: smoke
-  axis: null
+  comparison_group: m2.3-spec-decoding-canonical
+  variant: spec-decoding
+  axis: runtime.speculative-config
   baseline_config_id: null
 
 model:
-  id: Qwen/Qwen2.5-0.5B-Instruct
-  path: /models/Qwen2.5-0.5B-Instruct
-  artifact_revision: 7ae557604adf67be50417f59c2c2f167def9a775
+  id: Qwen/Qwen3-8B
+  path: /models/Qwen3-8B
+  artifact_revision: b968826d9c46dd6066d109eabc6255188de91218
   runtime_revision: null
   tokenizer_revision: null
-  served_name: qwen2.5-0.5b-instruct
+  served_name: qwen3-8b
 
 runtime:
   image: nvcr.io/nvidia/vllm@sha256:1de8e6bfdb4c81c1f31a806cc9b13b5c6352714a7cec87f4d24964bcc91159b2
@@ -26,22 +25,22 @@ runtime:
   generation_config: vllm
   max_model_len: 8192
   max_num_seqs: 128
-  gpu_memory_utilization: 0.15
+  gpu_memory_utilization: 0.25
   container_memory_limit: 64g
   extra_args: []
 
 workload:
-  name: m1.4-short-short
-  shape: short-short
-  input_tokens_target: 55
+  name: m1.4-short-long
+  shape: short-long
+  input_tokens_target: 60
   prompt:
     prefix: ""
-    repeated_text: "Explain PagedAttention in one sentence. "
-    repetitions: 3
+    repeated_text: "Write a detailed primer on LLM inference scheduling. "
+    repetitions: 2
     suffix: ""
-  max_output_tokens: 32
-  total_requests_per_repetition: 4
-  request_timeout_seconds: 120
+  max_output_tokens: 512
+  total_requests_per_repetition: 16
+  request_timeout_seconds: 600
   cache_identity:
     mode: request_unique
     derivation: sha256-run-case-phase-index-v1
@@ -53,12 +52,12 @@ sampling:
   include_usage: true
 
 warmup:
-  requests: 1
+  requests: 2
   concurrency: 1
 
 sweep:
-  concurrency: [1]
-  measured_repetitions: 1
+  concurrency: [1, 16]
+  measured_repetitions: 3
   reference_points:
     c1: 1
     c_eff: null
@@ -69,7 +68,7 @@ metrics:
   sample_interval_seconds: 1
 
 orchestration:
-  ready_timeout_seconds: 600
+  ready_timeout_seconds: 900
   idle_timeout_seconds: 120
   stop_timeout_seconds: 60
   stop_on_failure: true

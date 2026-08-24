@@ -58,11 +58,11 @@
   "links": [
     {
       "label": "M1.6 small-model config",
-      "href": "../../../benchmarks/configs/vllm-single-node/m1/m1.6/small-common.yaml"
+      "href": "../../../benchmarks/configs/m1/m1.6/small-common.yaml"
     },
     {
       "label": "M1.6 medium-model config",
-      "href": "../../../benchmarks/configs/vllm-single-node/m1/m1.6/medium.yaml"
+      "href": "../../../benchmarks/configs/m1/m1.6/medium.yaml"
     },
     {
       "label": "Published small-model evidence",

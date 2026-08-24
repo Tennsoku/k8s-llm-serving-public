@@ -1,0 +1,81 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "output-eval.schema.json",
+  "title": "Output-evaluation JSONL case",
+  "description": "校验 cases JSONL 中一个非空行解析出的 case object。逐行 JSON、文件非空和跨行 id 唯一由 output_evaluator.py 检查。",
+  "type": "object",
+  "required": ["id", "prompt", "scorer", "expected"],
+  "properties": {
+    "id": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "\\S",
+      "description": "稳定的 case 标识；必须包含非空白字符，并在同一 JSONL 文件内唯一。"
+    },
+    "prompt": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "\\S",
+      "description": "发送给 /v1/chat/completions 的完整单条 user message；不会拼接 benchmark workload.prompt。"
+    },
+    "scorer": {
+      "type": "string",
+      "enum": ["normalized_exact", "json_exact"],
+      "description": "normalized_exact 规范化文本后整串比较；json_exact 解析完整 JSON 后按类型、结构和值比较。"
+    },
+    "expected": {
+      "description": "期望值；允许的类型由 scorer 决定。"
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "scorer": {"const": "normalized_exact"}
+        },
+        "required": ["scorer"]
+      },
+      "then": {
+        "properties": {
+          "expected": {
+            "description": "一个期望字符串，或表示任一命中即可的非空字符串数组。",
+            "oneOf": [
+              {"type": "string"},
+              {
+                "type": "array",
+                "minItems": 1,
+                "items": {"type": "string"}
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "scorer": {"const": "json_exact"}
+        },
+        "required": ["scorer"]
+      },
+      "then": {
+        "properties": {
+          "expected": {
+            "description": "推荐直接使用 JSON-native 值。字符串会被再次执行 json.loads，因此必须自身包含完整 JSON 文本。",
+            "oneOf": [
+              {
+                "type": "string",
+                "contentMediaType": "application/json"
+              },
+              {
+                "type": ["object", "array", "number", "boolean", "null"]
+              }
+            ]
+          }
+        }
+      }
+    }
+  ],
+  "additionalProperties": true,
+  "$comment": "额外字段会进入 captured raw，但不参与评分且不会进入 output-evaluation summary。不要在输入中预填 output、error 或 correct。JSON Schema 不能可靠校验 json_exact 字符串中的二次 JSON；runtime loader 是最终校验边界。"
+}

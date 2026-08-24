@@ -1,20 +1,20 @@
 schema_version: 2
-run_id: 20260823-m2-apc-baseline-7b-exp
+run_id: 20260823-m2-apc-candidate-7b-canonical
 milestone: M2
-purpose: exploratory
-timestamp_utc: '2026-08-23T09:12:24.141805+00:00'
-config_id: m2.1-apc-baseline-exploratory-v1
-config_fingerprint: c193fbffdd91be5c2608ef1491fc13a881d70b4db0462f6ece4a3b460a207ee1
+purpose: canonical
+timestamp_utc: '2026-08-23T19:52:58.990122+00:00'
+config_id: m2.1-apc-candidate-can-v1
+config_fingerprint: 841a74611773fe9f5293391c0c14cea42397bd32e9bca760505ad6509aeb9879
 experiment: &id001
   step: M2.1
-  kind: selection
+  kind: canonical
   status: ready
-  comparison_group: m2.1-exploratory
+  comparison_group: m2.1-canonical
   variant: prefix-caching
   axis: workload.cache_identity
-  baseline_config_id: null
+  baseline_config_id: m2.1-apc-baseline-canonical-v1
 git:
-  commit: eb9e38df5b16d03eb5c53d123f7026fb79cd2c2a
+  commit: fe0acb3f0438f34cf9375f7133a489af1ad3d4a8
   dirty: true
 environment:
   node: spark-a
@@ -26,7 +26,7 @@ runner:
   gpu_index: 0
 configuration:
   schema_version: 2
-  config_id: m2.1-apc-baseline-exploratory-v1
+  config_id: m2.1-apc-candidate-can-v1
   experiment: *id001
   model:
     id: Qwen/Qwen2.5-7B-Instruct
@@ -133,8 +133,8 @@ configuration:
     total_requests_per_repetition: 16
     request_timeout_seconds: 600
     cache_identity:
-      mode: request_unique
-      derivation: sha256-run-case-phase-index-v1
+      mode: run_shared
+      derivation: sha256-run-v1
   sampling:
     temperature: 0.0
     seed: 42
@@ -146,9 +146,8 @@ configuration:
   sweep:
     concurrency:
     - 1
-    - 8
     - 16
-    measured_repetitions: 4
+    measured_repetitions: 3
     reference_points:
       c1: 1
       c_eff: null
@@ -167,20 +166,20 @@ lifecycle:
   failure_phase: null
   warnings: []
   stop_reason: sweep_completed
-  last_supported_case: c016-r04
+  last_supported_case: c016-r03
   first_unsupported_case: null
 outcome: success
 observed_server:
-  started_at_utc: '2026-08-23T05:12:24-04:00'
-  run_label: 20260823-m2-apc-baseline-7b-exp
+  started_at_utc: '2026-08-23T15:52:59-04:00'
+  run_label: 20260823-m2-apc-candidate-7b-canonical
   container_name: vllm-m2
-  container_id: 061d5ab6d5df2adcb3a9cca2642d15ebb73e1cb4e05ad8c74b694e6bb60cc772
+  container_id: d5d3c31b3666f6288da656747802472cb2ce380bf56899c9ad22c0105c62a9af
   base_url: http://127.0.0.1:8000
   image: nvcr.io/nvidia/vllm@sha256:1de8e6bfdb4c81c1f31a806cc9b13b5c6352714a7cec87f4d24964bcc91159b2
   runtime_revision: null
   tokenizer_revision: null
   expanded_command: command=docker run --detach --name vllm-m2 --init --stop-signal
-    SIGTERM --stop-timeout 60 --gpus all --ipc=host --memory 64g --label io.tensoku.benchmark.run_id=20260823-m2-apc-baseline-7b-exp
+    SIGTERM --stop-timeout 60 --gpus all --ipc=host --memory 64g --label io.tensoku.benchmark.run_id=20260823-m2-apc-candidate-7b-canonical
     --label owner=tensoku -p 127.0.0.1:8000:8000 -v <HOME>/models:/models:ro
     --entrypoint vllm nvcr.io/nvidia/vllm@sha256:1de8e6bfdb4c81c1f31a806cc9b13b5c6352714a7cec87f4d24964bcc91159b2
     serve /models/Qwen2.5-7B-Instruct --host 0.0.0.0 --port 8000 --dtype bfloat16
@@ -210,7 +209,7 @@ observed_server:
 
     logging_complete=true
 
-    stop_seconds=1.177
+    stop_seconds=1.275
 
     container_remove_rc=0
 
@@ -228,7 +227,7 @@ observed_server:
     server_log_capture_rc: '0'
     post_stop_inspect_rc: '0'
     logging_complete: 'true'
-    stop_seconds: '1.177'
+    stop_seconds: '1.275'
     container_remove_rc: '0'
     container_removed: 'true'
-finished_at_utc: '2026-08-23T09:20:56.966256+00:00'
+finished_at_utc: '2026-08-23T19:59:13.555862+00:00'

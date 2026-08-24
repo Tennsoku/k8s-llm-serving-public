@@ -52,4 +52,4 @@ jobs:
           while IFS= read -r config; do
             python serving/vllm/benchmark/benchmark_config.py \
               --config "$config" validate
-          done < <(git ls-files -- 'benchmarks/configs/vllm-single-node/*.yaml')
+          done < <(git ls-files -- 'benchmarks/configs/*.yaml')

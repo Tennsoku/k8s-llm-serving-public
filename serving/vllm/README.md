@@ -212,7 +212,7 @@ Use the smoke workload to validate the complete lifecycle before a full run:
 ```bash
 serving/vllm/run-benchmark.sh \
   --milestone m1 \
-  --config benchmarks/configs/vllm-single-node/benchmark-smoke.yaml \
+  --config benchmarks/configs/benchmark-smoke.yaml \
   --node-label spark-a \
   --purpose exploratory \
   --run-id "$(date -u +%Y%m%dT%H%M%SZ)-m1-smoke"
@@ -221,7 +221,7 @@ serving/vllm/run-benchmark.sh \
 The smoke workload uses one concurrency point, four requests, and one
 repetition. It validates orchestration and evidence production; its output is
 not a substitute for the measurement workload. The copy under
-`benchmarks/configs/vllm-single-node/benchmark-smoke.yaml` keeps the same rapid
+`benchmarks/configs/benchmark-smoke.yaml` keeps the same rapid
 pipeline/API contract beside the M1.4–M1.6 reference templates.
 
 Run into a new private directory:
@@ -229,7 +229,7 @@ Run into a new private directory:
 ```bash
 serving/vllm/run-benchmark.sh \
   --milestone m1 \
-  --config benchmarks/configs/vllm-single-node/m1/m1.4/selection/short-short.yaml \
+  --config benchmarks/configs/m1/m1.4/selection/short-short.yaml \
   --node-label spark-a \
   --purpose canonical \
   --run-id "$(date -u +%Y%m%dT%H%M%SZ)-m1-baseline"

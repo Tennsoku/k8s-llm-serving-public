@@ -1,14 +1,14 @@
 schema_version: 2
-config_id: m2.1-apc-candidate-exp-v1
+config_id: m2.1-apc-candidate-can-v1
 
 experiment:
   step: M2.1
-  kind: selection
+  kind: canonical
   status: ready
-  comparison_group: m2.1-exploratory
+  comparison_group: m2.1-canonical
   variant: prefix-caching
   axis: workload.cache_identity
-  baseline_config_id: m2.1-apc-baseline-exploratory-v1
+  baseline_config_id: m2.1-apc-baseline-canonical-v1
 
 model:
   id: Qwen/Qwen2.5-7B-Instruct
@@ -130,8 +130,8 @@ warmup:
   concurrency: 1
 
 sweep:
-  concurrency: [1, 8, 16]
-  measured_repetitions: 4
+  concurrency: [1, 16]
+  measured_repetitions: 3
   reference_points:
     c1: 1
     c_eff: null

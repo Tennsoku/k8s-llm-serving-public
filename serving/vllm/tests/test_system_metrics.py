@@ -275,7 +275,7 @@ class SystemMetricTests(unittest.TestCase):
         schema = json.loads(
             (
                 REPO_ROOT
-                / "benchmarks/configs/vllm-single-node/system-metrics.schema.jsonl"
+                / "benchmarks/configs/system-metrics.schema.jsonl"
             ).read_text(encoding="utf-8")
         )
         validator = Draft202012Validator(schema)
