@@ -126,6 +126,16 @@ M1 的 benchmark pipeline 可直接复用；M2 的主要新增成本转为 featu
 
 ## 5. M3 — Kubernetes 基础与 GPU workload（W3–W5，50 h）
 
+### 临时执行拆分
+
+Minimal 的 2–3 天 timebox 从本节既有预算中切出，不增加新的 Milestone 或额外预算。
+
+```text
+M2 overall pre-close → M3 Minimal → M2 close → M3 Complete
+```
+
+[M3 Minimal](milestone-plan/m3-plan-minimal.md) 只做 3.1–3.3 的窄纵向闭环和一次功能实测，不满足完整 M3 Exit Criteria。[M3 Complete](milestone-plan/m3-plan-complete.md) 复用该闭环，再补齐 3.1–3.6 与本节全部验收项；M2.5 adapter 仍须在 3.6 前可用。
+
 ### 目标
 
 **这是全计划的第一重心。** 目标是验证 LLM workload 的可复现 Kubernetes 生命周期，而不是只完成一次 Deployment。

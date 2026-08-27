@@ -1,0 +1,35 @@
+{
+  "accuracy": 0.75,
+  "correct": 3,
+  "items": [
+    {
+      "correct": true,
+      "error": null,
+      "id": "short-01",
+      "scorer": "normalized_exact"
+    },
+    {
+      "correct": true,
+      "error": null,
+      "id": "fact-01",
+      "scorer": "normalized_exact"
+    },
+    {
+      "correct": false,
+      "error": null,
+      "id": "format-01",
+      "scorer": "json_exact"
+    },
+    {
+      "correct": true,
+      "error": null,
+      "id": "long-01",
+      "scorer": "normalized_exact"
+    }
+  ],
+  "outcome": "complete",
+  "record_type": "output_evaluation_summary",
+  "request_errors": 0,
+  "schema_version": 1,
+  "total": 4
+}

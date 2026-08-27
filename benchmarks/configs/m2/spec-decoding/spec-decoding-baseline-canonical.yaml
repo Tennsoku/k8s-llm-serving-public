@@ -45,6 +45,9 @@ workload:
     mode: request_unique
     derivation: sha256-run-case-phase-index-v1
 
+output_evaluation:
+  cases_path: private_cases/cases.output-eval.m2.jsonl
+
 sampling:
   temperature: 0.0
   seed: 42

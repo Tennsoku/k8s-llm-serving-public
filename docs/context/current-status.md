@@ -8,7 +8,7 @@
 
 ---
 
-**最后更新**：2026-08-23
+**最后更新**：2026-08-25
 
 ---
 
@@ -29,8 +29,8 @@
 
 ## Next Steps
 
-M2.2 — 量化与输出检查已收尾。
-M2.3 smoke 已完成，下一步是 M2.3 exploratory 与 canonical。
+M2.3 - Speculative Decoding 已完成。
+M2.4 exploratory 已完成并进入 draft conclusion; 下一步 M2 overall 简单 pre-close 后开始 M3-minimal。
 
 ## Blockers
 

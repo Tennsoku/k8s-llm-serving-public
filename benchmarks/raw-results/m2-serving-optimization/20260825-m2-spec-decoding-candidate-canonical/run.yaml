@@ -1,0 +1,161 @@
+schema_version: 2
+run_id: 20260825-m2-spec-decoding-candidate-canonical
+milestone: M2
+purpose: canonical
+timestamp_utc: '2026-08-25T07:18:37.736384+00:00'
+config_id: m2.3-spec-decoding-candidate-canonical-v1
+config_fingerprint: 31924e2f5f43a4c11b5c18c13f4af0a7a5e5773c3c8f249da1a868eef2c0db8b
+experiment: &id001
+  step: M2.3
+  kind: canonical
+  status: ready
+  comparison_group: m2.3-spec-decoding-canonical
+  variant: spec-decoding
+  axis: runtime.speculative-config
+  baseline_config_id: m2.3-spec-decoding-baseline-canonical-v1
+git:
+  commit: a27833025a708bec4a5b71da6e3d2eb58df85547
+  dirty: true
+environment:
+  node: spark-a
+  architecture: aarch64
+runner:
+  host: 127.0.0.1
+  port: 8000
+  container_name: vllm-m2
+  gpu_index: 0
+configuration:
+  schema_version: 2
+  config_id: m2.3-spec-decoding-candidate-canonical-v1
+  experiment: *id001
+  model:
+    id: Qwen/Qwen3-8B
+    path: /models/Qwen3-8B
+    artifact_revision: b968826d9c46dd6066d109eabc6255188de91218
+    runtime_revision: null
+    tokenizer_revision: null
+    served_name: qwen3-8b
+  runtime:
+    image: nvcr.io/nvidia/vllm@sha256:1de8e6bfdb4c81c1f31a806cc9b13b5c6352714a7cec87f4d24964bcc91159b2
+    dtype: bfloat16
+    quantization: null
+    generation_config: vllm
+    max_model_len: 8192
+    max_num_seqs: 128
+    gpu_memory_utilization: 0.25
+    container_memory_limit: 64g
+    extra_args:
+    - --speculative-config={"method":"draft_model","model":"/models/Qwen3-0.6B","num_speculative_tokens":3}
+  workload:
+    name: m1.4-short-long
+    shape: short-long
+    input_tokens_target: 60
+    prompt:
+      prefix: ''
+      repeated_text: 'Write a detailed primer on LLM inference scheduling. '
+      repetitions: 2
+      suffix: ''
+    max_output_tokens: 512
+    total_requests_per_repetition: 16
+    request_timeout_seconds: 600
+    cache_identity:
+      mode: request_unique
+      derivation: sha256-run-case-phase-index-v1
+  output_evaluation:
+    cases_path: private_cases/cases.output-eval.m2.jsonl
+  sampling:
+    temperature: 0.0
+    seed: 42
+    stream: true
+    include_usage: true
+  warmup:
+    requests: 2
+    concurrency: 1
+  sweep:
+    concurrency:
+    - 1
+    - 16
+    measured_repetitions: 3
+    reference_points:
+      c1: 1
+      c_eff: null
+      c_pressure: null
+      highest_tested: null
+  metrics:
+    sample_interval_seconds: 1
+  orchestration:
+    ready_timeout_seconds: 900
+    idle_timeout_seconds: 120
+    stop_timeout_seconds: 60
+    stop_on_failure: true
+lifecycle:
+  phase: finished
+  outcome: success
+  failure_phase: null
+  warnings: []
+  stop_reason: sweep_completed
+  last_supported_case: c016-r03
+  first_unsupported_case: null
+outcome: success
+observed_server:
+  started_at_utc: '2026-08-25T03:18:37-04:00'
+  run_label: 20260825-m2-spec-decoding-candidate-canonical
+  container_name: vllm-m2
+  container_id: f5ff5e8e632e99ef3661cd2cb1b48c7c3d08d65de982d7f7e644132b42373929
+  base_url: http://127.0.0.1:8000
+  image: nvcr.io/nvidia/vllm@sha256:1de8e6bfdb4c81c1f31a806cc9b13b5c6352714a7cec87f4d24964bcc91159b2
+  runtime_revision: null
+  tokenizer_revision: null
+  expanded_command: command=docker run --detach --name vllm-m2 --init --stop-signal
+    SIGTERM --stop-timeout 60 --gpus all --ipc=host --memory 64g --label io.tensoku.benchmark.run_id=20260825-m2-spec-decoding-candidate-canonical
+    --label owner=tensoku -p 127.0.0.1:8000:8000 -v <HOME>/models:/models:ro
+    --entrypoint vllm nvcr.io/nvidia/vllm@sha256:1de8e6bfdb4c81c1f31a806cc9b13b5c6352714a7cec87f4d24964bcc91159b2
+    serve /models/Qwen3-8B --host 0.0.0.0 --port 8000 --dtype bfloat16 --served-model-name
+    qwen3-8b --gpu-memory-utilization 0.25 --generation-config vllm --max-model-len
+    8192 --max-num-seqs 128 --enable-request-id-headers --speculative-config=\{\"method\":\"draft_model\"\,\"model\":\"/models/Qwen3-0.6B\"\,\"num_speculative_tokens\":3\}
+  graceful_shutdown_evidence: 'graceful_shutdown=true
+
+    lifecycle_success=true
+
+    docker_stop_attempted=true
+
+    docker_stop_rc=0
+
+    container_status=exited
+
+    container_running=false
+
+    container_exit_code=0
+
+    oom_killed=false
+
+    restart_count=0
+
+    server_log_capture_rc=0
+
+    post_stop_inspect_rc=0
+
+    logging_complete=true
+
+    stop_seconds=1.189
+
+    container_remove_rc=0
+
+    container_removed=true'
+  shutdown:
+    graceful_shutdown: 'true'
+    lifecycle_success: 'true'
+    docker_stop_attempted: 'true'
+    docker_stop_rc: '0'
+    container_status: exited
+    container_running: 'false'
+    container_exit_code: '0'
+    oom_killed: 'false'
+    restart_count: '0'
+    server_log_capture_rc: '0'
+    post_stop_inspect_rc: '0'
+    logging_complete: 'true'
+    stop_seconds: '1.189'
+    container_remove_rc: '0'
+    container_removed: 'true'
+finished_at_utc: '2026-08-25T07:38:19.166165+00:00'

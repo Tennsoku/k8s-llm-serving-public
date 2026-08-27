@@ -120,11 +120,16 @@ def _model_matches(sample: MetricSample, model_name: str | None) -> bool:
 
 
 def select_semantics(
-    samples: list[MetricSample], model_name: str | None = None
+    samples: list[MetricSample],
+    model_name: str | None = None,
+    aliases_by_semantic: dict[str, tuple[str, ...]] | None = None,
 ) -> tuple[dict[str, float | None], dict[str, str | None]]:
     values: dict[str, float | None] = {}
     names: dict[str, str | None] = {}
-    for semantic, aliases in METRIC_ALIASES.items():
+    metric_aliases = (
+        METRIC_ALIASES if aliases_by_semantic is None else aliases_by_semantic
+    )
+    for semantic, aliases in metric_aliases.items():
         selected: list[MetricSample] = []
         selected_name: str | None = None
         for alias in aliases:
@@ -184,9 +189,15 @@ def semantic_counter_delta(
     after_text: str,
     semantic: str,
     model_name: str | None = None,
+    aliases: tuple[str, ...] | None = None,
 ) -> dict[str, Any]:
-    before_values, before_names = snapshot_semantics(before_text, model_name)
-    after_values, after_names = snapshot_semantics(after_text, model_name)
+    metric_aliases = {semantic: aliases} if aliases is not None else None
+    before_values, before_names = select_semantics(
+        parse_prometheus(before_text), model_name, metric_aliases
+    )
+    after_values, after_names = select_semantics(
+        parse_prometheus(after_text), model_name, metric_aliases
+    )
     before = before_values.get(semantic)
     after = after_values.get(semantic)
     metric_name = after_names.get(semantic) or before_names.get(semantic)

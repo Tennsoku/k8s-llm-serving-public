@@ -46,6 +46,9 @@ vllm:generation_tokens_total{model_name="model"} 50
 vllm:request_success_total{model_name="model",finished_reason="stop"} 1
 vllm:prefix_cache_queries_total{model_name="model"} 10
 vllm:prefix_cache_hits_total{model_name="model"} 5
+vllm:spec_decode_num_drafts_total{model_name="model"} 10
+vllm:spec_decode_num_draft_tokens_total{model_name="model"} 30
+vllm:spec_decode_num_accepted_tokens_total{model_name="model"} 15
 vllm:time_to_first_token_seconds_bucket{model_name="model",le="1.0"} 1
 vllm:time_to_first_token_seconds_bucket{model_name="model",le="+Inf"} 1
 vllm:time_to_first_token_seconds_sum{model_name="model"} 0.5
@@ -62,6 +65,9 @@ vllm:generation_tokens_total{model_name="model"} 114
 vllm:request_success_total{model_name="model",finished_reason="stop"} 2
 vllm:prefix_cache_queries_total{model_name="model"} 138
 vllm:prefix_cache_hits_total{model_name="model"} 69
+vllm:spec_decode_num_drafts_total{model_name="model"} 14
+vllm:spec_decode_num_draft_tokens_total{model_name="model"} 42
+vllm:spec_decode_num_accepted_tokens_total{model_name="model"} 23
 vllm:time_to_first_token_seconds_bucket{model_name="model",le="1.0"} 2
 vllm:time_to_first_token_seconds_bucket{model_name="model",le="+Inf"} 2
 vllm:time_to_first_token_seconds_sum{model_name="model"} 0.9
@@ -132,6 +138,7 @@ class BenchmarkToolTests(unittest.TestCase):
 
         self.assertEqual(observed["timeout"], 0.25)
         self.assertEqual(record["running_requests"], 0)
+        self.assertNotIn("speculative_drafts_total", record)
 
     def test_percentile_and_request_summary(self) -> None:
         self.assertEqual(percentile([1.0, 2.0, 3.0], 0.5), 2.0)
@@ -350,6 +357,18 @@ vllm:time_to_first_token_seconds_count{model_name="model"} 4
                 3,
             )
             self.assertEqual(
+                case["runtime_counters"][
+                    "speculative_accepted_tokens_total"
+                ]["delta"],
+                8,
+            )
+            self.assertAlmostEqual(
+                case["speculative_acceptance_rate"], 2 / 3
+            )
+            self.assertEqual(
+                case["speculative_accepted_tokens_per_draft"], 2
+            )
+            self.assertEqual(
                 case["client"]["output_token_throughput_tps"], 32.0
             )
             self.assertEqual(
@@ -367,6 +386,12 @@ vllm:time_to_first_token_seconds_count{model_name="model"} 4
                     "max_container_nvml_process_gpu_memory_used_bytes_median"
                 ],
                 30,
+            )
+            self.assertAlmostEqual(
+                summary["concurrency_summary"][0][
+                    "speculative_acceptance_rate_median"
+                ],
+                2 / 3,
             )
 
     def test_output_evaluator_uses_declared_deterministic_scores(self) -> None:

@@ -170,6 +170,7 @@ async def capture(args: argparse.Namespace, config: dict[str, Any]) -> int:
     async with aiohttp.ClientSession() as session:
         for case in cases:
             payload = {
+                "chat_template_kwargs": {"enable_thinking": False},  # hardcode the chat template kwargs to disable thinking for now
                 "model": args.model,
                 "messages": [{"role": "user", "content": case["prompt"]}],
                 "max_tokens": workload["max_output_tokens"],

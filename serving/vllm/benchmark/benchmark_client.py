@@ -137,6 +137,7 @@ async def run_case(args: argparse.Namespace, config: dict[str, Any]) -> int:
     sampling = config["sampling"]
     cache_identity = workload["cache_identity"]
     payload = {
+        "chat_template_kwargs": {"enable_thinking": False},  # hardcode the chat template kwargs to disable thinking for now
         "model": args.model,
         "max_tokens": workload["max_output_tokens"],
         "temperature": sampling["temperature"],

@@ -134,6 +134,10 @@ if [[ "$failed_mode" == true ]]; then
 else
 mkdir -p -- "$destination_abs/derived" "$destination_abs/raw/server"
 cp -- "$source_abs/run.yaml" "$destination_abs/run.yaml"
+if [[ -f "$source_abs/derived/output-evaluation-summary.json" ]]; then
+  python3 -c 'import json,sys; value=json.load(open(sys.argv[1])); isinstance(value,dict) or sys.exit("output evaluation summary must be an object")' "$source_abs/derived/output-evaluation-summary.json"
+  cp -- "$source_abs/derived/output-evaluation-summary.json" "$destination_abs/derived/output-evaluation-summary.json"
+fi
 publication_state="$(perl -MJSON::PP -e '
   my ($requests,$events,$summary_path,$case_root,$request_out,$life_out,$summary_out)=@ARGV;
   my $json=JSON::PP->new->canonical->utf8; my (%requests_by_case,%seen,%stats); my $failure=0; (my $derived_dir=$summary_path)=~s{/[^/]+\z}{};

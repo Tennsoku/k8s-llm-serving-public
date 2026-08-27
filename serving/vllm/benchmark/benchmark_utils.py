@@ -463,7 +463,11 @@ def _concurrency_summary(
             row for row in all_rows if row.get("measurement_complete") is True
         ]
 
-        def observed(path: tuple[str, str]) -> list[float]:
+        def observed(path: str | tuple[str, str]) -> list[float]:
+            if isinstance(path, str):
+                return [
+                    float(row[path]) for row in rows if row.get(path) is not None
+                ]
             return [
                 float(row[path[0]][path[1]])
                 for row in rows
@@ -495,6 +499,11 @@ def _concurrency_summary(
             (
                 "max_container_nvml_process_gpu_memory_used_bytes",
                 ("system", "max_container_nvml_process_gpu_memory_used_bytes"),
+            ),
+            ("speculative_acceptance_rate", "speculative_acceptance_rate"),
+            (
+                "speculative_accepted_tokens_per_draft",
+                "speculative_accepted_tokens_per_draft",
             ),
         ):
             values = observed(path)
@@ -532,12 +541,21 @@ def summarize_metrics(run_dir: Path) -> dict[str, Any]:
     ordered_starts = sorted(starts.values(), key=lambda event: event["monotonic_ns"])
     cases: list[dict[str, Any]] = []
     counter_semantics = (
-        "preemption_events_total",
-        "prompt_tokens_total",
-        "generation_tokens_total",
-        "request_success_total",
-        "prefix_cache_queries_total",
-        "prefix_cache_hits_total",
+        ("preemption_events_total", None),
+        ("prompt_tokens_total", None),
+        ("generation_tokens_total", None),
+        ("request_success_total", None),
+        ("prefix_cache_queries_total", None),
+        ("prefix_cache_hits_total", None),
+        ("speculative_drafts_total", ("vllm:spec_decode_num_drafts_total",)),
+        (
+            "speculative_draft_tokens_total",
+            ("vllm:spec_decode_num_draft_tokens_total",),
+        ),
+        (
+            "speculative_accepted_tokens_total",
+            ("vllm:spec_decode_num_accepted_tokens_total",),
+        ),
     )
 
     for start in ordered_starts:
@@ -572,9 +590,9 @@ def summarize_metrics(run_dir: Path) -> dict[str, Any]:
         runtime_counters: dict[str, Any] = {}
         server_histograms: dict[str, Any] = {}
         if before_text is not None and after_text is not None:
-            for semantic in counter_semantics:
+            for semantic, aliases in counter_semantics:
                 runtime_counters[semantic] = semantic_counter_delta(
-                    before_text, after_text, semantic, start["model"]
+                    before_text, after_text, semantic, start["model"], aliases
                 )
             for semantic in HISTOGRAM_ALIASES:
                 server_histograms[semantic] = histogram_delta(
@@ -610,6 +628,25 @@ def summarize_metrics(run_dir: Path) -> dict[str, Any]:
         generation_delta = runtime_counters.get(
             "generation_tokens_total", {}
         ).get("delta")
+        speculative_drafts = runtime_counters.get(
+            "speculative_drafts_total", {}
+        ).get("delta")
+        speculative_draft_tokens = runtime_counters.get(
+            "speculative_draft_tokens_total", {}
+        ).get("delta")
+        speculative_accepted_tokens = runtime_counters.get(
+            "speculative_accepted_tokens_total", {}
+        ).get("delta")
+        speculative_acceptance_rate = (
+            speculative_accepted_tokens / speculative_draft_tokens
+            if speculative_accepted_tokens is not None and speculative_draft_tokens
+            else None
+        )
+        speculative_accepted_tokens_per_draft = (
+            speculative_accepted_tokens / speculative_drafts
+            if speculative_accepted_tokens is not None and speculative_drafts
+            else None
+        )
         cases.append(
             {
                 "case_id": case_id,
@@ -631,6 +668,10 @@ def summarize_metrics(run_dir: Path) -> dict[str, Any]:
                     else None
                 ),
                 "prefix_cache_token_hit_ratio": prefix_ratio,
+                "speculative_acceptance_rate": speculative_acceptance_rate,
+                "speculative_accepted_tokens_per_draft": (
+                    speculative_accepted_tokens_per_draft
+                ),
                 "server_histograms": server_histograms,
                 "system": _system_sample_summary(system_window),
             }
@@ -652,4 +693,3 @@ def summarize_metrics(run_dir: Path) -> dict[str, Any]:
         "cases": cases,
         "concurrency_summary": _concurrency_summary(cases),
     }
-
