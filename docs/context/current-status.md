@@ -19,8 +19,8 @@
 | M0 — Platform Qualification | ✅ [review](../reviews/m0-review.md) |
 | M1 — Single-Node vLLM Baseline | ✅ [review](../reviews/m1.3-review.md) · [showcase](../../showcase/m1/) |
 | M1.5 — Public Closeout / Repackage | ✅ [showcase](../../showcase/m1/) |
-| M2 — Serving 优化（量化 / 投机解码 / 前缀缓存） | 🚧 |
-| M3 — Kubernetes 与 GPU workload | ○ |
+| M2 — Serving 优化（量化 / 投机解码 / 前缀缓存） | Pre-close |
+| M3 — Kubernetes 与 GPU workload | 🚧 |
 | M4 — 可观测性、SLO 与 Tracing | ○ |
 | M5 — 路由 / 灰度 / 伸缩 / 故障 | ○ |
 | M6 — 容量成本与收尾 | ○ |
@@ -29,8 +29,9 @@
 
 ## Next Steps
 
-M2.3 - Speculative Decoding 已完成。
-M2.4 exploratory 已完成并进入 draft conclusion; 下一步 M2 overall 简单 pre-close 后开始 M3-minimal。
+M2 全部 raw evidence 封存完毕。M2 overall 处于 pre-close 阶段，随 M3-minimal 完成后一起发布。
+M3 minimal 已完成两节点拓扑的网络、GPU runtime、Device Plugin导入。
+下一步是：vLLM Probe & Smoke。
 
 ## Blockers
 

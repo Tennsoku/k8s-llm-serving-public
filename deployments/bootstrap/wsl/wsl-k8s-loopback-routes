@@ -1,0 +1,69 @@
+#!/bin/sh
+set -eu
+
+IP=/usr/bin/ip
+PREFERENCE=0
+DESTINATION=127.0.0.0/8
+PORTS="10248 10249 10250 10256 10257 10259"
+
+delete_rule() {
+    port=$1
+
+    # Remove every duplicate of the exact rule so restart is idempotent.
+    while "$IP" -4 rule del pref "$PREFERENCE" \
+        to "$DESTINATION" ipproto tcp dport "$port" \
+        lookup local 2>/dev/null; do
+        :
+    done
+}
+
+flush_route_cache() {
+    "$IP" -4 route flush cache 2>/dev/null || :
+}
+
+start_rules() {
+    if [ -x /usr/bin/wslinfo ]; then
+        networking_mode=$(/usr/bin/wslinfo --networking-mode 2>/dev/null || :)
+        if [ "$networking_mode" != "mirrored" ]; then
+            echo "WSL networking mode is '$networking_mode'; no loopback workaround needed."
+            return
+        fi
+    fi
+
+    # Remove the aggregate rule used during the one-off diagnosis, if present.
+    while "$IP" -4 rule del pref "$PREFERENCE" \
+        to "$DESTINATION" ipproto tcp dport 10248-10259 \
+        lookup local 2>/dev/null; do
+        :
+    done
+
+    for port in $PORTS; do
+        delete_rule "$port"
+        "$IP" -4 rule add pref "$PREFERENCE" \
+            to "$DESTINATION" ipproto tcp dport "$port" \
+            lookup local
+    done
+
+    flush_route_cache
+}
+
+stop_rules() {
+    for port in $PORTS; do
+        delete_rule "$port"
+    done
+
+    flush_route_cache
+}
+
+case "${1:-}" in
+    start)
+        start_rules
+        ;;
+    stop)
+        stop_rules
+        ;;
+    *)
+        echo "usage: $0 {start|stop}" >&2
+        exit 2
+        ;;
+esac

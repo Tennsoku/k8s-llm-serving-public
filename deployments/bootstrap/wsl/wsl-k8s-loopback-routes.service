@@ -1,0 +1,19 @@
+[Unit]
+Description=Route Kubernetes localhost ports inside WSL mirrored networking
+Documentation=https://github.com/microsoft/WSL/issues/14063
+ConditionVirtualization=wsl
+Wants=network-online.target
+After=network-online.target
+Before=kubelet.service
+PartOf=kubelet.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/wsl-k8s-loopback-routes start
+ExecStop=/usr/local/sbin/wsl-k8s-loopback-routes stop
+RemainAfterExit=yes
+TimeoutStartSec=30s
+TimeoutStopSec=30s
+
+[Install]
+WantedBy=multi-user.target

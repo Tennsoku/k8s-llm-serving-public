@@ -1,0 +1,21 @@
+apiVersion: kubeadm.k8s.io/v1beta4
+kind: InitConfiguration
+localAPIEndpoint:
+  advertiseAddress: 192.168.68.71
+  bindPort: 6443
+nodeRegistration:
+  name: spark-4151
+  criSocket: unix:///run/containerd/containerd.sock
+  kubeletExtraArgs:
+    - name: node-ip
+      value: 192.168.68.71
+---
+apiVersion: kubeadm.k8s.io/v1beta4
+kind: ClusterConfiguration
+kubernetesVersion: v1.36.4
+controlPlaneEndpoint: spark-cluster.internal:6443
+networking:
+  podSubnet: 10.244.0.0/16
+  serviceSubnet: 10.96.0.0/16
+  dnsDomain: cluster.local
+  

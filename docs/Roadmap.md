@@ -142,13 +142,15 @@ M2 overall pre-close → M3 Minimal → M2 close → M3 Complete
 
 验收重点是 LLM workload 特有的运行约束：慢加载模型的探针设计、流式连接的优雅终止、GPU 扩展资源，以及模型缓存的存储策略。
 
-拓扑：控制面在 x86 / VM，两台 Spark 作 GPU Worker。若控制面必须落在 Spark 上，在 benchmark 中记录 control-plane noise。
+拓扑：Spark A 承担 single control plane，并作为显式调度的 GPU workload node；Spark B
+是 worker-only。该两节点拓扑不是 HA；benchmark 中记录 Spark A 的 control-plane
+activity/noise，不把它与普通 Worker 等同。
 
 ### 任务
 
 | # | 任务 | 内容 | 工时 |
 |---|---|---|---:|
-| 3.1 | **集群可复现搭建** | kubeadm 或 k3s，两节点，脚本 + 文档可重建。含 CNI 选择理由、节点标签与 taint 策略。<br>**"可从零重建"是本阶段的复现性要求。** | 10 h |
+| 3.1 | **集群可复现搭建** | kubeadm，两节点，脚本 + 文档可重建。含 CNI 选择理由、节点标签与 taint 策略。<br>**"可从零重建"是本阶段的复现性要求。** | 10 h |
 | 3.2 | **GPU 接入** | device plugin / RuntimeClass / NVIDIA container runtime，GPU 作为 extended resource 被正确 request。<br>**ARM64 + GB10 上这一步的成熟度明显低于 x86**——过程中的坑与解法本身是最有价值的产出，全部记录。M0 已把此项列为未验证边界。 | 12 h |
 | 3.3 | **Workload 建模与探针** | Deployment vs StatefulSet 的选择理由；requests/limits 与 QoS class；**`startupProbe` 针对 900 s 级模型加载的设计**（这是 LLM serving 的经典陷阱——用 liveness 兜加载会导致无限重启）；readiness 与 liveness 的职责分离 | 10 h |
 | 3.4 | **优雅终止** | `terminationGracePeriodSeconds` + `preStop` hook，保证 Pod 删除时**进行中的流式请求不被截断**。用 M1 的 benchmark client 量化：删 Pod 时的请求失败数与截断数，以验证 K8s 生命周期与 LLM 流式响应的交互。 | 8 h |
@@ -157,7 +159,7 @@ M2 overall pre-close → M3 Minimal → M2 close → M3 Complete
 
 ### Exit Criteria
 
-- [ ] 集群可由脚本 + 文档从零重建，两台 Spark 以 GPU Worker 稳定加入
+- [ ] 集群可由脚本 + 文档从零重建；Spark A control plane 与 Spark B Worker 都 Ready，且两节点均可运行显式申请的 GPU workload
 - [ ] GPU 通过 extended resource 被调度，容器内可见；ARM64 上的坑与解法已记录
 - [ ] Probe 能正确区分「加载中 / 可服务 / 异常」；模型加载期不触发重启
 - [ ] Pod 删除时进行中的流式请求不被截断，有量化数据
