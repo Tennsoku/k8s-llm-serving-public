@@ -4,8 +4,8 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="dark">
-  <meta name="description" content="M1 single-node vLLM baseline interactive showcase and evidence index.">
-  <title>M1 Showcase · Single-Node vLLM Baseline</title>
+  <meta name="description" content="M2 serving optimization canonical review and long-context evidence showcase.">
+  <title>M2 Showcase · Serving Optimization</title>
   <link rel="stylesheet" href="../shared/showcase.css">
   <link rel="stylesheet" href="../shared/review-fragment.css">
 </head>
@@ -13,22 +13,19 @@
   <header class="topbar">
     <a class="brand" href="../../README.md" aria-label="返回项目首页">
       <span class="brand-mark" aria-hidden="true"></span>
-      <span>
-        <strong>M1 Showcase</strong>
-        <small>Milestone evidence showcase</small>
-      </span>
+      <span><strong>M2 Showcase</strong><small>Serving optimization evidence</small></span>
     </a>
     <nav class="topnav" aria-label="Showcase navigation">
-      <span aria-current="page">单 run 结论</span>
-      <a href="compare.html">对比</a>
+      <span aria-current="page">总览与 run set</span>
+      <a href="compare.html">A/B 对比</a>
     </nav>
   </header>
 
   <main>
     <section class="hero" aria-labelledby="pageTitle">
-      <p class="eyebrow">M1 · INTERACTIVE CLOSEOUT</p>
-      <h1 id="pageTitle">Single-Node<br><span>vLLM Baseline</span></h1>
-      <p class="hero-copy">Benchmark 并展示单节点 vLLM 在四类工作负载下的实测结果：每个场景的关键结论，性能指标、测试范围和原始数据。</p>
+      <p class="eyebrow">M2 · CANONICAL REVIEW</p>
+      <h1 id="pageTitle">Serving<br><span>Optimization Lab</span></h1>
+      <p class="hero-copy">集中阅读 compatibility、prefix cache、量化、投机解码和 long-context 的 canonical 结论；数值视图直接读取已发布 summary。</p>
       <div id="milestoneMeta" class="chip-row" aria-label="Milestone metadata">
         <span id="milestoneStatus" class="status-pill">loading</span>
       </div>
@@ -37,61 +34,45 @@
 
     <section class="section" aria-labelledby="overviewTitle">
       <div class="section-heading">
-        <div>
-          <p class="section-kicker">Milestone report</p>
-          <h2 id="overviewTitle">M1 总结</h2>
-        </div>
+        <div><p class="section-kicker">Canonical source</p><h2 id="overviewTitle">M2 总览</h2></div>
         <span id="overviewStatus" class="status-pill">—</span>
       </div>
-      <div id="milestoneReview" class="review-fragment-host" aria-busy="true"></div>
+      <article id="milestoneReview" class="review-fragment-host" aria-busy="true"></article>
     </section>
 
     <section class="section" aria-labelledby="runExplorerTitle">
       <div class="section-heading explorer-heading">
-        <div>
-          <p class="section-kicker">Selected Evidence</p>
-          <h2 id="runExplorerTitle">Selected Run</h2>
-        </div>
+        <div><p class="section-kicker">Selected Evidence</p><h2 id="runExplorerTitle">Long-context run set</h2></div>
         <div class="run-picker">
           <label for="runSelect">展示条目</label>
-          <select id="runSelect" disabled>
-            <option>正在加载 index.json…</option>
-          </select>
+          <select id="runSelect" disabled><option>正在加载 index.json…</option></select>
         </div>
       </div>
-
       <div id="runDiagnostic" class="notice notice-warn" role="status" hidden></div>
       <div id="analysisError" class="notice notice-error" role="alert" hidden></div>
 
       <article id="runAnalysis" class="run-analysis" aria-busy="true">
         <header class="run-header">
-          <div>
-            <p id="runStage" class="section-kicker">—</p>
-            <h3 id="runTitle">正在加载 canonical review…</h3>
-          </div>
+          <div><p id="runStage" class="section-kicker">—</p><h3 id="runTitle">正在加载 run set…</h3></div>
           <div class="run-statuses">
             <span id="sourceStatus" class="status-pill">—</span>
             <span id="analysisStatus" class="status-pill">—</span>
           </div>
         </header>
-
-        <div id="runReview" class="review-fragment-host" aria-busy="true"></div>
+        <article id="runReview" class="review-fragment-host" aria-busy="true"></article>
         <nav id="runLinks" class="evidence-links" aria-label="Run evidence links"></nav>
       </article>
     </section>
 
     <section class="section" aria-labelledby="viewerTitle">
       <div class="section-heading">
-        <div>
-          <p class="section-kicker">Evidence drill-down</p>
-          <h2 id="viewerTitle">Summary viewer</h2>
-        </div>
+        <div><p class="section-kicker">Evidence drill-down</p><h2 id="viewerTitle">Summary viewer</h2></div>
         <div class="viewer-actions">
           <span id="viewerStatus" class="status-pill">idle</span>
           <a id="openViewerLink" class="text-link" target="_blank" rel="noopener noreferrer" aria-disabled="true">独立打开 ↗</a>
         </div>
       </div>
-      <p class="viewer-note">这里展示单个 run 内的可重算曲线与证据健康。人工结论以上方 canonical review 为准。</p>
+      <p class="viewer-note">固定展示每份 C1 summary 的观测值；表格不计算跨 run delta、趋势线或 knee。</p>
       <div class="viewer-frame-shell">
         <iframe id="viewerFrame" title="Benchmark summary viewer" loading="eager"></iframe>
       </div>
@@ -99,10 +80,9 @@
   </main>
 
   <footer>
-    <span>M1 interactive report · Markdown review + static summary JSON</span>
-    <span>Raw evidence remains the final traceability layer.</span>
+    <span>M2 review · Markdown-owned conclusions</span>
+    <a href="compare.html">查看 selected A/B comparisons</a>
   </footer>
-
   <script type="module" src="showcase.js"></script>
 </body>
 </html>

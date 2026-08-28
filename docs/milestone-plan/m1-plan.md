@@ -14,7 +14,7 @@
 | 工程代码 | `serving/vllm/` — 服务生命周期脚本 + streaming benchmark pipeline + runtime/system 采集 + summary 生成 |
 | 实验配置 | `benchmarks/configs/` — 四种 workload shape、OVAT、boundary、medium model 的 versioned config |
 | 原始证据 | `benchmarks/raw-results/m1-vllm-baseline/` — 11 个 final-reference run 的公开抽查副本；[producer 与 public 投影对比](../reviews/m1-public-evidence-projection.md) |
-| 结论 | [M1.3 review](../reviews/m1.3-review.md)、[showcase](../../showcase/m1/) |
+| 结论 | [M1 review](../reviews/m1-review.md)、[showcase](../../showcase/m1/) |
 
 ---
 

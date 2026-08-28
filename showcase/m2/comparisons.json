@@ -1,0 +1,120 @@
+{
+  "schema_version": 1,
+  "default_study": "m2.1-prefix-cache-canonical",
+  "runs": {
+    "m2.1-apc-baseline": {
+      "label": "APC request-unique control",
+      "summary_path": "../../benchmarks/raw-results/m2-serving-optimization/20260823-m2-apc-baseline-7b-canonical/derived/summary.json",
+      "expected_run_id": "20260823-m2-apc-baseline-7b-canonical",
+      "expected_config_id": "m2.1-apc-baseline-canonical-v1",
+      "source_status": "published"
+    },
+    "m2.1-apc-candidate": {
+      "label": "APC run-shared candidate",
+      "summary_path": "../../benchmarks/raw-results/m2-serving-optimization/20260823-m2-apc-candidate-7b-canonical/derived/summary.json",
+      "expected_run_id": "20260823-m2-apc-candidate-7b-canonical",
+      "expected_config_id": "m2.1-apc-candidate-can-v1",
+      "source_status": "published"
+    },
+    "m2.2-kv-baseline": {
+      "label": "BF16 KV baseline",
+      "summary_path": "../../benchmarks/raw-results/m2-serving-optimization/20260823-m2-quant-output-kv-baseline-canonical/derived/summary.json",
+      "expected_run_id": "20260823-m2-quant-output-kv-baseline-canonical",
+      "expected_config_id": "m2.2-kv-quant-baseline-canonical-v1",
+      "source_status": "published"
+    },
+    "m2.2-kv-candidate": {
+      "label": "FP8 KV candidate",
+      "summary_path": "../../benchmarks/raw-results/m2-serving-optimization/20260823-m2-quant-output-kv-candidate-canonical/derived/summary.json",
+      "expected_run_id": "20260823-m2-quant-output-kv-candidate-canonical",
+      "expected_config_id": "m2.2-kv-quant-candidate-canonical-v1",
+      "source_status": "published"
+    },
+    "m2.2-weight-baseline": {
+      "label": "BF16 weight baseline",
+      "summary_path": "../../benchmarks/raw-results/m2-serving-optimization/20260823-m2-quant-output-weight-baseline-canonical/derived/summary.json",
+      "expected_run_id": "20260823-m2-quant-output-weight-baseline-canonical",
+      "expected_config_id": "m2.2-weight-quant-baseline-canonical-v1",
+      "source_status": "published"
+    },
+    "m2.2-weight-candidate": {
+      "label": "Online FP8 weight candidate",
+      "summary_path": "../../benchmarks/raw-results/m2-serving-optimization/20260823-m2-quant-output-weight-candidate-canonical/derived/summary.json",
+      "expected_run_id": "20260823-m2-quant-output-weight-candidate-canonical",
+      "expected_config_id": "m2.2-weight-quant-candidate-canonical-v1",
+      "source_status": "published"
+    },
+    "m2.3-spec-baseline": {
+      "label": "Target-only baseline",
+      "summary_path": "../../benchmarks/raw-results/m2-serving-optimization/20260825-m2-spec-decoding-baseline-canonical/derived/summary.json",
+      "expected_run_id": "20260825-m2-spec-decoding-baseline-canonical",
+      "expected_config_id": "m2.3-spec-decoding-baseline-canonical-v1",
+      "source_status": "published"
+    },
+    "m2.3-spec-candidate": {
+      "label": "Qwen3-0.6B draft candidate",
+      "summary_path": "../../benchmarks/raw-results/m2-serving-optimization/20260825-m2-spec-decoding-candidate-canonical/derived/summary.json",
+      "expected_run_id": "20260825-m2-spec-decoding-candidate-canonical",
+      "expected_config_id": "m2.3-spec-decoding-candidate-canonical-v1",
+      "source_status": "published"
+    }
+  },
+  "studies": [
+    {
+      "id": "m2.1-prefix-cache-canonical",
+      "label": "Prefix cache · request-unique → run-shared",
+      "stage": "M2.1 canonical A/B",
+      "policy": "m2_prefix_cache_v1",
+      "axis": "workload.cache_identity",
+      "baseline_run": "m2.1-apc-baseline",
+      "candidate_run": "m2.1-apc-candidate",
+      "concurrencies": [1, 16],
+      "metric_set": "m2_prefix_cache_v1",
+      "expected_changed_paths": [
+        "/workload/cache_identity/mode",
+        "/workload/cache_identity/derivation"
+      ],
+      "analysis_path": "../../docs/reviews/m2-review.md#m2-prefix-cache"
+    },
+    {
+      "id": "m2.2-kv-quant-canonical",
+      "label": "KV cache · BF16 → FP8",
+      "stage": "M2.2 canonical A/B",
+      "policy": "m2_quantization_v1",
+      "axis": "runtime.kv_cache_dtype",
+      "baseline_run": "m2.2-kv-baseline",
+      "candidate_run": "m2.2-kv-candidate",
+      "concurrencies": [1],
+      "metric_set": "m2_quantization_v1",
+      "expected_changed_paths": ["/runtime/extra_args"],
+      "analysis_path": "../../docs/reviews/m2-review.md#m2-quantization"
+    },
+    {
+      "id": "m2.2-weight-quant-canonical",
+      "label": "Weight · BF16 → online FP8",
+      "stage": "M2.2 canonical A/B",
+      "policy": "m2_quantization_v1",
+      "axis": "runtime.weight_quantization",
+      "baseline_run": "m2.2-weight-baseline",
+      "candidate_run": "m2.2-weight-candidate",
+      "concurrencies": [1],
+      "metric_set": "m2_quantization_v1",
+      "expected_changed_paths": ["/runtime/quantization"],
+      "analysis_path": "../../docs/reviews/m2-review.md#m2-quantization"
+    },
+    {
+      "id": "m2.3-spec-decoding-canonical",
+      "label": "Speculative decoding · target-only → draft model",
+      "stage": "M2.3 512-token canonical A/B",
+      "policy": "m2_speculative_decoding_v1",
+      "axis": "runtime.speculative-config",
+      "baseline_run": "m2.3-spec-baseline",
+      "candidate_run": "m2.3-spec-candidate",
+      "concurrencies": [1, 16],
+      "metric_set": "m2_speculative_v1",
+      "expected_changed_paths": ["/runtime/extra_args"],
+      "analysis_path": "../../docs/reviews/m2-review.md#m2-speculative"
+    }
+  ],
+  "templates": []
+}

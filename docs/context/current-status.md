@@ -8,7 +8,7 @@
 
 ---
 
-**最后更新**：2026-08-25
+**最后更新**：2026-08-28
 
 ---
 
@@ -17,7 +17,7 @@
 | Milestone | 状态 |
 |---|---|
 | M0 — Platform Qualification | ✅ [review](../reviews/m0-review.md) |
-| M1 — Single-Node vLLM Baseline | ✅ [review](../reviews/m1.3-review.md) · [showcase](../../showcase/m1/) |
+| M1 — Single-Node vLLM Baseline | ✅ [review](../reviews/m1-review.md) · [showcase](../../showcase/m1/) |
 | M1.5 — Public Closeout / Repackage | ✅ [showcase](../../showcase/m1/) |
 | M2 — Serving 优化（量化 / 投机解码 / 前缀缓存） | Pre-close |
 | M3 — Kubernetes 与 GPU workload | 🚧 |
@@ -30,8 +30,10 @@
 ## Next Steps
 
 M2 全部 raw evidence 封存完毕。M2 overall 处于 pre-close 阶段，随 M3-minimal 完成后一起发布。
-M3 minimal 已完成两节点拓扑的网络、GPU runtime、Device Plugin导入。
-下一步是：vLLM Probe & Smoke。
+
+M3 minimal 已完成全部实验+采集，正在整理 M3 minimal review。
+
+计划在 2026-08-30 前完成并发布两个 milestone 的 正式 review。
 
 ## Blockers
 

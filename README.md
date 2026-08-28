@@ -5,14 +5,18 @@
 两台 DGX Spark（GB10 Grace Blackwell / ARM64 / 统一内存）上的 LLM 推理平台工程实践。从单机 runtime 基线做起，逐步接入 Kubernetes、可观测性与控制回路。
 这是验证 LLM workload 平台层行为与工程边界的个人研究 testbed，不建设通用、多租户或产品化平台。
 
-**每个结论都由 request-level 原始数据支撑，失败数据全部保留。**
+**每个结论都由直接原始 evidence 支撑并受其边界约束；benchmark 保留 request-level 记录，失败数据全部保留。**
 
-- 交互式结果 → [M1 Showcase](https://tennsoku.github.io/k8s-llm-serving-public/showcase/m1/)
+- 交互式结果 → [M1 Showcase](https://tennsoku.github.io/k8s-llm-serving-public/showcase/m1/) · [M2 Showcase](https://tennsoku.github.io/k8s-llm-serving-public/showcase/m2/)
 - 执行计划 → [Roadmap](docs/Roadmap.md) · 当前进度 → [Status](docs/context/current-status.md)
 
 ---
 
 ## Results at a glance
+
+当前执行状态只在 [Status](docs/context/current-status.md) 维护；这里仅列稳定成果与证据边界。
+
+### M1 — Single-node vLLM baseline
 
 Qwen2.5-0.5B-Instruct · BF16 · TP=1 · vLLM（digest-pinned NGC ARM64 镜像）· 单节点
 四种 workload shape，每点 3 次重复，**10,368 个请求 0 失败 0 超时**。
@@ -35,9 +39,31 @@ Qwen2.5-0.5B-Instruct · BF16 · TP=1 · vLLM（digest-pinned NGC ARM64 镜像�
 
 7B 的 12.7 tok/s 达到统一内存带宽 roofline 估算值的 **65%**（273 GB/s ÷ 14 GB BF16 权重 ≈ 19.5 tok/s）。这与 decode 受内存带宽约束的解释一致，但不能单独排除调度或 kernel 因素。
 
+完整结论与限制见 [M1 review](docs/reviews/m1-review.md)。
+
+### M2 — Serving optimization boundaries
+
+[M2 review](docs/reviews/m2-review.md) - Draft
+
+**Interpretation**：M2 没有强行探索全局最优，但是界定了四类条件性收益：
+1. Prefix reuse 可以减少 measured prefill work，但不等价 C1 E2E 或成本收益
+2. FP8 KV 与 Online FP8 weight 有不同的容量、decode 与质量边界
+3. Speculative decoding 明显改善 tested completion workload 的 decode (TPOT) / E2E (总用时)，但相对单节点情况下会增加 TTFT (额外模型的加载时间)
+4. Tested long-context range 尚未触及首个 pressure / failure boundary。精确数值、证据与限制以该 review 为准
+
+### M3 Minimal — Kubernetes GPU Serving 最小闭环
+
+[Minimal 范围与 checkpoint](docs/milestone-plan/m3-plan-minimal.md) · [工作 manifests](control-plane/) · 进度见 [Status](docs/context/current-status.md)
+
+**Observed Fact**：private capture 记录了两节点 `Ready` 与跨节点 Pod / Service / DNS smoke、两节点 GPU extended resource 与 CUDA compute，以及 probe-gated vLLM rollout；经 Service 的 4 个 streaming requests 均为 HTTP 200，0 失败、0 超时。
+
+**Interpretation**：这验证了当前 DGX Spark / ARM64 / Kubernetes / NVIDIA runtime / vLLM 组合的窄纵向功能闭环。完整 M3 或 production readiness 尚需推进。
+
+**证据边界**：command/status capture 仍是 gitignored private evidence，将在完整 M3 close 后统一公开。本阶段没有验证 clean-machine rebuild、长期稳定性、容量、Kubernetes 性能开销或 probe 异常路径。
+
 ---
 
-## 目前的3个代表性结论
+## M1 的 3 个代表性结论
 
 ### 1. Prefill 与 Decode 的成本结构完全不同
 
@@ -87,7 +113,7 @@ M1.3 首轮 concurrency sweep 得到 C64 输出 6,038 tok/s，数字很漂亮。
 
 ---
 
-## 测量方法
+## M1/M2 Serving benchmark 测量方法
 
 支撑上述结论的工程约束：
 
@@ -102,7 +128,7 @@ M1.3 首轮 concurrency sweep 得到 C64 输出 6,038 tok/s，数字很漂亮。
 | **可重算** | `derived/` 必须能从 `raw/` 重新生成；分析有误时修逻辑重算，不改 `raw/` |
 | **配置固定** | 节点、镜像 digest、model revision、server 参数、workload 全部记录并指纹化 |
 
-单入口重放：`serving/vllm/run-benchmark.sh --milestone <milestone> --config <workload.yaml> --node-label <label>`
+M1/M2 单入口重放：`serving/vllm/run-benchmark.sh --milestone <milestone> --config <workload.yaml> --node-label <label>`
 
 ---
 
@@ -117,7 +143,7 @@ M1.3 首轮 concurrency sweep 得到 C64 输出 6,038 tok/s，数字很漂亮。
 
 M0 已验证 host CUDA、GPU 容器、TCP/NCCL 基线、NIC counter 与 RoCE 数据通路、四层 bootstrap 重放。
 
-**已知边界**：GPUDirect RDMA 未启用（`GDR 0`）；跨节点模型并行未验证；Kubernetes GPU 集成待 M3 实测。两节点结果不外推到生产 DGX 集群。
+**已知边界**：GPUDirect RDMA 未启用（`GDR 0`）；跨节点模型并行未验证。两节点结果不外推到生产 DGX 集群。
 
 ---
 
@@ -127,7 +153,8 @@ M0 已验证 host CUDA、GPU 容器、TCP/NCCL 基线、NIC counter 与 RoCE 数
 |---|---|
 | [`serving/vllm/`](serving/vllm/) | 服务生命周期脚本 + benchmark pipeline（streaming client、runtime/system 采集、summary 生成） |
 | [`benchmarks/`](benchmarks/) | Workload 配置、公开原始结果、可重算 summary |
-| [`showcase/m1/`](showcase/m1/) | M1 交互式报告 |
+| [`showcase/m1/`](showcase/m1/) · [`showcase/m2/`](showcase/m2/) | M1 / M2 交互式报告 |
+| [`control-plane/`](control-plane/) | M3 Minimal 的 Kubernetes、GPU 与 vLLM working manifests |
 | [`labs/vllm-basics/`](labs/vllm-basics/README.md) | Runtime 机制学习实验（Labs 0–4） |
 | [`docs/reviews/`](docs/reviews/) | 各 milestone 结论、限制与 unknowns |
 | [`docs/experiments/`](docs/experiments/README.md) | 实验目录约定与脱敏流程 |

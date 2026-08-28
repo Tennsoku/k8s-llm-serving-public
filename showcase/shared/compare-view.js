@@ -1,17 +1,12 @@
 "use strict";
 
 import {
-  MISSING, formatNumber, formatPercent, formatRelative, getPointer,
+  formatNumber, formatPercent, formatRelative, getPointer,
   isFiniteNumber, isNonEmptyString, valueLabel
 } from "./compare-data.js";
+import {renderReviewError, renderReviewFragment} from "./review-fragment.js";
 
 const STATUS_LABELS = {descriptive_only: "descriptive only", not_comparable: "not comparable"};
-const CLAIM_LABELS = {
-  observed_fact: "Observed fact",
-  interpretation: "Interpretation",
-  hypothesis: "Hypothesis",
-  unknown: "Unknown"
-};
 
 export function createComparisonView(state) {
   const byId = id => document.getElementById(id);
@@ -42,7 +37,7 @@ export function createComparisonView(state) {
   }
 
   function renderDiagnostics() {
-    setNotice(byId("queryDiagnostic"), [state.queryDiagnostic, state.evidenceDiagnostic].filter(Boolean).join("\n"));
+    setNotice(byId("queryDiagnostic"), state.queryDiagnostic);
   }
 
   function appendDefinitionList(element, pairs) {
@@ -138,10 +133,12 @@ export function createComparisonView(state) {
     byId("candidateLabel").textContent = study.candidate.label;
     byId("baselineRunId").textContent = study.baseline.expectedRunId;
     byId("candidateRunId").textContent = study.candidate.expectedRunId;
-    for (const id of ["baselineMeta", "candidateMeta", "contextSummary", "contextDiagnostics", "metricRows", "shapeGrid", "outcomeGrid", "claims", "limitations", "evidenceLinks"]) {
+    for (const id of ["baselineMeta", "candidateMeta", "contextSummary", "contextDiagnostics", "metricRows", "shapeGrid", "outcomeGrid", "evidenceLinks"]) {
       byId(id).replaceChildren();
     }
-    byId("takeaway").textContent = "正在并发加载 baseline、candidate 与人工 analysis…";
+    const reviewHost = byId("comparisonReview");
+    reviewHost.replaceChildren(createTextElement("p", "panel-note", "正在加载 canonical review…"));
+    reviewHost.setAttribute("aria-busy", "true");
     renderAxisValues(study);
     byId("contextCount").textContent = "—";
     byId("metricsSection").hidden = false;
@@ -150,7 +147,7 @@ export function createComparisonView(state) {
     setStatus(byId("dataStatus"), "loading", "data · ");
     setStatus(byId("comparabilityStatus"), "idle", "comparability · ");
     setStatus(byId("outcomeStatus"), "idle", "outcome · ");
-    setStatus(byId("analysisStatus"), "loading", "analysis · ");
+    setStatus(byId("analysisStatus"), "loading", "review · ");
     setNotice(byId("loadError"), "");
   }
 
@@ -289,42 +286,11 @@ export function createComparisonView(state) {
     }
   }
 
-  function evidenceLabel(evidence) {
-    if (evidence.source === "metric") return "metric · " + evidence.metric + " · C" + evidence.concurrency;
-    return evidence.source.replaceAll("_", " ") + " · " + evidence.pointer;
-  }
-
-  function renderClaims(analysis) {
-    const container = byId("claims");
-    container.replaceChildren();
-    if (!analysis.claims.length) {
-      const card = createTextElement("article", "claim-card", "");
-      card.append(createTextElement("span", "claim-type", "Pending"), createTextElement("p", "", "尚未形成可发布 comparison claim。"));
-      container.append(card);
-      return;
-    }
-    for (const claim of analysis.claims) {
-      const card = createTextElement("article", "claim-card claim-" + claim.type.replaceAll("_", "-"), "");
-      card.append(createTextElement("span", "claim-type", CLAIM_LABELS[claim.type]), createTextElement("p", "", claim.text));
-      for (const evidence of claim.evidence) card.append(createTextElement("span", "evidence-ref", evidenceLabel(evidence)));
-      container.append(card);
-    }
-  }
-
-  function renderLimitations(analysis) {
-    const list = byId("limitations");
-    list.replaceChildren();
-    for (const text of analysis.limitations.length ? analysis.limitations : ["尚未记录 limitation。"]) {
-      list.append(createTextElement("li", "", text));
-    }
-  }
-
-  function renderLinks(study, analysis) {
+  function renderLinks(study, reviewUrl = study.analysisUrl) {
     const links = [
       {label: "Baseline summary", url: study.baseline.summaryUrl},
       {label: "Candidate summary", url: study.candidate.summaryUrl},
-      {label: "Comparison analysis JSON", url: study.analysisUrl},
-      ...analysis.links
+      {label: "Canonical review", url: reviewUrl}
     ];
     const container = byId("evidenceLinks");
     container.replaceChildren();
@@ -338,40 +304,17 @@ export function createComparisonView(state) {
     }
   }
 
-  function verifyEvidence(analysis, comparison) {
-    const warnings = [];
-    for (const [claimIndex, claim] of analysis.claims.entries()) {
-      for (const evidence of claim.evidence) {
-        if (evidence.source === "metric") {
-          if (evidence.concurrency !== comparison.concurrency) continue;
-          const baseline = comparison.baseline.values[evidence.metric];
-          const candidate = comparison.candidate.values[evidence.metric];
-          if (!isFiniteNumber(baseline) || !isFiniteNumber(candidate)) {
-            warnings.push("claim " + (claimIndex + 1) + " 引用的 metric " + evidence.metric + " 在 C" + evidence.concurrency + " 不完整。");
-          }
-          continue;
-        }
-        const summary = evidence.source === "baseline_summary" ? comparison.baseline.summary : comparison.candidate.summary;
-        if (getPointer(summary, evidence.pointer) === MISSING) {
-          warnings.push("claim " + (claimIndex + 1) + " 的 " + evidence.source + " pointer 不存在：" + evidence.pointer + "。");
-        }
-      }
-    }
-    state.evidenceDiagnostic = warnings.join("\n");
-    renderDiagnostics();
+  function renderReview(review, comparison) {
+    setStatus(byId("analysisStatus"), review.status, "review · ");
+    renderReviewFragment(byId("comparisonReview"), review);
+    renderLinks(comparison.study, review.sourceUrl);
   }
 
-  function emptyAnalysis(message) {
-    return {status: "draft", takeaway: null, claims: [], limitations: [message], links: []};
-  }
-
-  function renderAnalysis(analysis, comparison) {
-    setStatus(byId("analysisStatus"), analysis.status, "analysis · ");
-    byId("takeaway").textContent = analysis.takeaway === null ? "分析进行中；尚未形成 selected takeaway。" : analysis.takeaway;
-    renderClaims(analysis);
-    renderLimitations(analysis);
-    renderLinks(comparison.study, analysis);
-    verifyEvidence(analysis, comparison);
+  function renderReviewUnavailable(message, study = null) {
+    setStatus(byId("analysisStatus"), "error", "review · ");
+    renderReviewError(byId("comparisonReview"), message);
+    if (study) renderLinks(study);
+    else byId("evidenceLinks").replaceChildren();
   }
 
   function renderComparison(comparison) {
@@ -394,8 +337,7 @@ export function createComparisonView(state) {
   }
 
   return {
-    byId, emptyAnalysis, populateConcurrencySelect, populateStudySelect, renderAnalysis,
-    renderClaims, renderComparison, renderDiagnostics, renderLimitations, renderLinks,
-    renderLoading, renderManifest, setNotice, setStatus
+    byId, populateConcurrencySelect, populateStudySelect, renderComparison, renderDiagnostics,
+    renderLoading, renderManifest, renderReview, renderReviewUnavailable, setNotice, setStatus
   };
 }

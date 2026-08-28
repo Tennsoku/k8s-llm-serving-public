@@ -5,6 +5,7 @@ import {
 } from "./compare-data.js";
 import {createComparisonModel} from "./compare-model.js";
 import {createComparisonView} from "./compare-view.js";
+import {loadReviewFragment} from "./review-fragment.js";
 
 export {CORE_METRICS, formatNumber, formatSigned} from "./compare-data.js";
 
@@ -17,8 +18,7 @@ export function startComparison({metrics, policyContracts, matchedContextPaths})
     selectedConcurrency: null,
     selectionEpoch: 0,
     controller: null,
-    queryDiagnostic: "",
-    evidenceDiagnostic: ""
+    queryDiagnostic: ""
   };
   const source = createRepositorySource();
   const model = createComparisonModel({metrics, policyContracts, matchedContextPaths, source});
@@ -40,7 +40,6 @@ export function startComparison({metrics, policyContracts, matchedContextPaths})
     const epoch = ++state.selectionEpoch;
     state.controller?.abort();
     state.controller = new AbortController();
-    state.evidenceDiagnostic = "";
     view.renderDiagnostics();
     view.byId("studySelect").value = study.id;
     view.populateConcurrencySelect(study, concurrency);
@@ -51,18 +50,21 @@ export function startComparison({metrics, policyContracts, matchedContextPaths})
     const requests = await Promise.allSettled([
       source.fetchJson(study.baseline.summaryUrl, MAX_SUMMARY_BYTES, signal),
       source.fetchJson(study.candidate.summaryUrl, MAX_SUMMARY_BYTES, signal),
-      source.fetchJson(study.analysisUrl, MAX_MANIFEST_BYTES, signal)
+      loadReviewFragment(study.analysisUrl, {signal})
     ]);
     if (epoch !== state.selectionEpoch || signal.aborted) return;
 
     const errors = [];
     let baselineResult = null;
     let candidateResult = null;
-    let analysis = null;
+    let review = null;
+    let reviewError = "Canonical review 暂时不可用。";
     for (const [index, result] of requests.entries()) {
       if (result.status === "rejected") {
-        const label = ["Baseline summary", "Candidate summary", "Comparison analysis"][index];
-        errors.push(label + " 加载失败：" + result.reason.message);
+        const label = ["Baseline summary", "Candidate summary", "Canonical review"][index];
+        const message = label + " 加载失败：" + (result.reason?.message || String(result.reason));
+        errors.push(message);
+        if (index === 2) reviewError = message;
       }
     }
     if (requests[0].status === "fulfilled") {
@@ -81,24 +83,15 @@ export function startComparison({metrics, policyContracts, matchedContextPaths})
         errors.push("Candidate summary contract 错误：" + error.message);
       }
     }
-    if (requests[2].status === "fulfilled") {
-      try {
-        analysis = model.validateAnalysis(requests[2].value.data, study, requests[2].value.url);
-      } catch (error) {
-        errors.push("Comparison analysis contract 错误：" + error.message);
-      }
-    }
+    if (requests[2].status === "fulfilled") review = requests[2].value;
 
     view.setNotice(view.byId("loadError"), errors.join("\n"));
     if (!baselineResult || !candidateResult) {
       view.setStatus(view.byId("dataStatus"), "unavailable", "data · ");
       view.setStatus(view.byId("comparabilityStatus"), "not_comparable", "comparability · ");
       view.setStatus(view.byId("outcomeStatus"), "unknown", "outcome · ");
-      view.setStatus(view.byId("analysisStatus"), analysis ? analysis.status : "error", "analysis · ");
-      view.byId("takeaway").textContent = analysis?.takeaway || "至少一侧 summary 不可用；不计算 delta。";
-      view.renderClaims(analysis || view.emptyAnalysis("Comparison analysis 暂时不可用。"));
-      view.renderLimitations(analysis || view.emptyAnalysis("至少一侧 summary 不可用，页面保留 outcome-only 状态。"));
-      view.renderLinks(study, analysis || view.emptyAnalysis(""));
+      if (review) view.renderReview(review, {study});
+      else view.renderReviewUnavailable(reviewError, study);
       view.byId("metricsSection").hidden = true;
       view.byId("shapeSection").hidden = true;
       view.byId("outcomeGrid").replaceChildren();
@@ -112,8 +105,8 @@ export function startComparison({metrics, policyContracts, matchedContextPaths})
       [...baselineResult.identityIssues, ...candidateResult.identityIssues]
     );
     view.renderComparison(comparison);
-    view.renderAnalysis(analysis || view.emptyAnalysis("Comparison analysis 加载失败；computed delta 仍可独立检查。"), comparison);
-    if (!analysis) view.setStatus(view.byId("analysisStatus"), "error", "analysis · ");
+    if (review) view.renderReview(review, comparison);
+    else view.renderReviewUnavailable(reviewError + " Computed delta 仍可独立检查。", study);
     view.byId("comparisonView").setAttribute("aria-busy", "false");
   }
 
@@ -133,8 +126,7 @@ export function startComparison({metrics, policyContracts, matchedContextPaths})
       view.setStatus(view.byId("dataStatus"), "unavailable", "data · ");
       view.setStatus(view.byId("comparabilityStatus"), "not_comparable", "comparability · ");
       view.setStatus(view.byId("outcomeStatus"), "unknown", "outcome · ");
-      view.setStatus(view.byId("analysisStatus"), "error", "analysis · ");
-      view.byId("takeaway").textContent = "Comparison 构建失败；不保留上一组 pair 的指标或结论。";
+      view.renderReviewUnavailable("Comparison 构建失败；不保留上一组 pair 的指标或结论。", study);
       view.byId("metricsSection").hidden = true;
       view.byId("shapeSection").hidden = true;
       for (const id of ["metricRows", "shapeGrid", "outcomeGrid"]) view.byId(id).replaceChildren();
@@ -218,11 +210,10 @@ export function startComparison({metrics, policyContracts, matchedContextPaths})
     view.byId("comparisonView").setAttribute("aria-busy", "false");
     view.byId("studyStage").textContent = "manifest unavailable";
     view.byId("studyTitle").textContent = "无法加载 selected comparison index";
-    view.byId("takeaway").textContent = "Comparison manifest 初始化失败；没有加载任何 analysis 或 summary。";
     view.setStatus(view.byId("dataStatus"), "error", "data · ");
     view.setStatus(view.byId("comparabilityStatus"), "not_comparable", "comparability · ");
     view.setStatus(view.byId("outcomeStatus"), "unknown", "outcome · ");
-    view.setStatus(view.byId("analysisStatus"), "error", "analysis · ");
+    view.renderReviewUnavailable("Comparison manifest 初始化失败；没有加载任何 review 或 summary。");
     view.setNotice(view.byId("pageError"), "Comparison 初始化失败：" + error.message);
   });
 }

@@ -1,6 +1,7 @@
 "use strict";
 
-import {CLAIM_LABELS, REFERENCE_LABELS, REFERENCE_ORDER, STATUS_LABELS, createRunModel, isNonEmptyString, isObject} from "./run-model.js";
+import {STATUS_LABELS, createRunModel, isNonEmptyString, isObject} from "./run-model.js";
+import {loadReviewFragment, renderReviewError, renderReviewFragment} from "./review-fragment.js";
 
 export function startRunApp({entryContract}) {
   const model = createRunModel(entryContract);
@@ -14,7 +15,6 @@ export function startRunApp({entryContract}) {
     viewerTimeout: null,
     queryDiagnostic: "",
     viewerDiagnostic: "",
-    analysisDiagnostic: "",
     pageErrors: []
   };
   const byId = id => document.getElementById(id);
@@ -40,11 +40,7 @@ export function startRunApp({entryContract}) {
   }
 
   function renderDiagnostics() {
-    setNotice(byId("runDiagnostic"), [
-      state.queryDiagnostic,
-      state.viewerDiagnostic,
-      state.analysisDiagnostic
-    ].filter(Boolean).join("\n"));
+    setNotice(byId("runDiagnostic"), [state.queryDiagnostic, state.viewerDiagnostic].filter(Boolean).join("\n"));
   }
 
   function createTextElement(tagName, className, text) {
@@ -53,38 +49,6 @@ export function startRunApp({entryContract}) {
     return node;
   }
 
-  function renderStringList(element, items, emptyText) {
-    element.replaceChildren();
-    if (!items.length) {
-      element.append(createTextElement("li", "", emptyText || "待补充"));
-      return;
-    }
-    for (const item of items) element.append(createTextElement("li", "", item));
-  }
-
-  function renderClaims(element, claims) {
-    element.replaceChildren();
-    if (!claims.length) {
-      const empty = createTextElement("article", "claim-card", "");
-      empty.append(
-        createTextElement("span", "claim-type", "Pending"),
-        createTextElement("p", "", "尚未形成可发布 claim。")
-      );
-      element.append(empty);
-      return;
-    }
-    for (const claim of claims) {
-      const card = createTextElement("article", "claim-card claim-" + claim.type.replaceAll("_", "-"), "");
-      card.append(
-        createTextElement("span", "claim-type", CLAIM_LABELS[claim.type]),
-        createTextElement("p", "", claim.text)
-      );
-      if (claim.evidence.length) {
-        card.append(createTextElement("span", "evidence-ref", "Evidence · " + claim.evidence.join(" · ")));
-      }
-      element.append(card);
-    }
-  }
 
   function renderLinks(element, links) {
     element.replaceChildren();
@@ -100,18 +64,6 @@ export function startRunApp({entryContract}) {
     }
   }
 
-  function renderHandoff(handoff) {
-    const container = byId("milestoneHandoff");
-    container.replaceChildren();
-    for (const item of handoff) {
-      const card = createTextElement("article", "handoff", "");
-      card.append(createTextElement("strong", "", item.id.toUpperCase()));
-      const list = document.createElement("ul");
-      for (const text of item.values) list.append(createTextElement("li", "", text));
-      card.append(list);
-      container.append(card);
-    }
-  }
 
   function renderMilestoneMeta() {
     const status = byId("milestoneStatus");
@@ -119,68 +71,39 @@ export function startRunApp({entryContract}) {
     const chips = [
       state.manifest.entries.length + " selected entries",
       "schema v" + state.manifest.schemaVersion,
-      "static same-origin JSON"
+      "canonical review fragments"
     ];
     byId("milestoneMeta").replaceChildren(status, ...chips.map(text => createTextElement("span", "chip", text)));
   }
 
-  function renderMilestoneAnalysis(analysis) {
-    setStatus(byId("overviewStatus"), analysis.status);
-    setStatus(byId("milestoneStatus"), analysis.status);
-    byId("milestoneTakeaway").textContent = analysis.takeaway;
-    renderStringList(byId("milestoneScope"), analysis.scope);
-    renderClaims(byId("milestoneClaims"), analysis.claims);
-    renderStringList(byId("milestoneLimitations"), analysis.limitations);
-    renderHandoff(analysis.handoff);
-    renderLinks(byId("milestoneLinks"), analysis.links);
+  function renderMilestoneReview(review) {
+    setStatus(byId("overviewStatus"), review.status);
+    setStatus(byId("milestoneStatus"), review.status);
+    renderReviewFragment(byId("milestoneReview"), review);
   }
 
-  async function loadMilestoneAnalysis() {
+  async function loadMilestoneReview() {
     try {
-      const result = await model.fetchJson(state.manifest.milestone.analysisUrl);
-      renderMilestoneAnalysis(model.validateMilestoneAnalysis(
-        result.data,
-        result.url,
-        state.manifest.milestone.id
-      ));
+      const review = await loadReviewFragment(state.manifest.milestone.analysisUrl);
+      renderMilestoneReview(review);
     } catch (error) {
       setStatus(byId("overviewStatus"), "error");
       setStatus(byId("milestoneStatus"), "error");
-      byId("milestoneTakeaway").textContent = "Milestone analysis 暂时不可用；精选 run 与 summary viewer 仍可独立使用。";
-      addPageError("Milestone analysis 加载失败：" + error.message);
+      renderReviewError(
+        byId("milestoneReview"),
+        "Milestone review 暂时不可用；精选 run 与 summary viewer 仍可独立使用。"
+      );
+      addPageError("Milestone review 加载失败：" + error.message);
     }
   }
 
-  function renderReferenceGrid(references) {
-    const container = byId("referenceGrid");
-    container.replaceChildren();
-    for (const key of REFERENCE_ORDER) {
-      const reference = references[key];
-      const card = createTextElement("article", "reference-card", "");
-      card.append(createTextElement("h5", "", REFERENCE_LABELS[key]));
-      const value = createTextElement("div", "reference-value", "");
-      value.textContent = reference.status === "observed" ? "C" + reference.concurrency : statusLabel(reference.status);
-      card.append(value);
-      const badge = createTextElement("span", "", "");
-      setStatus(badge, reference.status);
-      card.append(badge);
-      if (reference.rationale) card.append(createTextElement("p", "", reference.rationale));
-      if (reference.evidence.length) {
-        card.append(createTextElement("span", "evidence-ref", "Evidence · " + reference.evidence.join(" · ")));
-      }
-      container.append(card);
-    }
-  }
-
-  function emptyRunAnalysis() {
+  function emptyRunReview() {
+    const host = byId("runReview");
     byId("runAnalysis").setAttribute("aria-busy", "true");
+    host.setAttribute("aria-busy", "true");
+    host.replaceChildren(createTextElement("p", "", "正在加载 canonical review…"));
     setStatus(byId("analysisStatus"), "loading");
-    byId("runTakeaway").textContent = "正在加载人工 analysis…";
-    byId("referenceGrid").replaceChildren();
-    byId("runClaims").replaceChildren();
-    byId("runLimitations").replaceChildren();
     byId("runLinks").replaceChildren();
-    setNotice(byId("analysisError"), "");
   }
 
   function renderEntryHeader(entry) {
@@ -200,33 +123,30 @@ export function startRunApp({entryContract}) {
     }));
   }
 
-  function renderRunAnalysis(analysis, entry) {
-    setStatus(byId("analysisStatus"), analysis.status);
-    byId("runTakeaway").textContent = analysis.takeaway === null ? "分析进行中；尚未形成 takeaway。" : analysis.takeaway;
-    renderReferenceGrid(analysis.references);
-    renderClaims(byId("runClaims"), analysis.claims);
-    renderStringList(byId("runLimitations"), analysis.limitations);
-    renderLinks(byId("runLinks"), [...evidenceLinks(entry), ...analysis.links]);
+  function renderRunReview(review, entry) {
+    setStatus(byId("analysisStatus"), review.status);
+    renderReviewFragment(byId("runReview"), review);
     byId("runAnalysis").setAttribute("aria-busy", "false");
-    const pending = REFERENCE_ORDER.filter(key => analysis.references[key].status === "pending");
-    state.analysisDiagnostic = analysis.status === "final" && pending.length
-      ? "Analysis 标记为 final，但仍有 pending reference：" + pending.join(", ") + "。"
-      : "";
-    renderDiagnostics();
+    renderLinks(
+      byId("runLinks"),
+      [...evidenceLinks(entry), {label: "Canonical review", url: review.sourceUrl}]
+    );
   }
 
-  async function loadRunAnalysis(entry, epoch, signal) {
+  async function loadRunReview(entry, epoch, signal) {
     try {
-      const result = await model.fetchJson(entry.analysisUrl, {signal});
+      const review = await loadReviewFragment(entry.analysisUrl, {signal});
       if (epoch !== state.selectionEpoch) return;
-      const analysis = model.validateRunAnalysis(result.data, entry, result.url);
-      if (epoch === state.selectionEpoch) renderRunAnalysis(analysis, entry);
+      renderRunReview(review, entry);
     } catch (error) {
       if (error.name === "AbortError" || epoch !== state.selectionEpoch) return;
       setStatus(byId("analysisStatus"), "error");
-      byId("runTakeaway").textContent = "人工 analysis 暂时不可用；下方 summary viewer 仍可独立检查。";
+      renderReviewError(
+        byId("runReview"),
+        "Canonical review 加载失败：" + error.message + " 下方 summary viewer 仍可独立检查。"
+      );
+      renderLinks(byId("runLinks"), evidenceLinks(entry));
       byId("runAnalysis").setAttribute("aria-busy", "false");
-      setNotice(byId("analysisError"), "Analysis 加载失败：" + error.message);
     }
   }
 
@@ -343,7 +263,7 @@ export function startRunApp({entryContract}) {
     byId("viewerTitle").textContent = isSet ? "Long-context run set" : "Summary viewer";
     viewerNote().textContent = isSet
       ? "固定展示每份 C1 summary 的观测值；表格不计算跨 run delta、趋势线或 knee。"
-      : "这里展示单个 run 内的可重算曲线与证据健康。Showcase 模式隐藏通用 knee heuristic，人工 operating-reference 结论以上方 analysis 为准。";
+      : "这里展示单个 run 内的可重算曲线与证据健康。Showcase 模式隐藏通用 knee heuristic，人工结论以上方 canonical review 为准。";
     setStatus(byId("viewerStatus"), "loading");
     renderDiagnostics();
     if (isSet) {
@@ -390,12 +310,11 @@ export function startRunApp({entryContract}) {
     state.analysisController = new AbortController();
     clearTimeout(state.viewerTimeout);
     state.viewerDiagnostic = "";
-    state.analysisDiagnostic = "";
     renderDiagnostics();
     byId("runSelect").value = id;
     renderEntryHeader(entry);
-    emptyRunAnalysis();
-    loadRunAnalysis(entry, epoch, state.analysisController.signal);
+    emptyRunReview();
+    loadRunReview(entry, epoch, state.analysisController.signal);
     navigateViewer(entry, epoch);
     updateHistory(id, historyMode);
   }
@@ -471,7 +390,7 @@ export function startRunApp({entryContract}) {
     state.entriesById = new Map(state.manifest.entries.map(entry => [entry.id, entry]));
     renderMilestoneMeta();
     populateRunSelect();
-    loadMilestoneAnalysis();
+    loadMilestoneReview();
     const initial = chooseInitialEntry();
     renderDiagnostics();
     selectEntry(initial.id, initial.mode);
@@ -487,13 +406,13 @@ export function startRunApp({entryContract}) {
     setStatus(byId("milestoneStatus"), "error");
     setStatus(byId("overviewStatus"), "error");
     setStatus(byId("viewerStatus"), "error");
-    byId("milestoneTakeaway").textContent = "Milestone analysis 不可用；请检查 showcase manifest 与 analysis 文件。";
+    renderReviewError(byId("milestoneReview"), "Milestone review 不可用；请检查 showcase manifest 与 review fragment。");
     byId("runSelect").disabled = true;
     byId("runAnalysis").setAttribute("aria-busy", "false");
     byId("runStage").textContent = "index unavailable";
     byId("runTitle").textContent = "无法加载 selected run index";
     setStatus(byId("analysisStatus"), "error");
-    byId("runTakeaway").textContent = "Showcase manifest 初始化失败；没有加载任何 analysis 或 summary。";
+    renderReviewError(byId("runReview"), "Showcase manifest 初始化失败；没有加载任何 review 或 summary。");
     addPageError("Showcase 初始化失败：" + error.message);
   });
 }

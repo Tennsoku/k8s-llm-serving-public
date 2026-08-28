@@ -6,16 +6,7 @@ import {
 } from "./compare-data.js";
 
 const MANIFEST_SCHEMA = 1;
-const ANALYSIS_SCHEMA = 1;
 const SUMMARY_SCHEMA = 2;
-const ACTIVE_STATUSES = new Set(["draft", "reviewed", "final"]);
-const ANALYSIS_STATUSES = new Set(["draft", "reviewed", "final", "planned"]);
-const CLAIM_TYPES = new Set(["observed_fact", "interpretation", "hypothesis", "unknown"]);
-const EVIDENCE_SOURCES = new Set(["metric", "baseline_summary", "candidate_summary"]);
-const DERIVED_METRIC_IDS = new Set([
-  "success_rate", "timeout_rate", "actual_input_tokens_per_success",
-  "actual_output_tokens_per_success"
-]);
 const IGNORED_CONTEXT_PREFIXES = ["/config_id", "/sweep/reference_points"];
 const HARD_CONTROL_PREFIXES = [
   "/model/", "/runtime/", "/workload/", "/sampling/", "/warmup/",
@@ -66,13 +57,12 @@ export function createComparisonModel({metrics, policyContracts, matchedContextP
     const studies = data.studies.map((raw, index) => {
       const prefix = "studies[" + index + "]";
       assert(isObject(raw), prefix + " 必须是 object。");
-      for (const field of ["id", "label", "stage", "status", "policy", "axis", "baseline_run", "candidate_run", "metric_set", "analysis_path"]) {
+      for (const field of ["id", "label", "stage", "policy", "axis", "baseline_run", "candidate_run", "metric_set", "analysis_path"]) {
         assert(isNonEmptyString(raw[field]), prefix + "." + field + " 缺失。");
       }
       assert(/^[a-z0-9][a-z0-9.-]*$/.test(raw.id), prefix + ".id 必须是稳定的 URL-safe story id。");
       assert(!ids.has(raw.id), "重复 comparison id：" + raw.id + "。");
       ids.add(raw.id);
-      assert(ACTIVE_STATUSES.has(raw.status), prefix + ".status 不受支持。");
       const contract = resolveStudyContract(raw, prefix);
       assert(runs.has(raw.baseline_run), prefix + ".baseline_run 未出现在 runs registry。");
       assert(runs.has(raw.candidate_run), prefix + ".candidate_run 未出现在 runs registry。");
@@ -84,7 +74,7 @@ export function createComparisonModel({metrics, policyContracts, matchedContextP
       });
       assert(new Set(concurrencies).size === concurrencies.length, prefix + ".concurrencies 不允许重复。");
       return {
-        id: raw.id, label: raw.label, stage: raw.stage, status: raw.status,
+        id: raw.id, label: raw.label, stage: raw.stage,
         policy: raw.policy, axis: raw.axis, baseline: runs.get(raw.baseline_run),
         candidate: runs.get(raw.candidate_run), concurrencies, metricSet: raw.metric_set,
         ...contract,
@@ -116,58 +106,6 @@ export function createComparisonModel({metrics, policyContracts, matchedContextP
       };
     });
     return {schemaVersion: data.schema_version, defaultStudy: data.default_study, runs, studies, templates};
-  }
-
-  function validateAnalysisLink(raw, index, analysisUrl) {
-    const prefix = "links[" + index + "]";
-    assert(isObject(raw), prefix + " 必须是 object。");
-    assert(isNonEmptyString(raw.label), prefix + ".label 缺失。");
-    assert(isNonEmptyString(raw.href), prefix + ".href 缺失。");
-    assert(raw.kind !== "local_evidence", prefix + " 不能引用 local evidence。");
-    assert(raw.visibility == null || raw.visibility === "public", prefix + ".visibility 只允许 public。");
-    return {label: raw.label, url: source.resolveAnalysisLink(raw.href, analysisUrl, prefix + ".href")};
-  }
-
-  function validateEvidence(raw, claimIndex, evidenceIndex, study) {
-    const prefix = "claims[" + claimIndex + "].evidence[" + evidenceIndex + "]";
-    assert(isObject(raw), prefix + " 必须是 object。");
-    assert(EVIDENCE_SOURCES.has(raw.source), prefix + ".source 不受支持。");
-    if (raw.source === "metric") {
-      const allowedMetrics = new Set([...study.policyContract.metricIds, ...DERIVED_METRIC_IDS]);
-      assert(isNonEmptyString(raw.metric) && allowedMetrics.has(raw.metric), prefix + ".metric 不在 " + study.metricSet + " 中。");
-      assert(Number.isInteger(raw.concurrency) && study.concurrencies.includes(raw.concurrency), prefix + ".concurrency 不在当前 study 的 selected concurrencies 中。");
-      return {source: raw.source, metric: raw.metric, concurrency: raw.concurrency};
-    }
-    assert(validJsonPointer(raw.pointer), prefix + ".pointer 不是有效 JSON pointer。");
-    return {source: raw.source, pointer: raw.pointer};
-  }
-
-  function validateAnalysis(data, study, analysisUrl) {
-    assert(isObject(data), "comparison analysis 顶层必须是 object。");
-    assert(data.schema_version === ANALYSIS_SCHEMA, "不支持 comparison analysis schema_version " + String(data.schema_version) + "。");
-    assert(data.kind === "comparison_analysis", "comparison analysis kind 不匹配。");
-    assert(data.comparison_id === study.id, "analysis comparison_id 与当前 study 不匹配。");
-    assert(ANALYSIS_STATUSES.has(data.status), "comparison analysis status 不受支持。");
-    assert(data.takeaway === null || isNonEmptyString(data.takeaway), "takeaway 必须是 string 或 null。");
-    assert(Array.isArray(data.claims), "claims 必须是 array。");
-    assert(Array.isArray(data.limitations) && data.limitations.every(isNonEmptyString), "limitations 必须是 string array。");
-    assert(Array.isArray(data.links), "links 必须是 array。");
-    const claims = data.claims.map((raw, index) => {
-      const prefix = "claims[" + index + "]";
-      assert(isObject(raw), prefix + " 必须是 object。");
-      assert(CLAIM_TYPES.has(raw.type), prefix + ".type 不受支持。");
-      assert(isNonEmptyString(raw.text), prefix + ".text 缺失。");
-      assert(Array.isArray(raw.evidence), prefix + ".evidence 必须是 array。");
-      const evidence = raw.evidence.map((item, evidenceIndex) => validateEvidence(item, index, evidenceIndex, study));
-      if (["observed_fact", "interpretation", "unknown"].includes(raw.type)) {
-        assert(evidence.length > 0, prefix + " 的 " + raw.type + " 必须引用 evidence。");
-      }
-      return {type: raw.type, text: raw.text, evidence};
-    });
-    return {
-      status: data.status, takeaway: data.takeaway, claims, limitations: data.limitations,
-      links: data.links.map((link, index) => validateAnalysisLink(link, index, analysisUrl))
-    };
   }
 
   function validateSummary(data, run) {
@@ -344,5 +282,5 @@ export function createComparisonModel({metrics, policyContracts, matchedContextP
     };
   }
 
-  return {buildComparison, validateAnalysis, validateManifest, validateSummary};
+  return {buildComparison, validateManifest, validateSummary};
 }

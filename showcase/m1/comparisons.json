@@ -50,7 +50,6 @@
       "id": "m1.5-max-model-len",
       "label": "max_model_len · 8192 → 16384",
       "stage": "M1.5 runtime OVAT",
-      "status": "final",
       "policy": "runtime_ovat_v1",
       "axis": "runtime.max_model_len",
       "baseline_run": "m1.4-long-long-canonical",
@@ -58,13 +57,12 @@
       "concurrencies": [8],
       "metric_set": "m1_core_v1",
       "expected_changed_paths": ["/runtime/max_model_len"],
-      "analysis_path": "analysis/comparisons/max-model-len.json"
+      "analysis_path": "../../docs/reviews/m1-review.md#m1-max-model-len"
     },
     {
       "id": "m1.5-max-num-seqs",
       "label": "max_num_seqs · 128 → 4",
       "stage": "M1.5 runtime OVAT",
-      "status": "final",
       "policy": "runtime_ovat_v1",
       "axis": "runtime.max_num_seqs",
       "baseline_run": "m1.4-long-long-canonical",
@@ -72,13 +70,12 @@
       "concurrencies": [8],
       "metric_set": "m1_core_v1",
       "expected_changed_paths": ["/runtime/max_num_seqs"],
-      "analysis_path": "analysis/comparisons/max-num-seqs.json"
+      "analysis_path": "../../docs/reviews/m1-review.md#m1-max-num-seqs"
     },
     {
       "id": "m1.5-gpu-memory-utilization",
       "label": "gpu_memory_utilization · 0.15 → 0.50",
       "stage": "M1.5 runtime OVAT",
-      "status": "final",
       "policy": "runtime_ovat_v1",
       "axis": "runtime.gpu_memory_utilization",
       "baseline_run": "m1.4-long-long-canonical",
@@ -86,13 +83,12 @@
       "concurrencies": [8],
       "metric_set": "m1_core_v1",
       "expected_changed_paths": ["/runtime/gpu_memory_utilization"],
-      "analysis_path": "analysis/comparisons/gpu-memory-utilization.json"
+      "analysis_path": "../../docs/reviews/m1-review.md#m1-gpu-memory-utilization"
     },
     {
       "id": "m1.6-small-medium",
       "label": "Small → Medium model",
       "stage": "M1.6 model compatibility",
-      "status": "final",
       "policy": "model_compatibility_v1",
       "axis": "model_identity",
       "baseline_run": "m1.6-small-baseline",
@@ -105,7 +101,7 @@
         "/model/artifact_revision",
         "/model/served_name"
       ],
-      "analysis_path": "analysis/medium-model.json"
+      "analysis_path": "../../docs/reviews/m1-review.md#m1-small-medium"
     }
   ],
   "templates": []

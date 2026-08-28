@@ -5,14 +5,18 @@ Language: [中文](README.md) | English
 LLM inference platform engineering on two DGX Spark nodes (GB10 Grace Blackwell / ARM64 / unified memory). Starting from a single-node runtime baseline, then layering on Kubernetes, observability, and control loops.
 This is a personal research testbed for platform-layer LLM workload behavior and engineering boundaries, not a general-purpose, multi-tenant, or product platform.
 
-**Every conclusion is backed by request-level raw data. Failures are preserved, never filtered.**
+**Every conclusion is backed by direct evidence and kept within what that evidence can support. Benchmark runs retain request-level records, including failures.**
 
-- Interactive results → [M1 Showcase](https://tennsoku.github.io/k8s-llm-serving-public/showcase/m1/)
-- Plan → [Roadmap](docs/Roadmap.md) · Current state → [Status](docs/context/current-status.md)
+- Interactive results → [M1 Showcase](https://tennsoku.github.io/k8s-llm-serving-public/showcase/m1/) · [M2 Showcase](https://tennsoku.github.io/k8s-llm-serving-public/showcase/m2/)
+- Plan → [Roadmap](docs/Roadmap.md) · Current progress → [Status](docs/context/current-status.md)
 
 ---
 
 ## Results at a glance
+
+[Status](docs/context/current-status.md) is the single source of truth for current progress. This section covers stable findings and their evidence boundaries.
+
+### M1 — Single-node vLLM baseline
 
 Qwen2.5-0.5B-Instruct · BF16 · TP=1 · vLLM (digest-pinned NGC ARM64 image) · single node
 Four workload shapes, 3 repetitions per point, **10,368 requests with 0 failures and 0 timeouts**.
@@ -35,9 +39,34 @@ Four workload shapes, 3 repetitions per point, **10,368 requests with 0 failures
 
 The 7B result reaches **65% of the estimated unified-memory bandwidth roofline** (273 GB/s ÷ 14 GB BF16 weights ≈ 19.5 tok/s). This is consistent with a memory-bandwidth constraint on decode, but does not by itself rule out scheduling or kernel effects.
 
+See the [M1 review](docs/reviews/m1-review.md) for the full findings and limitations.
+
+### M2 — Serving optimization boundaries
+
+[M2 review](docs/reviews/m2-review.md) — draft
+
+**Interpretation:** M2 was not a search for one globally optimal configuration. It mapped four conditional trade-offs instead:
+
+1. Prefix reuse reduced measured prefill work, but the evidence does not establish lower C1 end-to-end latency or cost.
+2. FP8 KV cache and online FP8 weight quantization showed different trade-offs in capacity, decode performance, and output quality.
+3. On the tested 512-token completion workload, the speculative configuration reduced TPOT and end-to-end latency but increased TTFT relative to the target-only baseline.
+4. The tested long-context range did not reach the first pressure or failure boundary.
+
+See the review for exact results, evidence, and limitations.
+
+### M3 Minimal — End-to-end Kubernetes GPU serving
+
+[Minimal scope and checkpoint](docs/milestone-plan/m3-plan-minimal.md) · [Working manifests](control-plane/) · [Current status](docs/context/current-status.md)
+
+**Observed Fact:** The private captures show both nodes reaching `Ready`, with cross-node Pod, Service, and DNS smoke checks passing in both directions. Both nodes exposed GPU extended resources and completed a CUDA workload. The vLLM Deployment reached `Ready` without restarts under the configured probes, and all four streaming requests sent through its Service returned HTTP 200 with no failures or timeouts.
+
+**Interpretation:** Together, these results establish a narrow functional path through the current DGX Spark, ARM64, Kubernetes, NVIDIA runtime, and vLLM stack. Full M3 and production-readiness work remain.
+
+**Evidence boundary:** The command and status captures remain gitignored private evidence; publication is deferred until full M3 closeout. This checkpoint did not test clean-machine rebuilds, long-term stability, capacity, Kubernetes overhead, or probe failure paths.
+
 ---
 
-## Three findings worth reading
+## Three representative findings from M1
 
 ### 1. Prefill and decode have entirely different cost structures
 
@@ -87,9 +116,9 @@ Handling:
 
 ---
 
-## Measurement method
+## M1/M2 serving benchmark methodology
 
-The engineering constraints behind the results above:
+The measurement practices behind the M1/M2 results:
 
 | Aspect | Approach |
 |---|---|
@@ -102,7 +131,7 @@ The engineering constraints behind the results above:
 | **Recomputability** | `derived/` must regenerate from `raw/`; flawed analysis is fixed and recomputed — `raw/` is never edited |
 | **Fixed configuration** | Node, image digest, model revision, server arguments and workload all recorded and fingerprinted |
 
-Single-entry replay: `serving/vllm/run-benchmark.sh --milestone <milestone> --config <workload.yaml> --node-label <label>`
+Replay entry point for M1/M2: `serving/vllm/run-benchmark.sh --milestone <milestone> --config <workload.yaml> --node-label <label>`
 
 ---
 
@@ -117,11 +146,7 @@ Single-entry replay: `serving/vllm/run-benchmark.sh --milestone <milestone> --co
 
 M0 qualified host CUDA, GPU containers, TCP/NCCL baselines, NIC counters and the RoCE data path, plus four-layer bootstrap replay.
 
-**Known boundaries**: GPUDirect RDMA is not active (`GDR 0`); cross-node model parallelism is unverified; Kubernetes GPU integration is measured starting in M3. Two-node results are not extrapolated to production DGX clusters.
-
----
-
-Current milestone state has a single owner: [Status](docs/context/current-status.md). Scope and exit criteria are in the [Roadmap](docs/Roadmap.md).
+**Known boundaries**: GPUDirect RDMA is not active (`GDR 0`); cross-node model parallelism has not been validated. Results from this two-node testbed are not extrapolated to production DGX clusters.
 
 ---
 
@@ -131,7 +156,8 @@ Current milestone state has a single owner: [Status](docs/context/current-status
 |---|---|
 | [`serving/vllm/`](serving/vllm/) | Server lifecycle scripts + benchmark pipeline (streaming client, runtime/system collectors, summary generation) |
 | [`benchmarks/`](benchmarks/) | Workload configs, public raw results, recomputable summaries |
-| [`showcase/m1/`](showcase/m1/) | M1 interactive report |
+| [`showcase/m1/`](showcase/m1/) · [`showcase/m2/`](showcase/m2/) | M1 / M2 interactive reports |
+| [`control-plane/`](control-plane/) | Working Kubernetes, GPU, and vLLM manifests for M3 Minimal |
 | [`labs/vllm-basics/`](labs/vllm-basics/README.md) | Runtime mechanism labs (Labs 0–4) |
 | [`docs/reviews/`](docs/reviews/) | Per-milestone conclusions, limitations and unknowns |
 | [`docs/experiments/`](docs/experiments/README.md) | Experiment directory convention and sanitization workflow |

@@ -4,53 +4,43 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="dark">
-  <meta name="description" content="Selected Comparisons for the M1 single-node vLLM baseline.">
-  <title>M1 Selected Comparisons · vLLM Baseline</title>
+  <meta name="description" content="Selected M2 serving optimization A/B comparisons.">
+  <title>M2 Selected Comparisons · Serving Optimization</title>
   <link rel="stylesheet" href="../shared/compare.css">
   <link rel="stylesheet" href="../shared/review-fragment.css">
 </head>
 <body>
   <header class="topbar">
-    <a class="brand" href="index.html" aria-label="返回 M1 showcase">
+    <a class="brand" href="index.html" aria-label="返回 M2 showcase">
       <span class="brand-mark" aria-hidden="true"></span>
-      <span>
-        <strong>M1 Showcase</strong>
-        <small>Selected evidence comparisons</small>
-      </span>
+      <span><strong>M2 Showcase</strong><small>Selected optimization comparisons</small></span>
     </a>
     <nav class="topnav" aria-label="Showcase navigation">
-      <a href="index.html">单 run 结论</a>
-      <span aria-current="page">对比</span>
+      <a href="index.html">总览与 run set</a>
+      <span aria-current="page">A/B 对比</span>
     </nav>
   </header>
 
   <main>
     <section class="hero" aria-labelledby="pageTitle">
-      <p class="eyebrow">M1.5 / M1.6 · SELECTED PAIRS</p>
-      <h1 id="pageTitle">Selected<br><span>Comparisons</span></h1>
-      <p class="hero-copy">只比较 manifest 中预先选择的 baseline / candidate。页面从两份 selected summary 计算中性 delta，同时把声明的变化轴、实际 context 差异和证据限制放在同一视图。</p>
+      <p class="eyebrow">M2.1–M2.3 · SELECTED PAIRS</p>
+      <h1 id="pageTitle">Serving<br><span>Comparisons</span></h1>
+      <p class="hero-copy">预先选择的 canonical A/B：页面从 published summaries 计算中性 delta，并在同一视图投影 canonical review。</p>
       <div id="pageMeta" class="chip-row" aria-label="Comparison manifest metadata"></div>
       <div id="pageError" class="notice notice-error" role="alert" hidden></div>
     </section>
 
     <section class="section" aria-labelledby="comparisonTitle">
       <header class="section-heading explorer-heading">
-        <div>
-          <p class="section-kicker">Selected Comparison</p>
-          <h2 id="comparisonTitle">Baseline ↔ Candidate</h2>
-        </div>
+        <div><p class="section-kicker">Selected Comparison</p><h2 id="comparisonTitle">Baseline ↔ Candidate</h2></div>
         <div class="picker-group">
           <div class="picker">
-            <label for="studySelect">选项对比</label>
-            <select id="studySelect" disabled>
-              <option>正在加载 comparisons.json…</option>
-            </select>
+            <label for="studySelect">实验对比</label>
+            <select id="studySelect" disabled><option>正在加载 comparisons.json…</option></select>
           </div>
           <div class="picker picker-small">
             <label for="concurrencySelect">Concurrency</label>
-            <select id="concurrencySelect" disabled>
-              <option>—</option>
-            </select>
+            <select id="concurrencySelect" disabled><option>—</option></select>
           </div>
         </div>
       </header>
@@ -75,41 +65,28 @@
 
         <div class="pair-grid" aria-label="Selected run pair">
           <article class="run-card">
-            <span class="run-role">BASELINE</span>
-            <h4 id="baselineLabel">—</h4>
-            <code id="baselineRunId">—</code>
+            <span class="run-role">BASELINE</span><h4 id="baselineLabel">—</h4><code id="baselineRunId">—</code>
             <dl id="baselineMeta" class="run-meta"></dl>
           </article>
           <div class="pair-arrow" aria-hidden="true">→</div>
           <article class="run-card">
-            <span class="run-role">CANDIDATE</span>
-            <h4 id="candidateLabel">—</h4>
-            <code id="candidateRunId">—</code>
+            <span class="run-role">CANDIDATE</span><h4 id="candidateLabel">—</h4><code id="candidateRunId">—</code>
             <dl id="candidateMeta" class="run-meta"></dl>
           </article>
         </div>
 
-        <div id="comparisonReview" class="review-fragment-host" aria-busy="true"></div>
+        <article id="comparisonReview" class="review-fragment-host" aria-busy="true"></article>
 
         <div class="diagnostic-grid">
           <section class="panel axis-panel" aria-labelledby="axisTitle">
             <div class="panel-heading">
-              <div>
-                <p class="section-kicker">Declared change</p>
-                <h4 id="axisTitle">OVAT axis</h4>
-              </div>
+              <div><p class="section-kicker">Declared change</p><h4 id="axisTitle">OVAT axis</h4></div>
               <code id="axisPath" aria-live="polite">—</code>
             </div>
             <div id="axisValues" class="axis-values" aria-live="polite" aria-atomic="true">
-              <div class="axis-value-card">
-                <span>Baseline</span>
-                <strong id="axisBaseline">—</strong>
-              </div>
+              <div class="axis-value-card"><span>Baseline</span><strong id="axisBaseline">—</strong></div>
               <span class="axis-arrow" aria-hidden="true">→</span>
-              <div class="axis-value-card">
-                <span>Candidate</span>
-                <strong id="axisCandidate">—</strong>
-              </div>
+              <div class="axis-value-card"><span>Candidate</span><strong id="axisCandidate">—</strong></div>
             </div>
             <div class="axis-panel-footer">
               <p id="axisNote" class="panel-note">实际值来自 summary context，不由页面预设。</p>
@@ -123,40 +100,23 @@
 
           <section class="panel" aria-labelledby="contextTitle">
             <div class="panel-heading">
-              <div>
-                <p class="section-kicker">Evidence diagnostics</p>
-                <h4 id="contextTitle">Matched context</h4>
-              </div>
+              <div><p class="section-kicker">Evidence diagnostics</p><h4 id="contextTitle">Matched context</h4></div>
               <span id="contextCount" class="mini-badge">—</span>
             </div>
             <div id="contextSummary" class="context-summary"></div>
-            <details class="context-details">
-              <summary>查看逐项 context 诊断</summary>
-              <div id="contextDiagnostics" class="context-diagnostics"></div>
-            </details>
+            <details class="context-details"><summary>查看逐项 context 诊断</summary><div id="contextDiagnostics" class="context-diagnostics"></div></details>
           </section>
         </div>
 
         <section id="metricsSection" class="content-section" aria-labelledby="metricsTitle">
           <div class="subheading">
-            <div>
-              <p class="section-kicker">Computed from summaries</p>
-              <h4 id="metricsTitle">Core metric delta</h4>
-            </div>
+            <div><p class="section-kicker">Computed from summaries</p><h4 id="metricsTitle">Core metric delta</h4></div>
             <p id="metricMethod">Baseline-relative delta；不编码 winner / regression</p>
           </div>
           <div class="table-shell">
             <table>
               <caption class="sr-only">Baseline and candidate core metric comparison</caption>
-              <thead>
-                <tr>
-                  <th scope="col">Metric</th>
-                  <th scope="col">Baseline</th>
-                  <th scope="col">Candidate</th>
-                  <th scope="col">Absolute Δ</th>
-                  <th scope="col">Relative Δ</th>
-                </tr>
-              </thead>
+              <thead><tr><th scope="col">Metric</th><th scope="col">Baseline</th><th scope="col">Candidate</th><th scope="col">Absolute Δ</th><th scope="col">Relative Δ</th></tr></thead>
               <tbody id="metricRows"></tbody>
             </table>
           </div>
@@ -164,10 +124,7 @@
 
         <section id="shapeSection" class="content-section" aria-labelledby="shapeTitle">
           <div class="subheading">
-            <div>
-              <p class="section-kicker">Observed workload</p>
-              <h4 id="shapeTitle">Actual token shape</h4>
-            </div>
+            <div><p class="section-kicker">Observed workload</p><h4 id="shapeTitle">Actual token shape</h4></div>
             <p>按 selected concurrency 的 successful requests 汇总</p>
           </div>
           <div id="shapeGrid" class="shape-grid"></div>
@@ -175,10 +132,7 @@
 
         <section class="content-section outcome-section" aria-labelledby="outcomeTitle">
           <div class="subheading">
-            <div>
-              <p class="section-kicker">Execution result</p>
-              <h4 id="outcomeTitle">Outcome &amp; failure envelope</h4>
-            </div>
+            <div><p class="section-kicker">Execution result</p><h4 id="outcomeTitle">Outcome &amp; failure envelope</h4></div>
             <p id="outcomeNote">—</p>
           </div>
           <div id="outcomeGrid" class="outcome-grid"></div>
@@ -187,7 +141,7 @@
 
         <details class="evidence-drawer">
           <summary>Supporting evidence &amp; source links</summary>
-          <p>Canonical review、baseline summary 与 candidate summary 均在新标签页打开。hash 与 fingerprint 仅用于匹配 context，不构成授权或可信度判断。</p>
+          <p>Review、baseline summary 与 candidate summary 均在新标签页打开。hash 与 fingerprint 只作 context 诊断。</p>
           <nav id="evidenceLinks" class="evidence-links" aria-label="Comparison evidence links"></nav>
         </details>
       </article>
@@ -195,22 +149,15 @@
 
     <section id="plannedSection" class="section planned-section" aria-labelledby="plannedTitle" hidden>
       <div class="section-heading">
-        <div>
-          <p class="section-kicker">Reserved contract</p>
-          <h2 id="plannedTitle">Planned comparisons</h2>
-        </div>
+        <div><p class="section-kicker">Reserved contract</p><h2 id="plannedTitle">Planned comparisons</h2></div>
         <span class="status-pill status-planned">template only</span>
       </div>
-      <p class="planned-copy">这些条目只保留结构，不进入 active selector，也不会尝试读取尚未固定的 summary。</p>
+      <p class="planned-copy">Planned 条目不进入 active selector，也不会读取未发布 summary。</p>
       <div id="plannedGrid" class="planned-grid"></div>
     </section>
   </main>
 
-  <footer>
-    <span>M1 Selected comparisons · explicit pairs only</span>
-    <a href="index.html">返回 M1 single-run showcase</a>
-  </footer>
-
+  <footer><span>M2 selected comparisons · published summaries</span><a href="index.html">返回 M2 总览</a></footer>
   <script type="module" src="compare.js"></script>
 </body>
 </html>

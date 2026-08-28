@@ -1,0 +1,98 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: vllm-deployment
+  labels:
+    app: vllm
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  progressDeadlineSeconds: 1500
+  selector:
+    matchLabels:
+      app: vllm
+  template:
+    metadata:
+      labels:
+        app: vllm
+    spec:
+      runtimeClassName: nvidia
+
+      nodeSelector:
+        kubernetes.io/hostname: spark-f603
+
+      containers:
+        - name: vllm-container
+          image: nvcr.io/nvidia/vllm@sha256:1de8e6bfdb4c81c1f31a806cc9b13b5c6352714a7cec87f4d24964bcc91159b2
+          command: ["vllm"]
+          args:
+            - serve
+            - /models/Qwen3-0.6B
+            - --host
+            - 0.0.0.0
+            - --port
+            - "8000"
+            - --served-model-name
+            - qwen3-0.6b
+            - --max-model-len
+            - "2048"
+            - --gpu-memory-utilization
+            - "0.15"
+          ports:
+            - name: http
+              containerPort: 8000
+          resources:
+            requests:
+              memory: "4Gi"
+              cpu: "1"
+              nvidia.com/gpu: 1
+            limits:
+              memory: "8Gi"
+              nvidia.com/gpu: 1
+          volumeMounts:
+            - name: model-volume
+              mountPath: /models/Qwen3-0.6B
+          # Probes
+          startupProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 20
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 120
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: http
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 2
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+            periodSeconds: 30
+            timeoutSeconds: 5
+            failureThreshold: 6
+
+      volumes:
+        - name: model-volume
+          hostPath:
+            path: /home/tensoku/models/Qwen3-0.6B
+            type: Directory
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: vllm-service
+spec:
+  selector:
+    app: vllm
+  ports:
+    - name: vllm-service-port
+      port: 6330
+      targetPort: http
+  type: ClusterIP

@@ -4,7 +4,7 @@
   "milestone": {
     "id": "m1",
     "title": "M1 — Single-Node vLLM Serving Baseline",
-    "analysis_path": "analysis/milestone.json"
+    "analysis_path": "../../docs/reviews/m1-review.md#m1-overview"
   },
   "default_entry": "short-short",
   "entries": [
@@ -15,7 +15,7 @@
       "source_status": "published",
       "expected_run_id": "20260814-m1.4-s-s",
       "summary_path": "../../benchmarks/raw-results/m1-vllm-baseline/20260814-m1.4-s-s/derived/summary.json",
-      "analysis_path": "analysis/short-short.json"
+      "analysis_path": "../../docs/reviews/m1-review.md#m1-short-short"
     },
     {
       "id": "short-long",
@@ -24,7 +24,7 @@
       "source_status": "published",
       "expected_run_id": "20260814-m1.4-s-l",
       "summary_path": "../../benchmarks/raw-results/m1-vllm-baseline/20260814-m1.4-s-l/derived/summary.json",
-      "analysis_path": "analysis/short-long.json"
+      "analysis_path": "../../docs/reviews/m1-review.md#m1-short-long"
     },
     {
       "id": "long-short",
@@ -33,7 +33,7 @@
       "source_status": "published",
       "expected_run_id": "20260814-m1.4-l-s",
       "summary_path": "../../benchmarks/raw-results/m1-vllm-baseline/20260814-m1.4-l-s/derived/summary.json",
-      "analysis_path": "analysis/long-short.json"
+      "analysis_path": "../../docs/reviews/m1-review.md#m1-long-short"
     },
     {
       "id": "long-long",
@@ -42,7 +42,7 @@
       "source_status": "published",
       "expected_run_id": "20260814-m1.4-l-l",
       "summary_path": "../../benchmarks/raw-results/m1-vllm-baseline/20260814-m1.4-l-l/derived/summary.json",
-      "analysis_path": "analysis/long-long.json"
+      "analysis_path": "../../docs/reviews/m1-review.md#m1-long-long"
     },
     {
       "id": "bounded-boundary",
@@ -51,7 +51,7 @@
       "source_status": "published",
       "expected_run_id": "20260814-m1.5-boundary",
       "summary_path": "../../benchmarks/raw-results/m1-vllm-baseline/20260814-m1.5-boundary/derived/summary.json",
-      "analysis_path": "analysis/bounded-boundary.json"
+      "analysis_path": "../../docs/reviews/m1-review.md#m1-bounded-boundary"
     },
     {
       "id": "m1.3-historical",
@@ -60,7 +60,7 @@
       "source_status": "published",
       "expected_run_id": "20260812-m1.3-C16-128",
       "summary_path": "../../benchmarks/raw-results/m1-vllm-baseline/20260812-m1.3-C16-128/derived/summary.json",
-      "analysis_path": "analysis/m1.3-historical.json"
+      "analysis_path": "../../docs/reviews/m1-review.md#m1-m13-historical"
     }
   ]
 }

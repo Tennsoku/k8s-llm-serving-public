@@ -112,7 +112,7 @@ startComparison({
       metricSet: "m2_speculative_v1",
       metricIds: coreMetricIds,
       axes: {
-        "runtime.speculative_decoding": {
+        "runtime.speculative-config": {
           label: "Speculative decoding",
           paths: ["/runtime/extra_args"]
         }

@@ -12,7 +12,7 @@
 
 ## 1. 为什么 SLO 必须绑定 workload class
 
-LLM 推理的延迟由输入长度、输出长度和并发共同决定，三者的影响机制还不一样。M1 的实测显示 input shape 会改变 TTFT，decode-heavy 与 prefill-heavy workload 的扩展行为也不同；结果数字与限制只见 [README](../../README.md#results-at-a-glance) 和 [M1 review](../reviews/m1.3-review.md)。
+LLM 推理的延迟由输入长度、输出长度和并发共同决定，三者的影响机制还不一样。M1 的实测显示 input shape 会改变 TTFT，decode-heavy 与 prefill-heavy workload 的扩展行为也不同；结果数字与限制只见 [README](../../README.md#results-at-a-glance) 和 [M1 review](../reviews/m1-review.md)。
 
 **一个跨 workload 的统一 TTFT 目标必然是错的**：对 short-input 太松，对 long-input 太紧。这是本文档存在的根本原因。
 

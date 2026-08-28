@@ -314,6 +314,6 @@ activity/noise，不把它与普通 Worker 等同。
 | Milestone | 结论入口 |
 |---|---|
 | **M0** Platform Qualification | [`reviews/m0-review.md`](reviews/m0-review.md) — host CUDA、GPU container、200 Gb RoCE、NCCL 基线、兼容性边界 |
-| **M1** Single-Node vLLM Baseline | [`reviews/m1.3-review.md`](reviews/m1.3-review.md) + [`showcase/m1/`](../showcase/m1/) — 四场景 operating references、最小 OVAT、bounded boundary、7B 兼容性 |
+| **M1** Single-Node vLLM Baseline | [`reviews/m1-review.md`](reviews/m1-review.md) + [`showcase/m1/`](../showcase/m1/) — 四场景 operating references、最小 OVAT、bounded boundary、7B 兼容性 |
 
 M0/M1 的范围与 Exit Criteria 原文见 [`Roadmap-v1-archive.md`](Roadmap-v1-archive.md) 的对应章节。

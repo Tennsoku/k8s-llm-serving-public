@@ -1,0 +1,36 @@
+{
+  "schema_version": 1,
+  "viewer_path": "../../benchmarks/reports/benchmark-summary-viewer.html",
+  "milestone": {
+    "id": "m2",
+    "title": "M2 — Serving Optimization Laboratory",
+    "analysis_path": "../../docs/reviews/m2-review.md#m2-overview"
+  },
+  "default_entry": "m2.4-long-context",
+  "entries": [
+    {
+      "id": "m2.4-long-context",
+      "label": "Long-context · 4k / 8k / 16k run set",
+      "stage": "M2.4 exploratory boundary check",
+      "source_status": "published",
+      "summary_set": [
+        {
+          "label": "4k target",
+          "expected_run_id": "20260824-m2-long-context-4k",
+          "summary_path": "../../benchmarks/raw-results/m2-serving-optimization/20260824-m2-long-context-4k/derived/summary.json"
+        },
+        {
+          "label": "8k target",
+          "expected_run_id": "20260824-m2-long-context-8k",
+          "summary_path": "../../benchmarks/raw-results/m2-serving-optimization/20260824-m2-long-context-8k/derived/summary.json"
+        },
+        {
+          "label": "16k target",
+          "expected_run_id": "20260824-m2-long-context-16k",
+          "summary_path": "../../benchmarks/raw-results/m2-serving-optimization/20260824-m2-long-context-16k/derived/summary.json"
+        }
+      ],
+      "analysis_path": "../../docs/reviews/m2-review.md#m2-long-context"
+    }
+  ]
+}
