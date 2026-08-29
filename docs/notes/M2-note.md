@@ -14,7 +14,7 @@ benchmark runner 长度也有点过于雷霆了，之前就已经列为技术债
 一个关于 16b 浮点精度的笔记：
 FP16 
 - 1 sign + 5 exponent + 10 mantissa bits
-- 高精度但动态范围小 → 适合推理。
+- 高精度但动态范围小 → 适合推理
 
 BF16
 - 1 sign + 8 exponent + 7 mantissa bits

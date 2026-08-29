@@ -19,7 +19,8 @@
 | M0 — Platform Qualification | ✅ [review](../reviews/m0-review.md) |
 | M1 — Single-Node vLLM Baseline | ✅ [review](../reviews/m1-review.md) · [showcase](../../showcase/m1/) |
 | M1.5 — Public Closeout / Repackage | ✅ [showcase](../../showcase/m1/) |
-| M2 — Serving 优化（量化 / 投机解码 / 前缀缓存） | Pre-close |
+| M2 — Serving 优化（量化 / 投机解码 / 前缀缓存） | ✅ [review](../reviews/m2-review.md) · [showcase](../../showcase/m2/) |
+| M2.5 — 多 adapter 准备 | 🚧 |
 | M3 — Kubernetes 与 GPU workload | 🚧 |
 | M4 — 可观测性、SLO 与 Tracing | ○ |
 | M5 — 路由 / 灰度 / 伸缩 / 故障 | ○ |
