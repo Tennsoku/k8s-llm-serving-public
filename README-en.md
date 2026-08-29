@@ -43,7 +43,7 @@ See the [M1 review](docs/reviews/m1-review.md) for the full findings and limitat
 
 ### M2 — Serving optimization boundaries
 
-[M2 review](docs/reviews/m2-review.md) — draft
+[M2 review](docs/reviews/m2-review.md)
 
 **Interpretation:** M2 was not a search for one globally optimal configuration. It mapped four conditional trade-offs instead:
 
@@ -56,7 +56,7 @@ See the review for exact results, evidence, and limitations.
 
 ### M3 Minimal — End-to-end Kubernetes GPU serving
 
-[Minimal scope and checkpoint](docs/milestone-plan/m3-plan-minimal.md) · [Working manifests](control-plane/) · [Current status](docs/context/current-status.md)
+[M3 Minimal review](docs/reviews/m3-minimal-review.md) · [Minimal scope and checkpoint](docs/milestone-plan/m3-plan-minimal.md) · [Working manifests](control-plane/) · [Current status](docs/context/current-status.md)
 
 **Observed Fact:** The private captures show both nodes reaching `Ready`, with cross-node Pod, Service, and DNS smoke checks passing in both directions. Both nodes exposed GPU extended resources and completed a CUDA workload. The vLLM Deployment reached `Ready` without restarts under the configured probes, and all four streaming requests sent through its Service returned HTTP 200 with no failures or timeouts.
 

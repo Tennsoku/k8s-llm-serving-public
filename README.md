@@ -43,7 +43,7 @@ Qwen2.5-0.5B-Instruct · BF16 · TP=1 · vLLM（digest-pinned NGC ARM64 镜像�
 
 ### M2 — Serving optimization boundaries
 
-[M2 review](docs/reviews/m2-review.md) - Draft
+[M2 review](docs/reviews/m2-review.md)
 
 **Interpretation**：M2 没有强行探索全局最优，但是界定了四类条件性收益：
 1. Prefix reuse 可以减少 measured prefill work，但不等价 C1 E2E 或成本收益
@@ -53,7 +53,7 @@ Qwen2.5-0.5B-Instruct · BF16 · TP=1 · vLLM（digest-pinned NGC ARM64 镜像�
 
 ### M3 Minimal — Kubernetes GPU Serving 最小闭环
 
-[Minimal 范围与 checkpoint](docs/milestone-plan/m3-plan-minimal.md) · [工作 manifests](control-plane/) · 进度见 [Status](docs/context/current-status.md)
+[M3 Minimal review](docs/reviews/m3-minimal-review.md) · [Minimal 范围与 checkpoint](docs/milestone-plan/m3-plan-minimal.md) · [工作 manifests](control-plane/) · 进度见 [Status](docs/context/current-status.md)
 
 **Observed Fact**：private capture 记录了两节点 `Ready` 与跨节点 Pod / Service / DNS smoke、两节点 GPU extended resource 与 CUDA compute，以及 probe-gated vLLM rollout；经 Service 的 4 个 streaming requests 均为 HTTP 200，0 失败、0 超时。
 

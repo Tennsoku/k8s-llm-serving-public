@@ -10,4 +10,8 @@
 
 在 setup k8s 的过程中出了一个比较严重的 incident。。。忘了 containerd 和 runc 是 k8s 和 docker 的共有 dependency 了， 在上 Ubuntu 发行版 containerd 的时候没仔细看 apt summary，把 docker-ce 和 containerd.io 一起带走了。docker 环境整个炸完，还好发现及时可以简单回滚。切记切记，这在看到 apt summary 的时候就应该停下来的。之前也了解过 k8s 底层这一块，怎么就没过脑子呢
 
+把设计的minimal基本都落地了。不过学到了 k8s 的记账和现有的 docker 并不共通，之后跑 workload 的时候需要格外小心，UMA 的特殊性导致如果 GPU vRAM 拿太多甚至会使得整个 node 的 memory 被占满，导致系统级 OOM 影响到 docker 和整个 node 的稳定性。之后的 workload 需要在拉起前优先确认 docker 的情况。
 
+修改了 dgxtop 专门分一个 tab 出来看 container
+
+Plugin 接入了 GPU 和 RoCE，不过现在 GPU 和 RoCE 的最小分块就是 1，只能靠 time slice 来做多任务调度。后续可以考虑做一个 scheduler 来做 GPU 和 RoCE 的分配？再说吧

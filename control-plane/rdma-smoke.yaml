@@ -1,0 +1,57 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: rdma-smoke-a
+spec:
+  hostNetwork: true
+  dnsPolicy: ClusterFirstWithHostNet
+  automountServiceAccountToken: false
+  restartPolicy: Never
+  nodeSelector:
+    kubernetes.io/hostname: spark-4151
+  tolerations:
+    - key: node-role.kubernetes.io/control-plane
+      operator: Exists
+      effect: NoSchedule
+  containers:
+    - name: tools
+      image: nvcr.io/nvidia/doca/doca:3.1.0-full-rt-host@sha256:35eb7362de0e73fc26c60a61789faa496c9e7d45318ef7df5068ad77b3a3d93f
+      command: ["/bin/bash", "-lc", "exec sleep infinity"]
+      securityContext:
+        capabilities:
+          add: ["IPC_LOCK"]
+      resources:
+        requests:
+          rdma/cx7_roce: 1
+        limits:
+          rdma/cx7_roce: 1
+
+---
+
+apiVersion: v1
+kind: Pod
+metadata:
+  name: rdma-smoke-b
+spec:
+  hostNetwork: true
+  dnsPolicy: ClusterFirstWithHostNet
+  automountServiceAccountToken: false
+  restartPolicy: Never
+  nodeSelector:
+    kubernetes.io/hostname: spark-f603
+  tolerations:
+    - key: node-role.kubernetes.io/control-plane
+      operator: Exists
+      effect: NoSchedule
+  containers:
+    - name: tools
+      image: nvcr.io/nvidia/doca/doca:3.1.0-full-rt-host@sha256:35eb7362de0e73fc26c60a61789faa496c9e7d45318ef7df5068ad77b3a3d93f
+      command: ["/bin/bash", "-lc", "exec sleep infinity"]
+      securityContext:
+        capabilities:
+          add: ["IPC_LOCK"]
+      resources:
+        requests:
+          rdma/cx7_roce: 1
+        limits:
+          rdma/cx7_roce: 1

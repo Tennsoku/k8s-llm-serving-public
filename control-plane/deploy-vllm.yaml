@@ -80,7 +80,7 @@ spec:
       volumes:
         - name: model-volume
           hostPath:
-            path: /home/tensoku/models/Qwen3-0.6B
+            path: <home>/models/Qwen3-0.6B
             type: Directory
 
 ---
