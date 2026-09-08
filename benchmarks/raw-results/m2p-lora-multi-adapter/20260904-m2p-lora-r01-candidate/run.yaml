@@ -1,0 +1,67 @@
+# Starting point for an experiment run. Milestones may add fields as needed.
+run_id: 20260904-m2p-lora-r01
+milestone: M2p
+purpose: exploratory
+timestamp_utc: 20260904T061713Z
+experiment: &id001
+  step: M2p
+  kind: smoke
+  status: finished
+  comparison_group: null
+  variant: smoke
+  axis: null
+  baseline_config_id: null
+
+git:
+  commit: null # 公开 repo 因 squash 不含该 commit
+  dirty: false
+
+environment:
+  node: spark-a
+
+runtime:
+  training:
+    image: nvcr.io/nvidia/pytorch@sha256:7531d90bcbe0e43e1f7363029c7e145ce90eebeb494a7b4695fdba0329d7c3c3
+    versions: {torch: "2.13.0a0+9186a08b2c.nv26.07", cuda: "13.3", transformers: "4.57.6", peft: "0.20.0", trl: "1.12.0", datasets: "5.0.0"}
+    container: {gpus: all, ipc: host, memory_limit_bytes: 68719476736, workdir: /workspace}
+    model_mount: {target: /models/Qwen3-8B, read_only: true}
+    sources: [raw/environment/train-container-start/command.txt, raw/environment/train-versions/stdout.log]
+  serving:
+    execution: cli_help_only
+    image: nvcr.io/nvidia/vllm@sha256:1de8e6bfdb4c81c1f31a806cc9b13b5c6352714a7cec87f4d24964bcc91159b2
+    image_label_version: "0.24.0+092c4842"
+    source: raw/environment/vllm-help-gpu/command.txt
+  telemetry: {scope: training, interval_seconds: 5}
+
+workload:
+  model:
+    id: Qwen/Qwen3-8B
+    path: /models/Qwen3-8B
+    revision: b968826d9c46dd6066d109eabc6255188de91218
+    revision_source: raw/environment/model-head/stdout.log
+  roles: [npc-merchant, npc-guard, quest-planner, lore-archivist]
+  dataset:
+    source: raw/datasets
+    synthetic: true
+    seed: 42
+    per_role: {train: 96, eval: 24}
+    template_families: {train: 4, eval: 2}
+    # 重放使用本 run 的落盘数据，当前 generate 已切换到扩展模板。
+  training:
+    adapters: [npc-merchant]
+    max_steps_by_attempt: {compat-train: 1, npc-merchant-s040: 40, npc-merchant-s080: 80}
+    learning_rate: 0.0001  # 各 attempt 的 log_history 首步记录。
+    logged_lr_schedule: linear_decay
+    seed: null  # 旧训练 metrics 未记录；不能用 dataset seed 代替。
+    lora: {r: 8, alpha: 16, dropout: 0.05, bias: none, task_type: CAUSAL_LM}
+    target_modules: [q_proj, k_proj, v_proj, o_proj]
+    # 以下为按现存 lora_train.py 补录的重放固定项，非历史 TrainingArguments 快照。
+    replay_fixed: {per_device_train_batch_size: 1, gradient_accumulation_steps: 8, bf16: true, weight_decay: 0.0, gradient_checkpointing: true, max_length: 512, loss: completion_only}
+    sources: [raw/training, raw/training/npc-merchant-s080/adapter/adapter_config.json]
+  evaluation:
+    peft: {adapter: npc-merchant, attempts: [npc-merchant-s040, npc-merchant-s080], cases_per_attempt: 12, case_indices: "000..011"}
+    # 解码固定项参照 scorer；历史评分 raw 未独立保存全部生成参数。
+    replay_decoding: {enable_thinking: false, do_sample: false, max_new_tokens: 128}
+    diagnostic: raw/score/npc-merchant-s080/diagnostic-20260907.jsonl  # 各诊断变体参数以逐行 kwargs 为准。
+
+outcome: failed

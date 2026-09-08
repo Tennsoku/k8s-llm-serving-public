@@ -1,0 +1,88 @@
+# Starting point for an experiment run. Milestones may add fields as needed.
+run_id: 20260907-m2p-lora-r01
+milestone: M2p
+purpose: canonical
+timestamp_utc: 20260907T052717Z
+experiment: &id001
+  step: M2p
+  kind: smoke
+  status: finished
+  comparison_group: null
+  variant: smoke
+  axis: null
+  baseline_config_id: null
+
+git:
+  commit: null # 公开 repo 因 squash 不含该 commit
+  dirty: false
+
+environment:
+  node: spark-a
+
+runtime:
+  training:
+    image: nvcr.io/nvidia/pytorch@sha256:7531d90bcbe0e43e1f7363029c7e145ce90eebeb494a7b4695fdba0329d7c3c3
+    versions: {torch: "2.13.0a0+9186a08b2c.nv26.07", cuda: "13.3", transformers: "4.57.6", peft: "0.20.0", trl: "1.12.0", datasets: "5.0.0"}
+    container: {gpus: all, ipc: host, memory_limit_bytes: 68719476736, workdir: /workspace}
+    model_mount: {target: /models/Qwen3-8B, read_only: true}
+    sources: [raw/environment/train-container-start/command.txt, raw/environment/train-versions/stdout.log]
+  serving:
+    image: nvcr.io/nvidia/vllm@sha256:1de8e6bfdb4c81c1f31a806cc9b13b5c6352714a7cec87f4d24964bcc91159b2
+    version: "0.24.0+092c4842.dev"
+    modes: [single, static_multi]
+    container: {gpus: all, ipc: host, memory_limit_bytes: 68719476736, bind: "127.0.0.1:8041"}
+    model_mount: {target: /models/Qwen3-8B, read_only: true}
+    adapter_mounts: {single: /adapter, static_multi: "/adapters/<role>", read_only: true}
+    served_model_name: qwen3-8b
+    dtype: bfloat16
+    generation_config: vllm
+    gpu_memory_utilization: 0.25
+    max_model_len: 8192
+    enable_lora: true
+    max_lora_rank: 8
+    single: {max_loras: 1, max_cpu_loras: 1}
+    static_multi: {max_loras: 4, max_cpu_loras: 4}
+    parallelism: {tensor: 1, pipeline: 1, data: 1}
+    speculative_config: null
+    quantization: null
+    sources: [raw/serving/multi-01/create/command.txt, raw/serving/behavior-01/logs/stdout.log]
+  telemetry: {scope: training, interval_seconds: 5}
+
+workload:
+  model:
+    id: Qwen/Qwen3-8B
+    path: /models/Qwen3-8B
+    revision: null  # 本 run 未独立捕获 HEAD；下面仅引用旧 run 的记录。
+    reference_revision: b968826d9c46dd6066d109eabc6255188de91218
+    revision_source: ../20260904-m2p-lora-r01/raw/environment/model-head/stdout.log
+  roles: [npc-merchant, npc-guard, quest-planner, lore-archivist]
+  dataset:
+    source: raw/datasets
+    synthetic: true
+    seed: 42
+    per_role: {train: 96, eval: 24}
+    template_families: {train: 12, eval: 2}
+    evaluation_groups: {development: "000..011", held_out: "012..023"}
+  training:
+    max_steps: 80  # 四个 <role>-s080 attempt，分别从 base 开始。
+    learning_rate: 0.0001
+    logged_lr_schedule: linear_decay
+    seed: 42
+    lora: {r: 8, alpha: 16, dropout: 0.05, bias: none, task_type: CAUSAL_LM}
+    target_modules: [q_proj, k_proj, v_proj, o_proj]
+    # 以下固定项取自 lora_train.py；未独立保存完整 TrainingArguments 快照。
+    replay_fixed: {per_device_train_batch_size: 1, gradient_accumulation_steps: 8, bf16: true, weight_decay: 0.0, gradient_checkpointing: true, max_length: 512, loss: completion_only}
+    sources: [raw/training, raw/adapters]
+  evaluation:
+    peft: {cases_per_role: 12, case_indices: "000..011"}
+    single: {requests_per_role: 1}
+    multi_individual: {requests_per_role: 1, concurrency: 1}
+    multi_mixed: {requests: 16, concurrency: 4, order: round_robin}
+    behavior: {adapter_requests: 96, base_requests: 24, concurrency: 1, base_model: qwen3-8b, base_cases: npc-merchant.eval.jsonl}
+    endpoint: http://127.0.0.1:8041/v1/chat/completions
+    # 解码固定项参照 lora_score.py；raw 未独立保存请求 body。
+    replay_decoding:
+      peft: {enable_thinking: false, do_sample: false, max_new_tokens: 128}
+      vllm: {enable_thinking: false, temperature: 0, max_tokens: 128}
+
+outcome: success

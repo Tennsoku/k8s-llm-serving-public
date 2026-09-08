@@ -56,7 +56,7 @@ See the review for exact results, evidence, and limitations.
 
 ### M3 Minimal — End-to-end Kubernetes GPU serving
 
-[M3 Minimal review](docs/reviews/m3-minimal-review.md) · [Minimal scope and checkpoint](docs/milestone-plan/m3-plan-minimal.md) · [Working manifests](control-plane/) · [Current status](docs/context/current-status.md)
+[M3 Minimal review](docs/reviews/m3-minimal-review.md) · [Minimal scope and checkpoint](docs/milestone-plan/m3-plan-minimal.md) · [Kubernetes manifests](kubernetes/) · [Current status](docs/context/current-status.md)
 
 **Observed Fact:** The private captures show both nodes reaching `Ready`, with cross-node Pod, Service, and DNS smoke checks passing in both directions. Both nodes exposed GPU extended resources and completed a CUDA workload. The vLLM Deployment reached `Ready` without restarts under the configured probes, and all four streaming requests sent through its Service returned HTTP 200 with no failures or timeouts.
 
@@ -157,7 +157,7 @@ M0 qualified host CUDA, GPU containers, TCP/NCCL baselines, NIC counters and the
 | [`serving/vllm/`](serving/vllm/) | Server lifecycle scripts + benchmark pipeline (streaming client, runtime/system collectors, summary generation) |
 | [`benchmarks/`](benchmarks/) | Workload configs, public raw results, recomputable summaries |
 | [`showcase/m1/`](showcase/m1/) · [`showcase/m2/`](showcase/m2/) | M1 / M2 interactive reports |
-| [`control-plane/`](control-plane/) | Working Kubernetes, GPU, and vLLM manifests for M3 Minimal |
+| [`kubernetes/`](kubernetes/) | Kubernetes, GPU, and vLLM manifests for M3, with exploratory inputs isolated |
 | [`labs/vllm-basics/`](labs/vllm-basics/README.md) | Runtime mechanism labs (Labs 0–4) |
 | [`docs/reviews/`](docs/reviews/) | Per-milestone conclusions, limitations and unknowns |
 | [`docs/experiments/`](docs/experiments/README.md) | Experiment directory convention and sanitization workflow |

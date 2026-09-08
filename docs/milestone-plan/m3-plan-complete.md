@@ -13,7 +13,7 @@ Minimal 是起点，不是完整验收。Complete 不重写一套集群或 Deplo
 
 1. Minimal checkpoint 必须能定位到 manifests、部署说明、private run 和 review 中的实测结果；失败的 minimal 先在原路径收敛，不复制一套替代实现。
 2. Complete 的进入位置见 [Roadmap 临时执行拆分](../Roadmap.md#临时执行拆分)；M2 close 依照 [m2-plan](m2-plan.md)，两边 raw、配置、review 和状态不得混写。
-3. Multi-adapter 步骤开始前检查 Roadmap M2.5 的 adapter 产物。没有真实可加载资产时，可继续 M3.1–M3.5，但 M3.6 和完整 M3 不能判定完成。
+3. Multi-adapter 步骤开始前检查 Roadmap M2p 的 adapter 产物。没有真实可加载资产时，可继续 M3.1–M3.5，但 M3.6 和完整 M3 不能判定完成。
 4. 逐项列出 Minimal 已证明、尚未执行和证据不足的内容。只有 direct evidence 可标为已证明；未执行是执行缺口，不是 `Unknown`。
 
 ## 执行顺序
@@ -77,7 +77,7 @@ Minimal checkpoint → gap analysis
 ## M3.6 — 打包与 Multi-adapter
 
 1. Helm 与 Kustomize 只选一种；复用现有 manifests，参数只覆盖 Minimal 与 Complete 已有的真实差异，不建立全局 values/schema。
-2. 加载 M2.5 提供的 adapter set，使单次请求能显式指定 adapter；保留 Pod args、加载日志、每个 adapter 的最小请求及 outcome。
+2. 加载 M2p 提供的 adapter set，使单次请求能显式指定 adapter；保留 Pod args、加载日志、每个 adapter 的最小请求及 outcome。
 3. 若 runtime 无法同时加载该集合，保留 compatibility failure；不要用不同 system prompt 冒充 multi-LoRA pass。
 4. 从记录的前置条件重放打包入口。成功标准是同一入口能重建已验证行为，不是发布 chart 或建设 registry。
 

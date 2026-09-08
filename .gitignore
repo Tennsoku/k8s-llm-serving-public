@@ -12,8 +12,7 @@ helper/
 .codex/
 
 # Local-only working notes/templates (drafts, job search) — must never reach the public repo
-*.private.md
-*.private.example
+*.private*
 
 # Interrupted publisher scratch/backup directories (staging may be unsanitized)
 benchmarks/raw-results/m0-platform-qualification/.*.staging.*/

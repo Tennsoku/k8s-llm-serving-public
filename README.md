@@ -53,7 +53,7 @@ Qwen2.5-0.5B-Instruct · BF16 · TP=1 · vLLM（digest-pinned NGC ARM64 镜像�
 
 ### M3 Minimal — Kubernetes GPU Serving 最小闭环
 
-[M3 Minimal review](docs/reviews/m3-minimal-review.md) · [Minimal 范围与 checkpoint](docs/milestone-plan/m3-plan-minimal.md) · [工作 manifests](control-plane/) · 进度见 [Status](docs/context/current-status.md)
+[M3 Minimal review](docs/reviews/m3-minimal-review.md) · [Minimal 范围与 checkpoint](docs/milestone-plan/m3-plan-minimal.md) · [Kubernetes manifests](kubernetes/) · 进度见 [Status](docs/context/current-status.md)
 
 **Observed Fact**：private capture 记录了两节点 `Ready` 与跨节点 Pod / Service / DNS smoke、两节点 GPU extended resource 与 CUDA compute，以及 probe-gated vLLM rollout；经 Service 的 4 个 streaming requests 均为 HTTP 200，0 失败、0 超时。
 
@@ -154,7 +154,7 @@ M0 已验证 host CUDA、GPU 容器、TCP/NCCL 基线、NIC counter 与 RoCE 数
 | [`serving/vllm/`](serving/vllm/) | 服务生命周期脚本 + benchmark pipeline（streaming client、runtime/system 采集、summary 生成） |
 | [`benchmarks/`](benchmarks/) | Workload 配置、公开原始结果、可重算 summary |
 | [`showcase/m1/`](showcase/m1/) · [`showcase/m2/`](showcase/m2/) | M1 / M2 交互式报告 |
-| [`control-plane/`](control-plane/) | M3 Minimal 的 Kubernetes、GPU 与 vLLM working manifests |
+| [`kubernetes/`](kubernetes/) | M3 的 Kubernetes、GPU 与 vLLM manifests；探索性配置单独隔离 |
 | [`labs/vllm-basics/`](labs/vllm-basics/README.md) | Runtime 机制学习实验（Labs 0–4） |
 | [`docs/reviews/`](docs/reviews/) | 各 milestone 结论、限制与 unknowns |
 | [`docs/experiments/`](docs/experiments/README.md) | 实验目录约定与脱敏流程 |

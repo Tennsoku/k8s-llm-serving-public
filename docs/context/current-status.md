@@ -8,7 +8,7 @@
 
 ---
 
-**最后更新**：2026-08-28
+**最后更新**：2026-09-08
 
 ---
 
@@ -18,9 +18,9 @@
 |---|---|
 | M0 — Platform Qualification | ✅ [review](../reviews/m0-review.md) |
 | M1 — Single-Node vLLM Baseline | ✅ [review](../reviews/m1-review.md) · [showcase](../../showcase/m1/) |
-| M1.5 — Public Closeout / Repackage | ✅ [showcase](../../showcase/m1/) |
+| M1p — Public Closeout / Repackage | ✅ [showcase](../../showcase/m1/) |
 | M2 — Serving 优化（量化 / 投机解码 / 前缀缓存） | ✅ [review](../reviews/m2-review.md) · [showcase](../../showcase/m2/) |
-| M2.5 — 多 adapter 准备 | 🚧 |
+| M2p — 多 adapter 准备 | ✅ [review](../reviews/m2p-review.md) |
 | M3 — Kubernetes 与 GPU workload | 🚧 |
 | M4 — 可观测性、SLO 与 Tracing | ○ |
 | M5 — 路由 / 灰度 / 伸缩 / 故障 | ○ |
@@ -30,10 +30,10 @@
 
 ## Next Steps
 
-M2 与 M3 Minimal 已正式 Closeout。
+M2p 与 M3 Minimal 已正式 Closeout。
 
-下一步是 M2.5 + M3 Full。
+M3 Full 继续；下一步按 [M2p review 的 handoff](../reviews/m2p-review.md#m3-handoff) 推进 M3.6 接入与 K8s 验证。
 
 ## Blockers
 
-无。
+无遗留执行阻塞。

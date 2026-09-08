@@ -10,9 +10,9 @@
 
 | 阶段 | 周次 | 计划工时 |
 |---|---|---:|
-| **M1.5** Repackage & 呈现修复 | W1 | 12 h |
+| **M1p** Repackage & 呈现修复 | W1 | 12 h |
 | **M2** Serving 优化实验室 | W1–W2 | 30 h |
-| **M2.5** 多 adapter 准备 | W2–W3 | 12 h |
+| **M2p** 多 adapter 准备 | W2–W3 | 12 h |
 | **M3** Kubernetes 基础与 GPU workload | W3–W5 | 50 h |
 | **M4** 可观测性、SLO 与 Tracing | W5–W6 | 35 h |
 | **M5** 路由 / 灰度 / 伸缩 / 故障 | W6–W8 | 45 h |
@@ -24,9 +24,9 @@
 
 ```text
         W1      W2      W3      W4      W5      W6      W7      W8
-M1.5   ████
+M1p    ████
 M2     ████    ██████
-M2.5           ██      ██
+M2p            ██      ██
 M3                     ████    ██████  ████
 M4                                     ████    ██████
 M5                                             ██      ██████  ████
@@ -46,7 +46,7 @@ Milestone 工作   24.5 h/week   (196 h / 8 weeks)
 
 ---
 
-## 2. M1.5 — Repackage & 呈现修复（W1，12 h）
+## 2. M1p — Repackage & 呈现修复（W1，12 h）
 
 **这不是技术 Milestone，是让前两个月的工作变得可见。** 目标是让 showcase、公开证据和项目入口在 fresh clone 中自洽；执行状态只见 [current-status](context/current-status.md)。
 
@@ -101,7 +101,7 @@ M1 的 benchmark pipeline 可直接复用；M2 的主要新增成本转为 featu
 
 ---
 
-## 4. M2.5 — 多 adapter 准备（W2–W3，12 h）
+## 4. M2p — 多 adapter 准备（W2–W3，12 h）
 
 ### 目标
 
@@ -134,7 +134,7 @@ Minimal 的 2–3 天 timebox 从本节既有预算中切出，不增加新的 M
 M2 overall pre-close → M3 Minimal → M2 close → M3 Complete
 ```
 
-[M3 Minimal](milestone-plan/m3-plan-minimal.md) 只做 3.1–3.3 的窄纵向闭环和一次功能实测，不满足完整 M3 Exit Criteria。[M3 Complete](milestone-plan/m3-plan-complete.md) 复用该闭环，再补齐 3.1–3.6 与本节全部验收项；M2.5 adapter 仍须在 3.6 前可用。
+[M3 Minimal](milestone-plan/m3-plan-minimal.md) 只做 3.1–3.3 的窄纵向闭环和一次功能实测，不满足完整 M3 Exit Criteria。[M3 Complete](milestone-plan/m3-plan-complete.md) 复用该闭环，再补齐 3.1–3.6 与本节全部验收项；M2p adapter 仍须在 3.6 前可用。
 
 ### 目标
 
@@ -155,7 +155,7 @@ activity/noise，不把它与普通 Worker 等同。
 | 3.3 | **Workload 建模与探针** | Deployment vs StatefulSet 的选择理由；requests/limits 与 QoS class；**`startupProbe` 针对 900 s 级模型加载的设计**（这是 LLM serving 的经典陷阱——用 liveness 兜加载会导致无限重启）；readiness 与 liveness 的职责分离 | 10 h |
 | 3.4 | **优雅终止** | `terminationGracePeriodSeconds` + `preStop` hook，保证 Pod 删除时**进行中的流式请求不被截断**。用 M1 的 benchmark client 量化：删 Pod 时的请求失败数与截断数，以验证 K8s 生命周期与 LLM 流式响应的交互。 | 8 h |
 | 3.5 | **模型缓存存储** | PVC 承载模型权重，冷启动 vs 热启动对比测量；init container 或 sidecar 的预热方案取舍 | 6 h |
-| 3.6 | **打包与多 adapter 服务** | Kustomize overlay 或 Helm chart；加载 M2.5 的 4–6 个 adapter 做 multi-LoRA 共池，单次请求可指定 adapter | 4 h |
+| 3.6 | **打包与多 adapter 服务** | Kustomize overlay 或 Helm chart；加载 M2p 的 4–6 个 adapter 做 multi-LoRA 共池，单次请求可指定 adapter | 4 h |
 
 ### Exit Criteria
 
@@ -302,9 +302,9 @@ activity/noise，不把它与普通 Worker 等同。
 | M8 Multi-Runtime | → S6 stretch | 锦上添花 |
 | M9 Production Simulation | → M5.5，收缩为三次演练 | 保留核心，去掉九场景矩阵 |
 | M10 Distributed Inference TP | → S3 stretch | M0 NCCL 已完成，增量成本低但优先级不高 |
-| **（v1 无）** | **新增 M1.5 呈现修复，12 h** | showcase 在公开 repo 上打不开 |
+| **（v1 无）** | **新增 M1p 呈现修复，12 h** | showcase 在公开 repo 上打不开 |
 | **（v1 无）** | **新增 M2 量化 / 投机解码 / 前缀缓存，30 h** | v1 列为 optional；现有 benchmark pipeline 可低边际成本复用 |
-| **（v1 无）** | **新增 M2.5 多 adapter 准备，12 h** | multi-LoRA 服务的前置；顺带给 optional 分布式训练留单节点基线 |
+| **（v1 无）** | **新增 M2p 多 adapter 准备，12 h** | multi-LoRA 服务的前置；顺带给 optional 分布式训练留单节点基线 |
 | **（v1 无）** | **分布式训练列为 S2 optional，30 h** | 硬件规模只支持有界的小规模实验，优先级低于推理主线 |
 
 ---

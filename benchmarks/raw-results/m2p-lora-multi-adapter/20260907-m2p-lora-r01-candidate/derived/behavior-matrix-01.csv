@@ -1,0 +1,16 @@
+eval_group,requested_model,npc-merchant,npc-guard,quest-planner,lore-archivist,failure
+all,lore-archivist,0,0,0,24,0
+all,npc-guard,0,24,0,0,0
+all,npc-merchant,22,0,0,0,2
+all,quest-planner,0,0,24,0,0
+all,qwen3-8b,0,0,0,0,24
+development,lore-archivist,0,0,0,12,0
+development,npc-guard,0,12,0,0,0
+development,npc-merchant,11,0,0,0,1
+development,quest-planner,0,0,12,0,0
+development,qwen3-8b,0,0,0,0,12
+held_out,lore-archivist,0,0,0,12,0
+held_out,npc-guard,0,12,0,0,0
+held_out,npc-merchant,11,0,0,0,1
+held_out,quest-planner,0,0,12,0,0
+held_out,qwen3-8b,0,0,0,0,12

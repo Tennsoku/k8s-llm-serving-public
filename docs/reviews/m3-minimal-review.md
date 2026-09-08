@@ -11,8 +11,8 @@
 | Checkpoint | Observed Fact | 直接证据 |
 |---|---|---|
 | 集群与网络 | Spark A control plane、Spark B Worker 均 `Ready`；Pod→Pod、Pod→Service、DNS+Service 双向 exit 0 | `system capture(private)` · `connectivity capture(private)` |
-| GPU 接入 | `RuntimeClass` 已创建，Device Plugin 2/2 Ready；两节点 Capacity/Allocatable 均为 1 GPU；两份 CUDA Pod 均 Succeeded、exit 0，矩阵结果均为有限值 | `GPU capture(private)` · [Spark A Pod](../../control-plane/gpu-test-pod-cp.yaml) · [Spark B Pod](../../control-plane/gpu-test-pod-worker.yaml) |
-| vLLM 与 probes | Deployment 显式申请 1 GPU 并固定到 Worker；Pod 从 `0/1` 进入 `1/1`，restart 为 0，Ready 后 EndpointSlice 有 endpoint | `rollout capture(private)` · [Deployment / Service](../../control-plane/deploy-vllm.yaml) |
+| GPU 接入 | `RuntimeClass` 已创建，Device Plugin 2/2 Ready；两节点 Capacity/Allocatable 均为 1 GPU；两份 CUDA Pod 均 Succeeded、exit 0，矩阵结果均为有限值 | `GPU capture(private)` · [Spark A Pod](../../kubernetes/gpu-test-pod-cp.yaml) · [Spark B Pod](../../kubernetes/gpu-test-pod-worker.yaml) |
+| vLLM 与 probes | Deployment 显式申请 1 GPU 并固定到 Worker；Pod 从 `0/1` 进入 `1/1`，restart 为 0，Ready 后 EndpointSlice 有 endpoint | `rollout capture(private)` · [Deployment / Service](../../kubernetes/deploy-vllm.yaml) |
 | 功能 smoke | case outcome 为 4/4 success；四条 request 均 `success=true`、HTTP 200、`timeout=false` | `case events(private)` · `requests(private)` |
 
 ## 范围、偏差与执行缺口

@@ -1,0 +1,64 @@
+
+--- raw/environment/train-imports-initial/command.txt ---
+docker exec m2p-train-20260904-m2p-lora-r01 python3 -c import\ torch\,transformers\,peft\,trl\,datasets 
+
+
+--- raw/environment/train-imports-initial/stdout.log ---
+
+
+--- raw/environment/train-imports-initial/stderr.log ---
+Traceback (most recent call last):
+  File "<string>", line 1, in <module>
+ModuleNotFoundError: No module named 'transformers'
+
+
+--- raw/environment/train-imports-initial/exit-code.txt ---
+1
+
+
+--- raw/environment/vllm-help/command.txt ---
+docker run --rm --entrypoint vllm nvcr.io/nvidia/vllm@sha256:1de8e6bfdb4c81c1f31a806cc9b13b5c6352714a7cec87f4d24964bcc91159b2 serve --help 
+
+
+--- raw/environment/vllm-help/stdout.log ---
+INFO 09-04 06:30:57 [importing.py:46] Triton is installed but 0 active driver(s) found (expected 1). Disabling Triton to prevent runtime errors.
+INFO 09-04 06:30:57 [importing.py:81] Triton not installed or not compatible; certain GPU-related functions will not be available.
+
+
+--- raw/environment/vllm-help/stderr.log ---
+W0904 06:30:58.030000 1 torch/utils/cpp_extension.py:178] No CUDA runtime is found, using CUDA_HOME='/usr/local/cuda'
+Traceback (most recent call last):
+  File "/usr/local/bin/vllm", line 6, in <module>
+    sys.exit(main())
+             ^^^^^^
+  File "/usr/local/lib/python3.12/dist-packages/vllm/entrypoints/cli/main.py", line 88, in main
+    cmd.subparser_init(subparsers).set_defaults(dispatch_function=cmd.cmd)
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/dist-packages/vllm/entrypoints/cli/serve.py", line 164, in subparser_init
+    serve_parser = make_arg_parser(serve_parser)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/dist-packages/vllm/entrypoints/openai/cli_args.py", line 382, in make_arg_parser
+    parser = AsyncEngineArgs.add_cli_args(parser)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/dist-packages/vllm/engine/arg_utils.py", line 2675, in add_cli_args
+    parser = EngineArgs.add_cli_args(parser)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/dist-packages/vllm/engine/arg_utils.py", line 1488, in add_cli_args
+    vllm_kwargs = get_kwargs(VllmConfig)
+                  ^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/dist-packages/vllm/engine/arg_utils.py", line 410, in get_kwargs
+    return copy.deepcopy(_compute_kwargs(cls))
+                         ^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/dist-packages/vllm/engine/arg_utils.py", line 311, in _compute_kwargs
+    default = default.default_factory()  # type: ignore[call-arg]
+              ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/dist-packages/pydantic/_internal/_dataclasses.py", line 121, in __init__
+    s.__pydantic_validator__.validate_python(ArgsKwargs(args, kwargs), self_instance=s)
+  File "/usr/local/lib/python3.12/dist-packages/vllm/config/device.py", line 56, in __post_init__
+    raise RuntimeError(
+RuntimeError: Failed to infer device type, please set the environment variable `VLLM_LOGGING_LEVEL=DEBUG` to turn on verbose logging to help debug the issue.
+
+
+--- raw/environment/vllm-help/exit-code.txt ---
+1
+
