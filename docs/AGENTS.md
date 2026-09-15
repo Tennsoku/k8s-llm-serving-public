@@ -62,7 +62,7 @@ README、Roadmap、milestone 计划、review 里出现"当前进行中""已完�
 
 ## 归档
 
-`docs/context/m0-*.md`、`docs/context/PUBLICATION-CHECKLIST.md`、`docs/Roadmap-v1-archive.md` 是历史归档。
+`docs/context/m0-*.md`、`docs/context/PUBLICATION-CHECKLIST.md`、`docs/Roadmap-v1-archive.md`、`docs/Roadmap-v2-archive.md` 是历史归档。
 
 - 不更新它们
 - 不引用它们的流程作为当前标准

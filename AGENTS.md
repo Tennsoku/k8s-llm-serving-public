@@ -72,7 +72,7 @@ Milestone 计划指单个 milestone 的具体落地计划，全局 roadmap 在�
 | 技术决策与取舍 | `docs/adr/ADR-*.md` |
 | 指标语义与 SLO | `docs/SLO/inference-service-slo.md` |
 | Agent 行为规则 | `AGENTS.md` + 子目录 `AGENTS.md` |
-| 历史全量计划（已归档） | `docs/Roadmap-v1-archive.md` |
+| 历史计划（已归档） | `docs/Roadmap-v1-archive.md`、`docs/Roadmap-v2-archive.md` |
 
 需要在别处提及该事实时**只放链接**，不复制数值、不复制表格、不复制状态。
 
@@ -197,10 +197,11 @@ Milestone 计划指单个 milestone 的具体落地计划，全局 roadmap 在�
 3. `docs/Roadmap.md` — 当前阶段的范围与 exit criteria
 4. 任务直接相关的 owner 文件（查 §3）
 
-以下文件已停用或属历史归档。**不读、不更新、不引用其流程为当前标准、不作为新文档模板**，除非任务明确涉及 M0：
+以下文件已停用或属历史归档。**不读、不更新、不引用其流程为当前标准、不作为新文档模板**，除非任务明确涉及对应历史版本（v1 的 M0 任务亦可读取）：
 
 ```text
 docs/Roadmap-v1-archive.md
+docs/Roadmap-v2-archive.md
 ```
 
 M0 的 evidence / publication 工作流是**一次性历史产物**，不是后续 milestone 的范式。

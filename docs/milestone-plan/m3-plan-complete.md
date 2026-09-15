@@ -13,19 +13,18 @@ Minimal 是起点，不是完整验收。Complete 不重写一套集群或 Deplo
 
 1. Minimal checkpoint 必须能定位到 manifests、部署说明、private run 和 review 中的实测结果；失败的 minimal 先在原路径收敛，不复制一套替代实现。
 2. Complete 的进入位置见 [Roadmap 临时执行拆分](../Roadmap.md#临时执行拆分)；M2 close 依照 [m2-plan](m2-plan.md)，两边 raw、配置、review 和状态不得混写。
-3. Multi-adapter 步骤开始前检查 Roadmap M2p 的 adapter 产物。没有真实可加载资产时，可继续 M3.1–M3.5，但 M3.6 和完整 M3 不能判定完成。
+3. Multi-adapter 步骤开始前检查 [M2p review handoff](../reviews/m2p-review.md#m3-handoff) 的 adapter 产物。没有真实可加载资产时，可继续 M3.1–M3.5，但 M3.6 和完整 M3 不能判定完成。
 4. 逐项列出 Minimal 已证明、尚未执行和证据不足的内容。只有 direct evidence 可标为已证明；未执行是执行缺口，不是 `Unknown`。
 
 ## 执行顺序
 
 ```text
-Minimal checkpoint → gap analysis
+Minimal checkpoint → 只读现场复核 / gap analysis → M3.6 早期接入 smoke
   → M3.1 从零重建与拓扑说明
   → M3.2 GPU 接入重放
-  → M3.3 workload/probe 异常路径
+  → M3.6 单一打包入口与 adapter 重放
+  → M3.5 模型缓存冷/热启动 → M3.3 workload/probe 校准与异常路径
   → M3.4 流式请求优雅终止
-  → M3.5 模型缓存冷/热启动
-  → M3.6 单一打包路径与 multi-adapter
   → K8s 单副本 / M1 裸机受控对照 → review
 ```
 
@@ -43,9 +42,9 @@ Minimal checkpoint → gap analysis
 ## M3.1 — 可复现集群
 
 1. 把 Minimal 中实际成功的主机前置、控制面、CNI、join、label/taint 和验证步骤收敛为小型脚本加说明；记录 exact versions、输入、命令、预期观察和失败恢复点。
-2. 给出 CNI、控制面位置及 label/taint 的最小选择理由，理由只服务两 Spark testbed，不外推生产集群。
+2. 给出 CNI、控制面位置及 label/taint 的最小选择理由。只针对目前组成的 Spark testbed，不外推生产集群。
 3. 经授权后执行一次受控的从零重建；分层保留 control plane、CNI、每个 Worker join 和重建后 node conditions。脚本和说明必须来自被重放的版本。
-4. 若控制面与 workload 共用 Spark，采集 control-plane 活动并把潜在干扰列为限制；不把两台 Spark 描述成生产 DGX 集群。
+4. 若控制面与 workload 共用 Spark，采集 control-plane 活动并把潜在干扰列为限制。
 
 ## M3.2 — GPU 接入重放
 
@@ -65,7 +64,7 @@ Minimal checkpoint → gap analysis
 1. 固定一个足够跨越删除时刻的 streaming workload，记录请求开始、首 token、Pod 删除、末 token、finish reason 和 client outcome 的统一时间线。
 2. 对比未配置与配置 `preStop` + `terminationGracePeriodSeconds` 的两个小型 run；除终止策略外保持 image、model、prompt、sampling 和删除时点一致。
 3. 报告总请求、失败、timeout、完成和截断数，以及 Pod 从 deletion timestamp 到退出的时长。只有 client 收到完整结束语义才算未截断。
-4. 找到能让本次固定 workload 完成的有界配置即可；不搜索全局最优 grace period。PDB、rolling update 和 canary 留给 M5。
+4. 找到能让本次固定 workload 完成的有界配置即可；不搜索全局最优 grace period。发布与回滚见 [Roadmap M5](../Roadmap.md#7-m5--服务生命周期与最小弹性闭环2228-h)，canary 见 [Roadmap M6](../Roadmap.md#8-m6--深度观测灰度与韧性扩展后续)。
 
 ## M3.5 — 模型缓存冷/热启动
 
@@ -91,4 +90,4 @@ Minimal checkpoint → gap analysis
 
 ## 不做
 
-不做 HA/生产集群外推、自定义 CRD/controller/scheduler、GPU sharing/MIG、集群发行版矩阵、全局 schema、自动参数搜索或性能最优；不提前建设 M4 的 Prometheus/SLO/Tracing，也不提前建设 M5 的 gateway、rolling/canary、autoscaling 和故障演练。
+不做 HA/生产集群外推、自定义 CRD/controller/scheduler、GPU sharing/MIG、集群发行版矩阵、全局 schema、自动参数搜索或性能最优；不提前建设 [Roadmap](../Roadmap.md) 中 M4 的 metrics/SLO（含早期 Tracing smoke）、M5 的 gateway/rolling/rollback/autoscaling/故障实测，以及 M6 的集中日志/完整 Tracing/canary/路由深化。

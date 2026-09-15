@@ -6,7 +6,7 @@
 能否在单台 DGX Spark 上，以同一 exact-revision `Qwen/Qwen3-8B` post-trained base、固定 non-thinking
 chat template 可复现地生成 4 个行为可区分的 LoRA，由 pinned vLLM 共池并仅通过 API `model` 选择？
 
-M2p 为 M3.6/M5 准备资产，不是训练性能 Milestone；吞吐与统一内存占用仅作有界单节点基线。
+M2p 为 M3.6 与 [后续路由对照](../Roadmap.md#8-m6--深度观测灰度与韧性扩展后续) 准备资产，不是训练性能 Milestone；吞吐与统一内存占用仅作有界单节点基线。
 
 ## 模型选择、进入条件与范围决定
 1. 固定复用 M2.3 已验证的 `Qwen/Qwen3-8B` post-trained 本地 snapshot 与 exact revision；
