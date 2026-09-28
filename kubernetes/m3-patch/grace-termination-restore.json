@@ -1,0 +1,17 @@
+{
+  "spec": {
+    "template": {
+      "spec": {
+        "terminationGracePeriodSeconds": 30,
+        "containers": [
+          {
+            "name": "vllm-container",
+            "lifecycle": {
+              "preStop": null
+            }
+          }
+        ]
+      }
+    }
+  }
+}

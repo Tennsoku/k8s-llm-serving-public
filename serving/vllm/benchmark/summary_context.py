@@ -50,6 +50,11 @@ def _workload_identity(config: dict[str, Any]) -> dict[str, Any] | None:
     identity["prompt_sha256"] = _prompt_sha256(config)
     sampling = config.get("sampling")
     identity["sampling"] = copy.deepcopy(sampling)
+    serving = {key: True for key in ("enable_thinking", "ignore_eos")
+               if config.get("serving", {}).get(key, False)}
+    # Keep historical identities unchanged when both switches are disabled.
+    if serving:
+        identity["serving"] = serving
     return identity
 
 
@@ -95,6 +100,8 @@ def _summary_configuration(config: dict[str, Any] | None) -> dict[str, Any]:
         "runtime": copy.deepcopy(config["runtime"]),
         "workload": workload,
         "sampling": copy.deepcopy(config["sampling"]),
+        "serving": {key: config.get("serving", {}).get(key, False)
+                    for key in ("enable_thinking", "ignore_eos")},
         "warmup": copy.deepcopy(config["warmup"]),
         "sweep": copy.deepcopy(config["sweep"]),
         "metrics": copy.deepcopy(config["metrics"]),

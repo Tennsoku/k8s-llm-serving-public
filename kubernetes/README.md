@@ -19,6 +19,26 @@ manifest。M3 范围与验收项见 [Roadmap](../docs/Roadmap.md#5-m3--kubernete
 本目录不是可直接递归 apply 的 bundle：`kubeadm` 配置不是 Kubernetes API object，且
 `experiments/` 明确不属于默认路径；从零重建的范围与验收以 Roadmap M3.1 为准。
 
+## 双节点网络重放
+
+使用 [test-node2node-network.sh](../scripts/experiments/test-node2node-network.sh) 执行 Pod IP、
+Service IP、Service DNS 的双向检查；先将 `NODE_A`、`NODE_B` 设为两个实际节点名：
+
+```bash
+bash scripts/experiments/test-node2node-network.sh \
+  <run-id> "$NODE_A" "$NODE_B"
+```
+
+执行会创建独立证据目录及专用 namespace，内含两个不申请 GPU 的 Pod 和两个 Service。
+脚本以 Pod HTTP Ready → EndpointSlice ready → 六条请求衔接；裸 Pod 使用 `kubectl wait`，
+无需 `rollout status`。每条请求必须返回对端 Pod 名才算通过；任一步失败即停止。
+命令、输出、退出码和输入/现场快照由现有 capture helper 保存，目录约定见
+[实验 owner](../docs/experiments/README.md)。脚本面向 kubectl v1.36.4，使用原网络 smoke 的固定镜像。
+
+成功后自动删除本轮 namespace；失败时采集诊断并保留 namespace，打印清理命令。
+检查证据后再清理失败现场，重试使用新 run ID。执行前确认 context；操作授权遵循根
+[AGENTS.md](../AGENTS.md#9-停手并询问)。此脚本不执行公开或脱敏。
+
 ## 探索性 manifest
 
 [`experiments/`](experiments/) 中的文件不属于 M3 Exit Criteria，也不进入上述默认路径：

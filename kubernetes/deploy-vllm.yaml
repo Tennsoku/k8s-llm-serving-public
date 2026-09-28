@@ -20,7 +20,12 @@ spec:
       runtimeClassName: nvidia
 
       nodeSelector:
-        kubernetes.io/hostname: spark-f603
+        kubernetes.io/hostname: spark-4151 # Kustomize selects the worker and its PVC bindings.
+
+      tolerations:
+        - key: node-role.kubernetes.io/control-plane
+          operator: Exists
+          effect: NoSchedule
 
       containers:
         - name: vllm-container
@@ -28,17 +33,33 @@ spec:
           command: ["vllm"]
           args:
             - serve
-            - /models/Qwen3-0.6B
+            - /models/Qwen3-8B
             - --host
             - 0.0.0.0
             - --port
             - "8000"
             - --served-model-name
-            - qwen3-0.6b
+            - qwen3-8b
             - --max-model-len
-            - "2048"
+            - "8192"
             - --gpu-memory-utilization
-            - "0.15"
+            - "0.4"
+            # LoRA configuration
+            - --enable-lora
+            - --lora-modules
+            - npc-merchant=/adapters/npc-merchant
+            - npc-guard=/adapters/npc-guard
+            - quest-planner=/adapters/quest-planner
+            - lore-archivist=/adapters/lore-archivist
+            - --max-loras
+            - "4"
+            - --max-cpu-loras
+            - "4"
+            - --max-lora-rank
+            - "8"
+            # Graceful termination
+            - --shutdown-timeout
+            - "120"
           ports:
             - name: http
               containerPort: 8000
@@ -52,7 +73,11 @@ spec:
               nvidia.com/gpu: 1
           volumeMounts:
             - name: model-volume
-              mountPath: /models/Qwen3-0.6B
+              mountPath: /models/Qwen3-8B
+              readOnly: true
+            - name: adapters-volume
+              mountPath: /adapters
+              readOnly: true
           # Probes
           startupProbe:
             httpGet:
@@ -79,9 +104,67 @@ spec:
 
       volumes:
         - name: model-volume
+          persistentVolumeClaim:
+            claimName: qwen3-8b-model-pvc
+
+        - name: adapters-volume
+          persistentVolumeClaim:
+            claimName: adapters-pvc
+
+        # Only init sees the source. The target PVC uses a separate cache directory.
+        - name: source-models-volume
           hostPath:
-            path: /home/tensoku/models/Qwen3-0.6B
+            path: /home/tensoku/models/Qwen3-8B
             type: Directory
+
+      initContainers:
+        - name: model-init-container
+          # Reuse the pinned serving image's Python; no extra image or dependency.
+          image: nvcr.io/nvidia/vllm@sha256:1de8e6bfdb4c81c1f31a806cc9b13b5c6352714a7cec87f4d24964bcc91159b2
+          command: ["python3", "-u", "-c"]
+          args:
+            - |
+              import filecmp
+              import shutil
+              import time
+              from pathlib import Path
+
+              source = Path("/source-models/Qwen3-8B")
+              target = Path("/target-models/Qwen3-8B")
+              completed = target / ".model-copy-complete"
+              started = time.monotonic()
+              # This experiment uses a fixed, previously validated source model.
+              # Keep source/cache unchanged between runs; main mounts cache read-only.
+              # Warm means files were filled, not that OS/GPU memory is warm.
+              if completed.is_file():
+                  print("Warm model cache: skipping copy and byte comparison.")
+              else:
+                  if not (source / "config.json").is_file():
+                      raise RuntimeError(f"Source model lacks config.json: {source}")
+                  print(f"Filling empty or incomplete model cache: {source} -> {target}")
+                  shutil.copytree(source, target, dirs_exist_ok=True)
+                  print(f"Copy complete after {time.monotonic() - started:.3f}s; comparing all files.")
+                  pending = [(source, target)]
+                  while pending:
+                      left, right = pending.pop()
+                      comparison = filecmp.dircmp(left, right, ignore=[], hide=[])
+                      if comparison.left_only or comparison.right_only or comparison.common_funny:
+                          raise RuntimeError(f"Directory mismatch: {left} -> {right}; "
+                                             f"source-only={comparison.left_only}, target-only={comparison.right_only}, "
+                                             f"uncomparable={comparison.common_funny}")
+                      _, different, unreadable = filecmp.cmpfiles(left, right, comparison.common_files, shallow=False)
+                      if different or unreadable:
+                          raise RuntimeError(f"File comparison failed in {right}: different={different}, unreadable={unreadable}")
+                      pending.extend((left / name, right / name) for name in comparison.common_dirs)
+                  # Only a fully copied and byte-compared tree receives this marker.
+                  completed.write_text("Copy and recursive byte comparison completed.\n")
+                  print(f"Model cache verified and marked complete after {time.monotonic() - started:.3f}s.")
+          volumeMounts:
+            - name: model-volume
+              mountPath: /target-models/Qwen3-8B
+            - name: source-models-volume
+              mountPath: /source-models/Qwen3-8B
+              readOnly: true
 
 ---
 apiVersion: v1
@@ -96,3 +179,31 @@ spec:
       port: 6330
       targetPort: http
   type: ClusterIP
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: qwen3-8b-model-pvc
+spec:
+  storageClassName: model-local
+  volumeName: qwen3-8b-model-pv-4151
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 30Gi
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: adapters-pvc
+spec:
+  storageClassName: model-local
+  volumeName: adapters-pv-4151
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 5Gi

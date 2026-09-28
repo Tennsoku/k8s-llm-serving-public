@@ -1,0 +1,49 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: default
+resources:
+  - deploy-vllm.yaml
+  - storage-vllm.yaml
+# Cold and warm reuse this bundle and the same PVCs; only cache contents change.
+# These patches keep the workload and both explicit PV bindings on the worker.
+patches:
+  - target:
+      group: apps
+      version: v1
+      kind: Deployment
+      name: vllm-deployment
+    patch: |-
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        name: vllm-deployment
+      spec:
+        template:
+          spec:
+            nodeSelector:
+              kubernetes.io/hostname: spark-f603
+  - target:
+      group: ""
+      version: v1
+      kind: PersistentVolumeClaim
+      name: qwen3-8b-model-pvc
+    patch: |-
+      apiVersion: v1
+      kind: PersistentVolumeClaim
+      metadata:
+        name: qwen3-8b-model-pvc
+      spec:
+        volumeName: qwen3-8b-model-pv-f603
+
+  - target:
+      group: ""
+      version: v1
+      kind: PersistentVolumeClaim
+      name: adapters-pvc
+    patch: |-
+      apiVersion: v1
+      kind: PersistentVolumeClaim
+      metadata:
+        name: adapters-pvc
+      spec:
+        volumeName: adapters-pv-f603

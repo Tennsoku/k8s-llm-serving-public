@@ -135,15 +135,17 @@ def case_event(
 async def run_case(args: argparse.Namespace, config: dict[str, Any]) -> int:
     workload = config["workload"]
     sampling = config["sampling"]
+    serving = config.get("serving", {})
     cache_identity = workload["cache_identity"]
     payload = {
-        "chat_template_kwargs": {"enable_thinking": False},  # hardcode the chat template kwargs to disable thinking for now
+        "chat_template_kwargs": {"enable_thinking": serving.get("enable_thinking", False)},
         "model": args.model,
         "max_tokens": workload["max_output_tokens"],
         "temperature": sampling["temperature"],
         "seed": sampling["seed"],
         "stream": True,
         "stream_options": {"include_usage": True},
+        "ignore_eos": serving.get("ignore_eos", False),
     }
     url = f"{args.base_url.rstrip('/')}/v1/chat/completions"
     started_ns = time.monotonic_ns()

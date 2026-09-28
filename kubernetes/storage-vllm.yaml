@@ -1,0 +1,104 @@
+# Local cache directories must exist on their named nodes before deployment.
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: model-local
+provisioner: kubernetes.io/no-provisioner
+volumeBindingMode: WaitForFirstConsumer
+
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: qwen3-8b-model-pv-4151
+  labels:
+    app: vllm
+spec:
+  capacity:
+    storage: 30Gi
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: model-local
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+        - matchExpressions:
+            - key: kubernetes.io/hostname
+              operator: In
+              values:
+                - spark-4151
+  local:
+    path: /home/tensoku/models/Qwen3-8B-cache
+
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: adapters-pv-4151
+spec:
+  storageClassName: model-local
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+        - matchExpressions:
+            - key: kubernetes.io/hostname
+              operator: In
+              values:
+                - spark-4151
+  capacity:
+    storage: 5Gi
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  local:
+    path: /home/tensoku/workspace/k8s-llm-serving/artifacts/private/m2p/20260907-m2p-lora-r01/adapters
+
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: qwen3-8b-model-pv-f603
+  labels:
+    app: vllm
+spec:
+  capacity:
+    storage: 30Gi
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: model-local
+  local:
+    path: /home/tensoku/models/Qwen3-8B-cache
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+        - matchExpressions:
+            - key: kubernetes.io/hostname
+              operator: In
+              values:
+                - spark-f603
+
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: adapters-pv-f603
+spec:
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+        - matchExpressions:
+            - key: kubernetes.io/hostname
+              operator: In
+              values:
+                - spark-f603
+  capacity:
+    storage: 5Gi
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: model-local
+  local:
+    # Adapters stay pre-populated; this experiment varies only the base model cache.
+    path: /home/tensoku/workspace/k8s-llm-serving/adapters

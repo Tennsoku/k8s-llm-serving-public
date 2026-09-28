@@ -280,6 +280,14 @@
         "cases_path": {"type": "string", "minLength": 1}
       }
     },
+    "serving": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "enable_thinking": {"type": "boolean", "default": false},
+        "ignore_eos": {"type": "boolean", "default": false}
+      }
+    },
     "sampling": {
       "type": "object",
       "additionalProperties": false,

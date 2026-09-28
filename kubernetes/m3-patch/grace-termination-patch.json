@@ -1,0 +1,21 @@
+{
+  "spec": {
+    "template": {
+      "spec": {
+        "terminationGracePeriodSeconds": 120,
+        "containers": [
+          {
+            "name": "vllm-container",
+            "lifecycle": {
+              "preStop": {
+                "exec": {
+                  "command": ["python3", "-c", "import time\nfrom datetime import datetime, timezone\n\nwith open(\"/proc/1/fd/1\", \"w\") as log:\n    print(datetime.now(timezone.utc).isoformat(), \"preStop start\", file=log, flush=True)\n    time.sleep(10)\n    print(datetime.now(timezone.utc).isoformat(), \"preStop end\", file=log, flush=True)"]
+                }
+              }
+            }
+          }
+        ]
+      }
+    }
+  }
+}

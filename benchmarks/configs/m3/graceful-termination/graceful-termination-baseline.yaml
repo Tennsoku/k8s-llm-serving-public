@@ -1,0 +1,102 @@
+# 用 benchmark_client.py 连接现有 Service；run-benchmark.sh 会另起 Docker server
+# runtime 是待对齐的运行设置，client 不会应用它；先使 Service 支持 8192 context。
+# 无 reasoning parser 时 thinking 随 content 返回；启用 parser 后须先核对计量字段。
+# 先做不删除 Pod 的校准，再冻结相同请求用于终止策略 A/B；不预设请求持续时间。
+schema_version: 2
+config_id: m3.4-graceful-termination-baseline-v1
+
+experiment:
+  step: M3.4
+  kind: smoke
+  status: draft
+  comparison_group: m3.4-graceful-termination
+  variant: baseline
+  axis: kubernetes.termination-policy
+  baseline_config_id: null
+
+model:
+  id: Qwen/Qwen3-8B
+  path: /models/Qwen3-8B
+  artifact_revision: null
+  runtime_revision: null
+  tokenizer_revision: null
+  served_name: qwen3-8b
+
+runtime:
+  image: nvcr.io/nvidia/vllm@sha256:1de8e6bfdb4c81c1f31a806cc9b13b5c6352714a7cec87f4d24964bcc91159b2
+  dtype: bfloat16
+  quantization: null
+  generation_config: auto
+  max_model_len: 8192
+  max_num_seqs: 128
+  gpu_memory_utilization: 0.4
+  container_memory_limit: 8g
+  extra_args: []
+
+serving:
+  enable_thinking: true
+  ignore_eos: true
+
+workload:
+  name: m3.4-long-thinking-stream
+  shape: long-long
+  # 目标值是近似值；实际 chat-template 后长度以 server usage 为准。
+  input_tokens_target: 2048
+  prompt:
+    prefix: |
+      Analyze the following fictional inference-service operating notes.
+      Treat repeated observations as repeated evidence, not as new incidents.
+      Develop a detailed operational plan and explain the causal relationships,
+      assumptions, alternatives, and failure cases. Do not just summarize.
+    repeated_text: |
+      The service streams generated text over an existing HTTP connection.
+      A request first processes its input, then generates output incrementally.
+      Model loading must finish before new requests can be accepted.
+      Removing an endpoint prevents new routing but does not prove that an
+      existing connection has drained. A shutdown deadline must allow active
+      requests to finish, while the client must distinguish normal completion
+      from an interrupted stream. Longer inputs and longer outputs exercise
+      different stages of inference. Record observations before drawing conclusions.
+    repetitions: 20
+    suffix: |
+      Write a thorough analysis covering admission, input processing, streaming,
+      readiness, endpoint removal, shutdown, client timeouts, and recovery.
+      For each topic give concrete examples and discuss competing explanations.
+      Finish with a detailed experimental procedure and its limitations.
+  # Synthetic decode load: reaching this cap is expected, not a transport truncation.
+  max_output_tokens: 2048
+  total_requests_per_repetition: 1
+  request_timeout_seconds: 600
+  cache_identity:
+    mode: request_unique
+    derivation: sha256-run-case-phase-index-v1
+
+sampling:
+  # generation_config=auto uses the local Qwen3 top_p/top_k defaults.
+  temperature: 0.6
+  seed: 42
+  stream: true
+  include_usage: true
+
+warmup:
+  requests: 1
+  concurrency: 1
+
+sweep:
+  concurrency: [1]
+  measured_repetitions: 1
+  reference_points:
+    c1: 1
+    c_eff: null
+    c_pressure: null
+    highest_tested: null
+
+metrics:
+  sample_interval_seconds: 1
+
+orchestration:
+  # These timeouts belong to the Docker runner, not Kubernetes termination grace.
+  ready_timeout_seconds: 1200
+  idle_timeout_seconds: 120
+  stop_timeout_seconds: 60
+  stop_on_failure: true

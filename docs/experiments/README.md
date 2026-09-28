@@ -21,6 +21,9 @@ artifacts/private/<milestone>/<run-id>/
 artifacts/private/m1/20260807-m1-concurrency-c08-r01/
 ```
 
+跨 milestone 的双节点网络测试使用 `artifacts/private/network/<run-id>/`；`run.yaml` 的
+`milestone` 默认留空，需要归入某阶段时再填写。
+
 `artifacts/private/` 默认由 Git 忽略。`run-id` 应能区分实验、关键变量和 repeat；不要求全项目使用复杂的编号系统。
 
 ## `run.yaml`

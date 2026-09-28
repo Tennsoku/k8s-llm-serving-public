@@ -15,3 +15,6 @@
 修改了 dgxtop 专门分一个 tab 出来看 container
 
 Plugin 接入了 GPU 和 RoCE，不过现在 GPU 和 RoCE 的最小分块就是 1，只能靠 time slice 来做多任务调度。后续可以考虑做一个 scheduler 来做 GPU 和 RoCE 的分配？再说吧
+9月中更新：扩展方向 - HAMi / DRA，可以在后续有机会再深入研究。
+
+Kustomization 目前只有 f603 的相关 patch，暂不拆分层级。
