@@ -1,0 +1,34 @@
+# raw/ references point to the same run in the complete Tier B archive.
+run_id: 20260927-m3-k8s-comp-r01
+milestone: M3
+experiment: single-replica-k8s-docker-comparison
+timestamp_utc: '2026-09-27T20:24:16Z'
+finished_utc: '2026-09-27T20:31:12Z'
+git:
+  commit: e44ea68e66673c348e0bba7f97a084a4c3d2561b
+  dirty: true
+environment:
+  node: spark-b
+  client: spark-a
+  observation_node: spark-a
+runtime:
+  platform: kubernetes
+  image: nvcr.io/nvidia/vllm@sha256:1de8e6bfdb4c81c1f31a806cc9b13b5c6352714a7cec87f4d24964bcc91159b2
+  model: /models/Qwen2.5-7B-Instruct
+  manifest: raw/pod-after/stdout.log
+workload:
+  config: raw/comparison-config/stdout.log
+  measured_command: raw/measured-client/command.txt
+  concurrency: 8
+  warmup_requests: 16
+  measured_requests: 64
+repeat: 1
+outcome: success
+paired_run: ../20260927-m3-docker-comp-r01
+conclusion: Observed Fact：C8 下 64/64 measured 请求成功，warmup 16/16 成功，失败与 timeout 均为
+  0。
+analysis_summary: derived/comparison-summary.md
+limitations:
+- client 与采集器在 cp（spark-a），经 ClusterIP 访问 worker（spark-b）；未采集与 Docker 对称的 runtime/system
+  曲线。
+- 仅单次 C8，且两侧网络与 runtime 路径不同，差异不能归因于 Kubernetes 本身。

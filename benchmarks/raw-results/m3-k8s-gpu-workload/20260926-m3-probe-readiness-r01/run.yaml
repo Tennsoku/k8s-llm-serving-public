@@ -1,0 +1,32 @@
+# raw/ references point to the same run in the complete Tier B archive.
+run_id: 20260926-m3-probe-readiness-r01
+milestone: M3
+experiment: readiness-failure-recovery
+timestamp_utc: '2026-09-26T20:09:29Z'
+observation_finished_utc: '2026-09-26T20:19:55Z'
+git:
+  commit: e44ea68e66673c348e0bba7f97a084a4c3d2561b
+  dirty: true
+environment:
+  node: spark-b
+  client: spark-a
+runtime:
+  image: nvcr.io/nvidia/vllm@sha256:1de8e6bfdb4c81c1f31a806cc9b13b5c6352714a7cec87f4d24964bcc91159b2
+  model: /models/Qwen3-8B
+  manifest: raw/probe-baseline-deployment/stdout.log
+workload:
+  injection: raw/probe-inject.json
+  restoration: raw/probe-restore.json
+  probe: readiness
+  failure_path: /m3-intentional-probe-failure
+  period_seconds: 5
+  failure_threshold: 2
+  followup: base 与四个 adapter 各一次 non-thinking Service smoke，max_tokens=128、temperature=0
+repeat: 1
+outcome: success
+conclusion: Observed Fact：startup 成功后，故障 readiness 阻止新 Pod 入池，观察期间 restartCount=0；恢复配置后替换
+  Pod Ready 并入池。
+analysis_summary: derived/probe-review.md
+limitations:
+- 故障 Pod 从未 Ready，本轮未验证同一健康 Pod 被摘除。
+- 后补 5 个功能请求均成功，但晚于原观察窗口，缺同期 Pod 归属证据。

@@ -1,0 +1,32 @@
+# raw/ references point to the same run in the complete Tier B archive.
+run_id: 20260926-m3-probe-liveness-r01
+milestone: M3
+experiment: liveness-failure-recovery
+timestamp_utc: '2026-09-26T20:33:10Z'
+observation_finished_utc: '2026-09-26T20:46:15Z'
+git:
+  commit: e44ea68e66673c348e0bba7f97a084a4c3d2561b
+  dirty: true
+environment:
+  node: spark-b
+  client: spark-a
+runtime:
+  image: nvcr.io/nvidia/vllm@sha256:1de8e6bfdb4c81c1f31a806cc9b13b5c6352714a7cec87f4d24964bcc91159b2
+  model: /models/Qwen3-8B
+  manifest: raw/probe-baseline-deployment/stdout.log
+workload:
+  injection: raw/probe-inject.json
+  restoration: raw/probe-restore.json
+  probe: liveness
+  failure_path: /m3-intentional-probe-failure
+  period_seconds: 30
+  failure_threshold: 6
+  followup: base 与四个 adapter 各一次 non-thinking Service smoke，max_tokens=128、temperature=0
+repeat: 1
+outcome: success
+conclusion: Observed Fact：六次 liveness 404 后，kubelet 触发同 UID 容器重启，restartCount 0→1，随后重新
+  Ready；恢复正常探针配置后替换 Pod Ready。
+analysis_summary: derived/probe-review.md
+limitations:
+- 本轮仅验证一次故障重启机制，不外推长期可靠性。
+- 后补 5 个功能请求均成功，但晚于原观察窗口，缺同期 Pod 归属证据。

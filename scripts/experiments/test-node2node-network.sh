@@ -60,8 +60,8 @@ workload: {directions: 2, paths_per_direction: 3}
 outcome: running
 META
 namespace_created=false
-trap '
-  rc=$?
+on_exit() {
+  local rc=$1 resource side
   trap - EXIT
   if (( rc != 0 )); then
     sed -i "s/^outcome: running$/outcome: failed/" "$run/run.yaml"
@@ -83,7 +83,8 @@ trap '
   fi
   printf "finished_utc: \"%s\"\n" "$(date -u +%FT%TZ)" >> "$run/run.yaml"
   exit "$rc"
-' EXIT
+}
+trap 'on_exit "$?"' EXIT
 trap 'exit 130' INT
 trap 'exit 143' TERM
 

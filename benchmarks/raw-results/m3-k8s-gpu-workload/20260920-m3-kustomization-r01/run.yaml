@@ -1,0 +1,38 @@
+# raw/ references point to the same run in the complete Tier B archive.
+run_id: 20260920-m3-kustomization-r01
+milestone: M3
+experiment: kustomize-worker-multi-adapter-replay
+timestamp_utc: '2026-09-20T19:33:47Z'
+timestamp_source: raw/apply-start/stdout.log
+requests_started_utc: '2026-09-20T19:55:26Z'
+requests_finished_utc: '2026-09-20T20:07:27Z'
+finished_utc: '2026-09-20T20:07:47Z'
+git:
+  commit: e44ea68e66673c348e0bba7f97a084a4c3d2561b
+  dirty: true
+environment:
+  node: spark-b
+  client: spark-a
+runtime:
+  image: nvcr.io/nvidia/vllm@sha256:1de8e6bfdb4c81c1f31a806cc9b13b5c6352714a7cec87f4d24964bcc91159b2
+  model: /models/Qwen3-8B
+  args_source: raw/rendered/stdout.log
+workload:
+  single_adapter: 四个 adapter，各 4 个 development case，concurrency=1
+  mixed: 16 个 development case，concurrency=4
+  command_sources: raw/*-request/command.txt
+repeat: 1
+outcome: success
+outcome_scope: 启动恢复后的多 adapter serving smoke
+conclusion: Observed Fact：单 adapter 与 mixed smoke 共 32 次请求，HTTP 与 model selection
+  均通过。
+analysis_summary: derived/adapter-summary.md
+evidence:
+- raw/npc-merchant-summary/stdout.log
+- raw/npc-guard-summary/stdout.log
+- raw/quest-planner-summary/stdout.log
+- raw/lore-archivist-summary/stdout.log
+- raw/mixed-summary/stdout.log
+limitations:
+- 启动发生 3 次重启，lastState 为 exitCode=1；本次只确认恢复后的 serving 功能。
+- npc-merchant 在单 adapter 和 mixed 中均有 1/4 角色不符；选模成功不代表角色正确。

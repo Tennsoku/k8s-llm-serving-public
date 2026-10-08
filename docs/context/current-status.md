@@ -8,7 +8,7 @@
 
 ---
 
-**最后更新**：2026-09-27
+**最后更新**：2026-10-07
 
 ---
 
@@ -21,7 +21,7 @@
 | M1p — Public Closeout / Repackage | ✅ [showcase](../../showcase/m1/) |
 | M2 — Serving 优化（量化 / 投机解码 / 前缀缓存） | ✅ [review](../reviews/m2-review.md) · [showcase](../../showcase/m2/) |
 | M2p — 多 adapter 准备 | ✅ [review](../reviews/m2p-review.md) |
-| M3 — Kubernetes 与 GPU workload | 🚧 |
+| M3 — Kubernetes 与 GPU workload | ✅ [review](../reviews/m3-review.md) |
 | M4 — 可观测性、SLO 与诊断闭环 | 🚧 |
 | M5 — 服务生命周期与最小弹性闭环 | ○ |
 | M6 — 深度观测、灰度与韧性扩展 | ○ |
@@ -31,10 +31,10 @@
 
 ## Next Steps
 
-M3 Complete Pre-close: 证据整理与验证完成，待最终核对，文档补完。
+M3：已完成。
 
-M4.3 完成。下一步是 M4.4 SLO 与告警。
+M4 Pre-closeout。证据收集与整理与最终验证进行中。
 
 ## Blockers
 
-无遗留执行阻塞。
+无新增实验阻塞；M3公开交付待收尾，见 [review](../reviews/m3-review.md#验收与公开缺口)。

@@ -56,7 +56,7 @@ Minimal checkpoint → 只读现场复核 / gap analysis → M3.6 早期接入 s
 
 1. 基于实际状态需求记录 Deployment 而非 StatefulSet 的选择理由，并冻结 CPU/memory/GPU requests/limits、QoS class、模型 mount 和 Service 行为。
 2. 用冷启动时间校准 `startupProbe`，证明模型加载期不被 liveness 重启；用 EndpointSlice 与请求结果证明 readiness 只控制流量资格。
-3. 各做一次小型受控异常：readiness 失败时 endpoint 被摘除但容器不重启；启动完成后让容器保持运行但 liveness 持续失败，捕获 kubelet `Unhealthy` event 后再观察重启。直接 kill 主进程不能作为 liveness 证据；不新增故障注入框架。
+3. 各做一次小型受控异常：readiness 失败时 endpoint 不具备 ready 流量资格、容器不重启；启动完成后让容器保持运行但 liveness 持续失败，捕获 kubelet `Unhealthy` event 后再观察重启。直接 kill 主进程不能作为 liveness 证据；不新增故障注入框架。
 4. 若 pinned runtime 不能提供语义可区分的健康端点，记录限制并用最小 exec probe 补足；不要用生成请求作 liveness。
 
 ## M3.4 — 流式请求优雅终止

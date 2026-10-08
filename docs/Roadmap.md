@@ -123,6 +123,8 @@ M2 overall pre-close → M3 Minimal → M2 close → M3 Complete
 
 验收重点是 LLM workload 特有的运行约束：慢加载模型的探针设计、流式连接的优雅终止、GPU 扩展资源，以及模型缓存的存储策略。
 
+公开交付承诺为关键结果可从Tier B重算，不要求公开集群重建全过程。Readiness异常验收覆盖未通过时不入池且不重启；同一健康Pod的摘除不是额外关闭条件。
+
 拓扑：Spark A 承担 single control plane，并作为显式调度的 GPU workload node；Spark B
 是 worker-only。该两节点拓扑不是 HA；benchmark 中记录 Spark A 的 control-plane
 activity/noise，不把它与普通 Worker 等同。
@@ -146,7 +148,7 @@ activity/noise，不把它与普通 Worker 等同。
 - [ ] Pod 删除时进行中的流式请求不被截断，有量化数据
 - [ ] 模型缓存冷/热启动差异已测量
 - [ ] 多 adapter 共池可服务，单请求可指定 adapter
-- [ ] K8s 单副本结果与 M1 裸机基线的差异已记录（隔离 K8s 引入的开销）
+- [ ] K8s 单副本结果与重跑的 M1 裸机基线差异已记录；保留实际路径差异，不要求 Kubernetes 单因素开销归因
 
 ---
 

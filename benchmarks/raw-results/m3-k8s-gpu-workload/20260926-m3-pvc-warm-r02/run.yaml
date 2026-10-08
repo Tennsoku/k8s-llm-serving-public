@@ -1,0 +1,36 @@
+# raw/ references point to the same run in the complete Tier B archive.
+run_id: 20260926-m3-pvc-warm-r02
+milestone: M3
+experiment: model-cache-warm
+timestamp_utc: '2026-09-26T15:05:32Z'
+git:
+  commit: e44ea68e66673c348e0bba7f97a084a4c3d2561b
+  dirty: true
+environment:
+  node: spark-b
+  client: spark-a
+  pod_uid: 48a2a50f-5605-4cfd-9635-bfd1e7e11432
+runtime:
+  manifest: raw/deploy-input/stdout.log
+  actual_workload: raw/workload-before/stdout.log
+workload:
+  models:
+  - qwen3-8b
+  - npc-merchant
+  - npc-guard
+  - quest-planner
+  - lore-archivist
+  max_tokens: 128
+  temperature: 0
+  enable_thinking: false
+repeat: 2
+outcome: completed_with_collection_gaps
+paired_cold_run: ../20260926-m3-pvc-cold-r01
+cache_condition: 复用同一模型 PVC。init 检出完成标记，跳过复制与逐字节校验。
+conclusion: Observed Fact：Pod 创建至 Ready 为 170s，init/main 均无重启；修正请求参数后，non-thinking
+  选模请求 5/5 完整成功。
+analysis_summary: derived/startup-comparison.md
+limitations:
+- 节点内存覆盖启动窗口，未采 init/main cgroup 曲线；page cache 未控制，不作容器内存归因或稳定性能结论。
+- 首次 base 请求因 no-thinking 参数错误返回 HTTP 400，修正后成功；失败客户端请求与响应未保留（用户操作补充）。
+- watch 路径曾被复用导致派生期间退出码由 143 变为 124，无法可靠归属到某次采集。不用于判断 workload 失败。

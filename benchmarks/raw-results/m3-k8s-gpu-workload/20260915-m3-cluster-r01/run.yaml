@@ -1,0 +1,33 @@
+# raw/ references point to the same run in the complete Tier B archive.
+run_id: 20260915-m3-cluster-r01
+milestone: M3
+experiment: cluster-rebuild-gpu-replay
+timestamp_utc: '2026-09-15T12:08:12Z'
+timestamp_source: raw/worker-start/stdout.log
+git:
+  commit: e44ea68e66673c348e0bba7f97a084a4c3d2561b
+  dirty: true
+environment:
+  node:
+  - spark-a
+  - spark-b
+runtime:
+  kubernetes: v1.36.4
+  containerd: 2.2.1
+  image: nvcr.io/nvidia/pytorch@sha256:7531d90bcbe0e43e1f7363029c7e145ce90eebeb494a7b4695fdba0329d7c3c3
+  runtime_class: nvidia
+  bootstrap_commands:
+  - raw/kubeadm-init/command.txt
+  - raw/apply-flannel/command.txt
+  - raw/apply-nv-runtimec/command.txt
+  - raw/apply-nv-dev/command.txt
+  gpu_inputs: raw/gpu-replay/*-input/stdout.log
+workload:
+  cluster: 两节点 reset、init/join 与 Ready 验证
+  gpu: 两节点各一个显式申请 1 GPU 的 CUDA FP16 2048×2048 matmul Pod
+repeat: 1
+outcome: success
+conclusion: Observed Fact：集群重建后两节点均 Ready；两侧 GPU Pod 均完成 CUDA 矩阵运算，result_finite=true、exitCode=0。
+analysis_summary: derived/cluster-replay-review.md
+limitations:
+- 复用已有主机软件与镜像；本轮是集群重建及 GPU smoke，不是裸机安装或性能评测。

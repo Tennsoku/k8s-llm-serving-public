@@ -51,15 +51,9 @@ Qwen2.5-0.5B-Instruct · BF16 · TP=1 · vLLM（digest-pinned NGC ARM64 镜像�
 3. Speculative decoding 明显改善 tested completion workload 的 decode (TPOT) / E2E (总用时)，但相对单节点情况下会增加 TTFT (额外模型的加载时间)
 4. Tested long-context range 尚未触及首个 pressure / failure boundary。精确数值、证据与限制以该 review 为准
 
-### M3 Minimal — Kubernetes GPU Serving 最小闭环
+### M3 — Kubernetes GPU Workload 生命周期
 
-[M3 Minimal review](docs/reviews/m3-minimal-review.md) · [Minimal 范围与 checkpoint](docs/milestone-plan/m3-plan-minimal.md) · [Kubernetes manifests](kubernetes/) · 进度见 [Status](docs/context/current-status.md)
-
-**Observed Fact**：private capture 记录了两节点 `Ready` 与跨节点 Pod / Service / DNS smoke、两节点 GPU extended resource 与 CUDA compute，以及 probe-gated vLLM rollout；经 Service 的 4 个 streaming requests 均为 HTTP 200，0 失败、0 超时。
-
-**Interpretation**：这验证了当前 DGX Spark / ARM64 / Kubernetes / NVIDIA runtime / vLLM 组合的窄纵向功能闭环。完整 M3 或 production readiness 尚需推进。
-
-**证据边界**：command/status capture 仍是 gitignored private evidence，将在完整 M3 close 后统一公开。本阶段没有验证 clean-machine rebuild、长期稳定性、容量、Kubernetes 性能开销或 probe 异常路径。
+[M3 review](docs/reviews/m3-review.md) · [Minimal checkpoint](docs/reviews/m3-minimal-review.md) · [Kubernetes manifests](kubernetes/) · 进度见 [Status](docs/context/current-status.md)
 
 ---
 

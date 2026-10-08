@@ -1,0 +1,37 @@
+# raw/ references point to the same run in the complete Tier B archive.
+run_id: 20260926-m3-pvc-cold-r01
+milestone: M3
+experiment: model-cache-cold
+timestamp_utc: '2026-09-26T11:55:05Z'
+git:
+  commit: e44ea68e66673c348e0bba7f97a084a4c3d2561b
+  dirty: true
+environment:
+  node: spark-b
+  client: spark-a
+  pod_uid: 33bb6f61-2e30-4b9a-ac3e-bc081e9cdf7e
+runtime:
+  manifest: raw/deploy-input/stdout.log
+workload:
+  models:
+  - qwen3-8b
+  - npc-merchant
+  - npc-guard
+  - quest-planner
+  - lore-archivist
+  max_tokens: 32
+  temperature: 0
+  followup:
+    capture_suffix: request-nothink
+    max_tokens: 128
+    enable_thinking: false
+repeat: 1
+outcome: completed_with_collection_gaps
+cache_condition: 目标模型缓存初始为空；源权重、adapter 与容器镜像已在节点上。
+conclusion: Observed Fact：缓存复制及校验完成，Pod 创建至 Ready 为 221s，init/main 均无重启；后补 non-thinking
+  选模请求 5/5 完整成功。
+analysis_summary: derived/startup-summary.md
+limitations:
+- 已采节点内存，未采 init/main cgroup 内存曲线；不能归属容器或 GPU 内存。
+- 初始请求未关闭 thinking，均触及 32-token 上限；成功补采晚于启动观察窗口。
+- cold 指目标 PVC 缓存为空，不含权重下载；page cache 未控制。
